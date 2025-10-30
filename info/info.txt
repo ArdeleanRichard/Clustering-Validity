@@ -1,0 +1,131 @@
+General reviews / surveys:
+ - Benchmarking validity indices for evolutionary K-means clustering performance: https://pmc.ncbi.nlm.nih.gov/articles/PMC12218181
+ - From A-to-Z Review of Clustering Validation Indices: https://www.sciencedirect.com/science/article/abs/pii/S092523122400969X
+
+Libraries for multiple metrics:
+ - https://pycvi.readthedocs.io/en/latest
+ - https://pypi.org/project/cvi/
+ -- https://github.com/nglm/pycvi - contains references to articles
+
+
+
+
+
+
+
+### cvi ###
+cSIL: Centroid-based Silhouette
+GD43: Generalized Dunn's Index 43.
+GD53: Generalized Dunn's Index 53.
+PS: Partition Separation.
+rCIP: (Renyi's) representative Cross Information Potential.
+WB: WB-index.
+XB: Xie-Beni.
+
+import cvi
+my_cvi = cvi.CH()
+criterion_value = my_cvi.get_cvi(samples, labels)
+
+
+
+
+
+
+
+
+### permetrics ###
+SSEI: Sum of Squared Error Index
+RSI: R-Squared Index
+DHI: Duda Hart Index
+BI: Beale Index
+BHI: Ball Hall Index
+DI: Dunn Index
+HI: Harigan Index
+DBCVI: Density-Based Clustering Validation Index
+
+
+from permetrics import ClusteringMetric
+cm = ClusteringMetric(X=data, y_pred=y_pred)
+print(cm.density_based_clustering_validation_index())
+print(cm.DBCVI())
+
+
+
+
+
+
+
+
+### pycvi ###
+12 internal CVIs implemented:
+# : Calinski-Harabasz
+# : Davies-Bouldin
+# : Silhouette
+# : Hartigan
+# : Dunn
+# : Xie-Beni
+
+GP: GapStatistic
+SF: ScoreFunction
+MB: Maulik-Bandyopadhyay
+SD: SD
+SDbw: SDbw
+XB: Xie-Beni*
+
+
+
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from pycvi.cvi import Silhouette
+from pycvi.datasets.benchmark import load_data
+from pycvi.cluster import get_clustering
+
+from pycvi_examples_utils import plot_true_selected
+
+# -------------- Standard data handling operations ---------------------
+# Load data
+data, labels = load_data("xclara", "barton")
+
+# Data pre-processing
+scaler = StandardScaler()
+X = scaler.fit_transform(data)
+# CVI to use, could be any class defined in pycvi.cvi
+cvi = Silhouette()
+
+# ---------- Integrating PyCVI in the clustering pipeline --------------
+# ------ 1. Compute CVI values of the generated clusterings ------------
+# ------ 2. Select the best clustering according to the CVI ------------
+
+clusterings = {}
+cvi_values = {}
+k_range = range(2, 10)
+for k in k_range:
+
+    # Generate the clusters assuming that there are k clusters
+    # Clustering model to use, could be any sklearn-like clustering class
+    model = KMeans(n_clusters=k)
+    labels_pred = model.fit_predict(X)
+
+    # From predicted cluster-label for each datapoint to a list of
+    # datapoints for each cluster.
+    clusters_pred = get_clustering(labels_pred)
+
+    # Compute the CVI value of this clustering
+    cvi_value = cvi(X, clusters_pred)
+
+    # Store clustering and CVI value
+    clusterings[k] = clusters_pred
+    cvi_values[k] = cvi_value
+    print(f"k={k}  |  CVI value:{cvi_value}")
+
+k_selected = cvi.select(cvi_values)
+print(f"k selected: {k_selected}")
+
+# ---------------------- Summmary fig ----------------------------------
+
+clustering_true = get_clustering(labels)
+fig = plot_true_selected(data, clustering_true, clusterings[k_selected])
+fig_title = "KMeans clustering with Silhouette score"
+fig_name = "basic_usage_KMeans_Silhouette.png"
+fig.suptitle(fig_title)
+fig.savefig(fig_name)

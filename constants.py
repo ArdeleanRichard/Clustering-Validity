@@ -1,0 +1,97 @@
+import os
+
+LABEL_COLOR_MAP = {
+    -1: 'gray',
+    0: 'red',
+    1: 'lightblue',
+    2: 'green',
+    3: 'yellow',
+    4: 'magenta',
+    5: 'cyan',
+}
+
+FOLDER_RESULTS = f"./results/"
+FOLDER_FIGS_DATA = f"./figs/data/"
+
+os.makedirs(FOLDER_RESULTS, exist_ok=True)
+os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
+
+
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
+import cvi
+from permetrics import ClusteringMetric
+from pycvi import cvi as pycvi_cvi
+from pycvi.cluster import get_clustering
+from ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
+from mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score
+
+
+MAP_METRIC_TO_FUNCTION = {
+    # CVI metrics
+    "cSIL": lambda data, labels: cvi.cSIL().get_cvi(data, labels),
+    "GD43": lambda data, labels: cvi.GD43().get_cvi(data, labels),
+    "GD53": lambda data, labels: cvi.GD53().get_cvi(data, labels),
+    "PS": lambda data, labels: cvi.PS().get_cvi(data, labels),
+    "rCIP": lambda data, labels: cvi.rCIP().get_cvi(data, labels),
+    "WB": lambda data, labels: cvi.WB().get_cvi(data, labels),
+    "XB": lambda data, labels: cvi.XB().get_cvi(data, labels),
+
+    # Permetrics metrics
+    "SSEI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).sum_squared_error_index(),
+    "RSI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).r_squared_index(),
+    "DHI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).duda_hart_index(),
+    "BI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).beale_index(),
+    "BHI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).ball_hall_index(),
+    "DI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).dunn_index(),
+    "HI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).hartigan_index(),
+    "DBCVI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).density_based_clustering_validation_index(),
+
+    # PyCVI metrics
+    # "Calinski-Harabasz":  lambda data, labels: pycvi_cvi.CalinskiHarabasz()(data, get_clustering(labels)),
+    # "Davies-Bouldin":     lambda data, labels: pycvi_cvi.DaviesBouldin()(data, get_clustering(labels)),
+    # "Silhouette":         lambda data, labels: pycvi_cvi.Silhouette()(data, get_clustering(labels)),
+    # "Hartigan":           lambda data, labels: pycvi_cvi.Hartigan()(data, get_clustering(labels)),
+    # "Dunn":               lambda data, labels: pycvi_cvi.Dunn()(data, get_clustering(labels)),
+    # "Xie-Beni":           lambda data, labels: pycvi_cvi.XieBeni()(data, get_clustering(labels)),
+    # ERROR: #"GP":         lambda data, labels: pycvi_cvi.GapStatistic()(data, get_clustering(labels)),
+    # ERROR: #"MB":         lambda data, labels: pycvi_cvi.MaulikBandyopadhyay()(data, get_clustering(labels)),
+    "SF": lambda data, labels: pycvi_cvi.ScoreFunction()(data, get_clustering(labels)),
+    "SD": lambda data, labels: pycvi_cvi.SD()(data, get_clustering(labels)),
+    "SDbw": lambda data, labels: pycvi_cvi.SDbw()(data, get_clustering(labels)),
+    "XB*": lambda data, labels: pycvi_cvi.XBStar()(data, get_clustering(labels)),
+
+    # sklearn metrics
+    "SS": silhouette_score,
+    "DBS": davies_bouldin_score,
+    "CHS": calinski_harabasz_score,
+
+    # our metrics
+    "ED-SS": ed_silhouette_score,
+    "ED-DBS": ed_davies_bouldin_score,
+    "ED-CHS": ed_calinski_harabasz_score,
+    "MST-SS": mst_silhouette_score,
+    "MST-DBS": mst_davies_bouldin_score,
+    "MST-CHS": mst_calinski_harabasz_score,
+}
+
+METRICS = list(MAP_METRIC_TO_FUNCTION.keys())
+
+
+# Define which metrics are "lower is better"
+MAP_LOWER_IS_BETTER = {
+    # CVI
+    "rcip", "wb", "xb",
+
+    # Permetrics
+    "ssei", "bhi", "dbcvi",
+
+    # PyCVI
+    "sd", "sdbw", "xb*",
+
+    # sklearn
+    "dbs",
+
+    # ours
+    "ed-dbs",
+    "mst-dbs",
+}
