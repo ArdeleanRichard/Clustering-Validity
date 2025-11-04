@@ -176,9 +176,6 @@ def mst_idea(data, labels, k=5):
 
 
 
-    # Calculate cluster means
-    centroid_ids = np.array([centroid_id_from_data(data[labels == i], np.where(labels == i)[0]) for i in unique_labels])
-
     # within cluster distances
     all_dists = []
     all_dists_by_cluster = []
@@ -200,14 +197,31 @@ def mst_idea(data, labels, k=5):
         all_dists_by_cluster.append(dists_by_cluster)
 
 
-    print([np.max(np.array(dists)) for dists in all_dists_by_cluster])
-    print([np.mean(np.array(dists)) for dists in all_dists_by_cluster])
+    # print([np.max(np.array(dists)) for dists in all_dists_by_cluster])
+    # print([np.mean(np.array(dists)) for dists in all_dists_by_cluster])
 
     all_dists = np.array(all_dists)
-    print(np.max(all_dists))
-    print(np.mean(all_dists))
+    # print(np.max(all_dists))
+    # print(np.mean(all_dists))
 
-    return all_dists
+
+
+    # Calculate cluster means
+    centroid_ids = np.array([centroid_id_from_data(data[labels == i], np.where(labels == i)[0]) for i in unique_labels])
+    mst_edges = mst_prim_knn(data, k=k)
+
+    inter_dists = []
+    for i in range(n_clusters):
+        for j in range(n_clusters):
+            if i != j:
+                inter_dists.append(find_path_max_edge(mst_edges, centroid_ids[i], centroid_ids[j])[0])
+
+    inter_dists = np.array(inter_dists)
+    # print(inter_dists)
+    # print(np.min(inter_dists))
+    # print()
+
+    return np.max(all_dists) / np.min(inter_dists)
 
 
 if __name__ == '__main__':

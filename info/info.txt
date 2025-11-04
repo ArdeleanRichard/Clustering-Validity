@@ -40,7 +40,7 @@ DHI: Duda Hart Index
 BI: Beale Index
 BHI: Ball Hall Index
 DI: Dunn Index
-HI: Harigan Index
+HI: Hartigan Index
 DBCVI: Density-Based Clustering Validation Index
 
 
@@ -65,9 +65,9 @@ print(cm.DBCVI())
 # : Dunn
 # : Xie-Beni
 
-GP: GapStatistic
+# ERROR: GP: GapStatistic
+# ERROR: MB: Maulik-Bandyopadhyay
 SF: ScoreFunction
-MB: Maulik-Bandyopadhyay
 SD: SD
 SDbw: SDbw
 XB: Xie-Beni*
