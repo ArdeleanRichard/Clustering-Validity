@@ -3,15 +3,21 @@ import os
 LABEL_COLOR_MAP = {
     -1: 'gray',
     0: 'red',
-    1: 'lightblue',
+    1: 'blue',
     2: 'green',
     3: 'yellow',
     4: 'magenta',
     5: 'cyan',
+    6: 'wheat',
+    7: 'yellowgreen',
+    8: 'orchid',
+    9: 'tab:orange',
+    10: 'tab:brown',
 }
 
 FOLDER_RESULTS = f"./results/"
 FOLDER_FIGS_DATA = f"./figs/data/"
+FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
 
 os.makedirs(FOLDER_RESULTS, exist_ok=True)
 os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
