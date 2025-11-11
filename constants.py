@@ -31,6 +31,8 @@ from pycvi.cluster import get_clustering
 from ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 from mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score, mst_idea
 
+from info.DBCV import DBCV
+
 MAP_METRIC_TO_FUNCTION = {
     # CVI metrics
     "cSIL": lambda data, labels: cvi.cSIL().get_cvi(data, labels),
@@ -50,6 +52,7 @@ MAP_METRIC_TO_FUNCTION = {
     "DI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).dunn_index(),
     "HI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).hartigan_index(),
     "DBCVI": lambda X, labels: ClusteringMetric(X=X, y_pred=labels).density_based_clustering_validation_index(),
+    "DBCV": lambda X, labels: DBCV(X=X, labels=labels),
 
     # PyCVI metrics
     # "Calinski-Harabasz":  lambda data, labels: pycvi_cvi.CalinskiHarabasz()(data, get_clustering(labels)),
