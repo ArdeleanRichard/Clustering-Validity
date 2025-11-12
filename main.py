@@ -27,7 +27,7 @@ def run_score_set1(datasets, plot=False):
 
         # Create and print metric table
         create_metric_table_with_arrows(X, choose_metric, label_sets=label_sets,
-                                        save=f"{FOLDER_RESULTS}/metrics_{i_dataset}.csv", printt=True)
+                                        save=f"{FOLDER_RESULTS}/metrics_data{i_dataset + 1}.csv", printt=True)
 
         if plot:
             for name, labels in zip(["gt", "dp", "vl", "hl", "rl"], [gt, dp, vl, hl, rl]):
