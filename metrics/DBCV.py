@@ -1,5 +1,6 @@
 """
-Implimentation of Density-Based Clustering Validation "DBCV"
+Implementation of Density-Based Clustering Validation "DBCV" (Higher is better)
+https://github.com/christopherjenness/DBCV
 
 Citation:
 Moulavi, Davoud, et al. "Density-based clustering validation."

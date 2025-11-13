@@ -253,3 +253,99 @@ def create_unbalance():
     temp_data = data.to_numpy()
     data = (temp_data[:, :-1], temp_data[:, -1])
     return data
+
+
+
+
+
+
+def create_2d4c():
+    data, meta = arff.loadarff('./data/2d-4c-no4.arff')
+    return transform_arff_data(data)
+
+def create_2d10c():
+    data, meta = arff.loadarff('./data/2d-10c.arff')
+    return transform_arff_data(data)
+
+def create_2d20c():
+    data, meta = arff.loadarff('./data/2d-20c-no0.arff')
+    return transform_arff_data(data)
+
+def create_3spiral():
+    data, meta = arff.loadarff('./data/3-spiral.arff')
+    return transform_arff_data(data)
+
+def create_aggregation():
+    data, meta = arff.loadarff('./data/aggregation.arff')
+    return transform_arff_data(data)
+
+def create_compound():
+    data, meta = arff.loadarff('./data/compound.arff')
+    return transform_arff_data(data)
+
+def create_elly_2d10c13s():
+    data, meta = arff.loadarff('./data/elly-2d10c13s.arff')
+    return transform_arff_data(data)
+
+def create_s1():
+    data, meta = arff.loadarff('./data/s-set1.arff')
+    return transform_arff_data(data)
+
+def create_s2():
+    data, meta = arff.loadarff('./data/s-set2.arff')
+    return transform_arff_data(data)
+
+def create_s3():
+    data, meta = arff.loadarff('./data/s-set3.arff')
+    return transform_arff_data(data)
+
+def create_s4():
+    data, meta = arff.loadarff('./data/s-set4.arff')
+    return transform_arff_data(data)
+
+
+
+
+def read_data_and_labels(data_path, labels_path):
+    f_data = open(data_path, 'r')
+    X = np.array(
+        [list(map(float, line.strip().split())) for line in f_data if line.strip()],
+        dtype=float
+    )
+    f_data.close()
+
+    f_labels = open(labels_path, 'r')
+    y = np.array(
+        [line.strip() for line in f_labels if line.strip()],
+        dtype=str
+    )
+    f_labels.close()
+
+    if X.shape[0] != y.shape[0]:
+        raise ValueError(f"Mismatch: {X.shape[0]} samples in data but {y.shape[0]} labels.")
+
+    return (X, y)
+
+
+def create_a1():
+    return read_data_and_labels("./data/a1.data", "./data/a1.labels0")
+
+
+def create_a2():
+    return read_data_and_labels("./data/a2.data", "./data/a2.labels0")
+
+
+def create_a3():
+    return read_data_and_labels("./data/a3.data", "./data/a3.labels0")
+
+
+if __name__ == '__main__':
+    X, y = create_a1()
+    print(X.shape, y.shape, len(np.unique(y)))
+
+    X, y = create_a2()
+    print(X.shape, y.shape, len(np.unique(y)))
+
+    X, y = create_a3()
+    print(X.shape, y.shape, len(np.unique(y)))
+

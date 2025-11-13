@@ -1,6 +1,3 @@
-import os
-import time
-
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
@@ -26,8 +23,7 @@ def run_score_set1(datasets, plot=False):
         label_sets = {"gt": gt, "dp": dp, "vl": vl, "hl": hl, "rl": rl}
 
         # Create and print metric table
-        create_metric_table_with_arrows(X, choose_metric, label_sets=label_sets,
-                                        save=f"{FOLDER_RESULTS}/metrics_data{i_dataset + 1}.csv", printt=True)
+        create_metric_table_with_arrows(X, choose_metric, label_sets=label_sets, save=f"{FOLDER_RESULTS}/metrics_data{i_dataset + 1}.csv", printt=True)
 
         if plot:
             for name, labels in zip(["gt", "dp", "vl", "hl", "rl"], [gt, dp, vl, hl, rl]):
@@ -37,7 +33,6 @@ def run_score_set1(datasets, plot=False):
                 plt.savefig(f"{FOLDER_FIGS_DATA}/data{i_dataset + 1}_{name}.png")
                 plt.close()
 
-    print()
 
 
 def run_scores_set1(plot=False):
@@ -52,4 +47,4 @@ def run_scores_set1(plot=False):
 if __name__ == '__main__':
     random_state = 42
 
-    run_scores_set1(plot=True)
+    run_scores_set1(plot=False)

@@ -186,8 +186,8 @@ def mst_idea(data, labels, k=5):
         mst_edges = mst_prim_knn(cluster, k=k)
 
         test = [dist for x,y,dist in mst_edges]
-        print(np.max(np.array(test)))
-        print(np.mean(np.array(test)))
+        # print(np.max(np.array(test)))
+        # print(np.mean(np.array(test)))
 
         for sid, sample in enumerate(cluster):
             dist = find_path_max_edge(mst_edges, sid, cluster_centroid)[0]

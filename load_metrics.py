@@ -87,6 +87,8 @@ def create_metric_table_with_arrows(X, choose_metric, label_sets=None, metrics=M
         for label_name, labels in label_sets.items():
             try:
                 val = choose_metric(metric=metric, data=X, labels=labels)
+                if type(val) == np.ndarray:
+                    print(metric, val)
             except Exception as e:
                 print(f"Warning: Metric {metric} failed for {label_name}: {e}")
                 val = np.nan
