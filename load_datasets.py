@@ -287,23 +287,14 @@ def create_elly_2d10c13s():
     data, meta = arff.loadarff('./data/elly-2d10c13s.arff')
     return transform_arff_data(data)
 
-def create_s1():
-    data, meta = arff.loadarff('./data/s-set1.arff')
+
+
+
+
+
+def create_s(n=1):
+    data, meta = arff.loadarff(f'./data/s/s-set{n}.arff')
     return transform_arff_data(data)
-
-def create_s2():
-    data, meta = arff.loadarff('./data/s-set2.arff')
-    return transform_arff_data(data)
-
-def create_s3():
-    data, meta = arff.loadarff('./data/s-set3.arff')
-    return transform_arff_data(data)
-
-def create_s4():
-    data, meta = arff.loadarff('./data/s-set4.arff')
-    return transform_arff_data(data)
-
-
 
 
 def read_data_and_labels(data_path, labels_path):
@@ -327,25 +318,25 @@ def read_data_and_labels(data_path, labels_path):
     return (X, y)
 
 
-def create_a1():
-    return read_data_and_labels("./data/a1.data", "./data/a1.labels0")
+def create_a(n=1):
+    return read_data_and_labels(f"./data/a/a{n}.data", f"./data/a/a{n}.labels0")
 
 
-def create_a2():
-    return read_data_and_labels("./data/a2.data", "./data/a2.labels0")
+def create_g(dims=2, overlap=10):
+    return read_data_and_labels(f"./data/g2mg/g2mg_{dims}_{overlap}.data", f"./data/g2mg_{dims}_{overlap}.labels0")
 
 
-def create_a3():
-    return read_data_and_labels("./data/a3.data", "./data/a3.labels0")
+
+
 
 
 if __name__ == '__main__':
-    X, y = create_a1()
+    X, y = create_a(1)
     print(X.shape, y.shape, len(np.unique(y)))
 
-    X, y = create_a2()
+    X, y = create_a(2)
     print(X.shape, y.shape, len(np.unique(y)))
 
-    X, y = create_a3()
+    X, y = create_a(3)
     print(X.shape, y.shape, len(np.unique(y)))
 

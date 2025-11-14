@@ -14,10 +14,7 @@ in the entire data set.
 
 
 Citation:
-
 A General Statistical Framework for Assessing Categorical Clustering in Free Recall.” Psychological Bulletin, 83(6), 1072–1080
-
-
 """
 import numpy as np
 from sklearn.cluster import KMeans

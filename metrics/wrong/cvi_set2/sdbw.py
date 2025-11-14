@@ -102,8 +102,8 @@ class SDbw:
 				point_density_k = self.density(cluster_k, **kwargs)
 				point_density_l = self.density(cluster_l, **kwargs)
 
-				print('Density K', point_density_k)
-				print('Density L', point_density_l)
+				# print('Density K', point_density_k)
+				# print('Density L', point_density_l)
 				density_ratio += paired_densities/(max(point_density_k, point_density_l))
 
 			return density_ratio / (math.pow(self.K, 2) - self.K)
