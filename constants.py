@@ -133,7 +133,7 @@ MAP_LOWER_IS_BETTER = {
     "rcip", "wb", "xb",
 
     # Permetrics
-    "ssei", "bhi",
+    "sse", "bh",
 
     # PyCVI
     "sd", "sdbw", "xb*",
