@@ -1,14 +1,9 @@
 import numpy as np
-from sklearn.metrics import davies_bouldin_score, calinski_harabasz_score, silhouette_score
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.utils import shuffle
-import time
 
 from load_datasets import create_data4
 from mst_distance import centroid_id_from_data, find_path_max_edge, mst_prim_knn
 from load_labelsets import diagonal_line, assign_labels_by_given_line, vertical_line, horizontal_line
-
-
 
 
 def mst_silhouette_score(data, labels, k=5):

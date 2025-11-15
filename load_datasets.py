@@ -81,70 +81,6 @@ def create_data7(n_samples):
 
 
 
-def create_data8(n_samples):
-    rng = np.random.RandomState(seed)
-    X = rng.rand(n_samples, 2)
-    no_structure = (X, np.zeros((len(X))))
-    return no_structure
-
-
-
-def create_set1(n_samples):
-    data1 = create_data1(n_samples)
-    data2 = create_data2(n_samples)
-    data3 = create_data3(n_samples)
-    data4 = create_data4(n_samples)
-    data5 = create_data5(n_samples)
-    data6 = create_data6(n_samples)
-    data7 = create_data7(n_samples)
-
-    datasets = [
-        data1,
-        data2,
-        data3,
-        data4,
-        data5,
-        data6,
-        data7,
-    ]
-
-    return datasets
-
-
-
-
-def create_data3_3d(n_samples):
-    # Anisotropicly distributed data
-    random_state = 170
-    X, y = datasets.make_blobs(n_samples=n_samples, n_features=3, cluster_std=1.0, random_state=random_state)
-    transformation = [[0.3, -0.3, 0.01], [-0.2, 0.4, 0.01], [-0.1, 0.2, 0.01]]
-    X_aniso = np.dot(X, transformation)
-    aniso = (X_aniso, y)
-    return aniso
-
-def create_data4_3d(n_samples):
-    return datasets.make_blobs(n_samples=n_samples, n_features=3, random_state=seed)
-
-
-def create_data5_3d(n_samples):
-    # data5 with data3 variances
-    return datasets.make_blobs(n_samples=n_samples, n_features=3, cluster_std=[1.0, 2.5, 0.5], random_state=random_state)
-
-
-def create_set3d(n_samples):
-    data3 = create_data3_3d(n_samples)
-    data4 = create_data4_3d(n_samples)
-    data5 = create_data5_3d(n_samples)
-
-    datasets = [
-        data3,
-        data4,
-        data5,
-    ]
-
-    return datasets
-
-
 
 
 def transform_arff_data(data):
@@ -168,18 +104,6 @@ def transform_arff_data(data):
 
     return (X, y)
 
-
-def create_iris():
-    data, meta = arff.loadarff('./data/iris.arff')
-    return transform_arff_data(data)
-
-def create_heart():
-    data, meta = arff.loadarff('./data/heart-statlog.arff')
-    return transform_arff_data(data)
-
-def create_diabetes():
-    data, meta = arff.loadarff('./data/diabetes.arff')
-    return transform_arff_data(data)
 
 
 
@@ -230,23 +154,6 @@ def create_wine():
     return read_uci(fetched_data)
 
 
-def create_set2():
-    data1 = create_ecoli()
-    data2 = create_glass()
-    data3 = create_yeast()
-    data4 = create_statlog()
-    data5 = create_wdbc()
-
-    datasets = [
-        data1,
-        data2,
-        data3,
-        data4,
-        data5,
-    ]
-
-    return datasets
-
 
 def create_unbalance():
     data = pd.read_csv('./data/unbalance.csv', header=None)
@@ -291,12 +198,6 @@ def create_elly_2d10c13s():
 
 
 
-
-def create_s(n=1):
-    data, meta = arff.loadarff(f'./data/s/s-set{n}.arff')
-    return transform_arff_data(data)
-
-
 def read_data_and_labels(data_path, labels_path):
     f_data = open(data_path, 'r')
     X = np.array(
@@ -307,8 +208,8 @@ def read_data_and_labels(data_path, labels_path):
 
     f_labels = open(labels_path, 'r')
     y = np.array(
-        [line.strip() for line in f_labels if line.strip()],
-        dtype=str
+        [int(line.strip()) for line in f_labels if line.strip()],
+        dtype=int
     )
     f_labels.close()
 
@@ -318,25 +219,96 @@ def read_data_and_labels(data_path, labels_path):
     return (X, y)
 
 
+def create_s(n=1):
+    # data, meta = arff.loadarff(f'./data/s/s-set{n}.arff')
+    # return transform_arff_data(data)
+    return read_data_and_labels(f"./data/s/s{n}.data", f"./data/s/s{n}.labels0")
+
 def create_a(n=1):
     return read_data_and_labels(f"./data/a/a{n}.data", f"./data/a/a{n}.labels0")
 
 
 def create_g(dims=2, overlap=10):
-    return read_data_and_labels(f"./data/g2mg/g2mg_{dims}_{overlap}.data", f"./data/g2mg_{dims}_{overlap}.labels0")
+    return read_data_and_labels(f"./data/g2mg/g2mg_{dims}_{overlap}.data", f"./data/g2mg/g2mg_{dims}_{overlap}.labels0")
 
 
+def create_set1(n_samples):
+    datasets = [
+        ("data1", create_data1(n_samples)),
+        ("data2", create_data2(n_samples)),
+        ("data3", create_data3(n_samples)),
+        ("data4", create_data4(n_samples)),
+        ("data5", create_data5(n_samples)),
+        ("data6", create_data6(n_samples)),
+        ("data7", create_data7(n_samples)),
+    ]
+
+    return datasets
 
 
+def create_set_uci():
+    datasets = [
+        create_ecoli(),
+        create_glass(),
+        create_yeast(),
+        create_statlog(),
+        create_wdbc(),
+        create_wine(),
+    ]
 
+    return datasets
+
+def create_set_s():
+    return [(f"s{i}", create_s(i)) for i in [1,2,3,4]]
+
+def create_set_a():
+    return [(f"a{i}", create_a(i)) for i in [1, 2, 3]]
+
+def create_set_g(dims):
+    return [(f"g{dims}_{i}", create_g(dims, i)) for i in [10,20,30,40,50,60,70,80,90]]
+
+
+# n_samples = 1000
+# dims = 2
+# MAP_SETS_OF_DATA = {
+#     f"simple{n_samples}": [
+#         create_data1(n_samples),
+#         create_data2(n_samples),
+#         create_data3(n_samples),
+#         create_data4(n_samples),
+#         create_data5(n_samples),
+#         create_data6(n_samples),
+#         create_data7(n_samples),
+#     ],
+#
+#     "s": [create_s(i) for i in [1,2,3,4]],
+#     "a": [create_a(i) for i in [1, 2, 3]],
+#     f"g{dims}": [create_g(dims, i) for i in [10,20,30,40,50,60,70,80,90]],
+#
+#     "uci": [
+#         create_ecoli(),
+#         create_glass(),
+#         create_yeast(),
+#         create_statlog(),
+#         create_wdbc(),
+#         create_wine(),
+#     ]
+#
+# }
 
 if __name__ == '__main__':
-    X, y = create_a(1)
+    X, y = create_data1(1000)
     print(X.shape, y.shape, len(np.unique(y)))
 
-    X, y = create_a(2)
-    print(X.shape, y.shape, len(np.unique(y)))
+    # X, y = create_a(1)
+    # print(X.shape, y.shape, len(np.unique(y)))
+    #
+    # X, y = create_a(2)
+    # print(X.shape, y.shape, len(np.unique(y)))
+    #
+    # X, y = create_a(3)
+    # print(X.shape, y.shape, len(np.unique(y)))
 
-    X, y = create_a(3)
+    X, y = create_g(2,10)
     print(X.shape, y.shape, len(np.unique(y)))
 

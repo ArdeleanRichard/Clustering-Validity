@@ -1,10 +1,9 @@
 """
-Implementation of Density-Based Clustering Validation "DBCV" (Higher is better)
+Implementation of CDbw
 https://github.com/alashkov83/CDbw
 
 Citation:
-M. Halkidi and M. Vazirgiannis, “A density-based cluster validity approach using multi-representatives”
-Pattern Recognition Letters 29 (2008) 773–786.
+
 """
 
 import importlib
@@ -159,13 +158,14 @@ def prep(X, labels):
         labels of points in each  cluster.    
     """
     dimension = X.shape[1]
-    n_clusters = labels.max() + 1
+    n_clusters = len(np.unique(labels))
+
     n_points_in_cl = np.zeros(n_clusters, dtype=int)
     stdv1_cl = np.zeros(shape=(n_clusters, dimension), dtype=float)
     std1_cl = np.zeros(shape=n_clusters, dtype=float)
-    for i in range(n_clusters):
-        n_points_in_cl[i] = Counter(labels).get(i)
-        stdv1_cl[i] = np.std(X[labels == i], axis=0)
+    for i, l in enumerate(np.unique(labels)):
+        n_points_in_cl[i] = Counter(labels).get(l)
+        stdv1_cl[i] = np.std(X[labels == l], axis=0)
         std1_cl[i] = np.dot(stdv1_cl[i].T, stdv1_cl[i])
         std1_cl[i] = math.sqrt(std1_cl[i] / dimension)
     n_max = max(n_points_in_cl)
@@ -174,9 +174,9 @@ def prep(X, labels):
     for i in range(n_clusters):
         for j in range(n_clusters):
             stdev = np.power(np.mean([std1_cl[i] ** 2, std1_cl[j] ** 2]), 0.5)
-    for i in range(n_clusters):
-        coord_in_cl[i, 0:n_points_in_cl[i], 0:dimension] = X[labels == i]
-        labels_in_cl[i, 0:n_points_in_cl[i]] = np.where(labels == i)[0]
+    for i, l in enumerate(np.unique(labels)):
+        coord_in_cl[i, 0:n_points_in_cl[i], 0:dimension] = X[labels == l]
+        labels_in_cl[i, 0:n_points_in_cl[i]] = np.where(labels == l)[0]
     return n_clusters, stdev, dimension, n_points_in_cl, n_max, coord_in_cl, labels_in_cl
 
 

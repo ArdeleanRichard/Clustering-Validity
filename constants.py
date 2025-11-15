@@ -115,13 +115,13 @@ MAP_METRIC_TO_FUNCTION = {
     "CH": calinski_harabasz_score,
 
     # our metrics
-    "ED-S": ed_silhouette_score,
-    "ED-DB": ed_davies_bouldin_score,
-    "ED-CH": ed_calinski_harabasz_score,
-    "MST-S": mst_silhouette_score,
-    "MST-DB": mst_davies_bouldin_score,
-    "MST-CH": mst_calinski_harabasz_score,
-    "idea": mst_idea,
+    # "ED-S": ed_silhouette_score,
+    # "ED-DB": ed_davies_bouldin_score,
+    # "ED-CH": ed_calinski_harabasz_score,
+    # "MST-S": mst_silhouette_score,
+    # "MST-DB": mst_davies_bouldin_score,
+    # "MST-CH": mst_calinski_harabasz_score,
+    # "idea": mst_idea,
 }
 
 METRICS = list(MAP_METRIC_TO_FUNCTION.keys())
@@ -133,20 +133,23 @@ MAP_LOWER_IS_BETTER = {
     "rcip", "wb", "xb",
 
     # Permetrics
-    "sse", "bh",
+    "sse", "bh", "dh", "b", "h",
 
     # PyCVI
     "sd", "sdbw", "xb*",
 
     # sklearn
-    "dbs",
+    "db",
 
     # others
     "c",
     "cs",
+    "cop",
 
     # ours
     "ed-db",
     "mst-db",
     "idea",
 }
+
+

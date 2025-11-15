@@ -1,86 +1,52 @@
 """
-CS Index (Chou-Su-Lai) Cluster Validity Index Implementation
+CS Index (Chou-Su-Lai) Cluster Validity Index - Optimized Implementation
 
 Reference:
 Chou, C.-H., Su, M.-C., & Lai, E. (2004).
 A new cluster validity measure and its application to image compression.
 Pattern Analysis and Applications, 7(2), 205-220.
 
-The CS index evaluates clustering quality by measuring the ratio of
-compactness (cluster diameter) to separation (nearest neighbor distance).
-Lower values indicate better clustering.
+Optimizations:
+- Vectorized distance calculations using broadcasting
+- Efficient pairwise distance computation with scipy
+- Eliminated nested loops
 """
 
 import numpy as np
-from typing import Union, Tuple
+from scipy.spatial.distance import cdist
 
 
-def euclidean_distance(point1: np.ndarray, point2: np.ndarray) -> float:
+def cluster_diameter_vectorized(cluster_points: np.ndarray) -> float:
     """
-    Calculate Euclidean distance between two points.
-
-    Args:
-        point1: First point
-        point2: Second point
-
-    Returns:
-        Euclidean distance
-    """
-    return np.sqrt(np.sum((point1 - point2) ** 2))
-
-
-def cluster_diameter(cluster_points: np.ndarray) -> float:
-    """
-    Calculate the diameter of a cluster as the average distance from
-    each point to its farthest neighbor within the cluster.
+    Calculate cluster diameter efficiently using vectorized operations.
 
     Args:
         cluster_points: Points belonging to the cluster (n_points, n_features)
 
     Returns:
-        Cluster diameter
+        Cluster diameter (average maximum distance from each point)
     """
-    if len(cluster_points) == 0:
+    n_points = len(cluster_points)
+
+    if n_points == 0 or n_points == 1:
         return 0.0
 
-    if len(cluster_points) == 1:
-        return 0.0
+    # Compute all pairwise distances at once (n_points x n_points)
+    distances = cdist(cluster_points, cluster_points, metric='euclidean')
 
-    # Calculate maximum distance from each point to all other points in cluster
-    max_distances = []
-    for i, point in enumerate(cluster_points):
-        distances = [euclidean_distance(point, other_point) for j, other_point in enumerate(cluster_points) if i != j]
-        if distances:
-            max_distances.append(max(distances))
+    # Get maximum distance for each point (ignoring self-distance)
+    max_distances = np.max(distances, axis=1)
 
-    # Diameter is the average of maximum distances
-    return np.mean(max_distances) if max_distances else 0.0
-
-
-def nearest_cluster_distance(centroid: np.ndarray, other_centroids: np.ndarray) -> float:
-    """
-    Calculate the minimum distance from a cluster centroid to other centroids.
-
-    Args:
-        centroid: Current cluster centroid
-        other_centroids: Array of other cluster centroids
-
-    Returns:
-        Distance to nearest cluster
-    """
-    if len(other_centroids) == 0:
-        return float('inf')
-
-    distances = [euclidean_distance(centroid, other_centroid) for other_centroid in other_centroids]
-    return min(distances) if distances else float('inf')
+    # Return average of maximum distances
+    return np.mean(max_distances)
 
 
 def cs_index(X: np.ndarray, labels: np.ndarray) -> float:
     """
-    Calculate the CS (Chou-Su-Lai) cluster validity index.
+    Calculate the CS (Chou-Su-Lai) cluster validity index (optimized version).
 
     The CS index is defined as:
-    CS = (1/K) * Σ(D_i / d_i)
+    CS = (1/K) * Σ(D_i / d_i) = Σ(D_i) / Σ(d_i)
 
     where:
     - K is the number of clusters
@@ -110,12 +76,17 @@ def cs_index(X: np.ndarray, labels: np.ndarray) -> float:
     if n_clusters < 2:
         raise ValueError("CS index requires at least 2 clusters")
 
-    # Compute centroids
+    # Compute centroids for all clusters at once
     centroids = np.array([X[labels == k].mean(axis=0) for k in unique_labels])
 
-    # Calculate CS index components for each cluster
-    D_ks = []
-    d_ks = []
+    # Compute all pairwise centroid distances at once
+    centroid_distances = cdist(centroids, centroids, metric='euclidean')
+
+    # Initialize accumulators
+    total_diameter = 0.0
+    total_separation = 0.0
+
+    # Calculate components for each cluster
     for i, k in enumerate(unique_labels):
         # Get points in current cluster
         cluster_points = X[labels == k]
@@ -123,21 +94,20 @@ def cs_index(X: np.ndarray, labels: np.ndarray) -> float:
         if len(cluster_points) == 0:
             continue
 
-        # Calculate diameter (compactness) of cluster k
-        D_k = cluster_diameter(cluster_points)
-
-        # Get other centroids for separation calculation
-        other_centroids = np.delete(centroids, i, axis=0)
+        # Calculate diameter (compactness) - vectorized
+        D_k = cluster_diameter_vectorized(cluster_points)
 
         # Calculate nearest neighbor distance (separation)
-        d_k = nearest_cluster_distance(centroids[i], other_centroids)
+        # Get distances to other centroids (exclude self by masking)
+        mask = np.ones(n_clusters, dtype=bool)
+        mask[i] = False
+        d_k = np.min(centroid_distances[i, mask])
 
-        D_ks.append(D_k)
-        d_ks.append(d_k)
+        total_diameter += D_k
+        total_separation += d_k
 
-    # CS index is the average of all components
-    if len(D_ks) == 0 or len(d_ks) == 0:
+    # Return the CS index
+    if total_separation == 0:
         return float('inf')
-    else:
-        return sum(D_ks) / sum(d_ks)
 
+    return total_diameter / total_separation

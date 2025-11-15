@@ -1,10 +1,10 @@
 """
-Implementation of CIndex
+Optimized Implementation of CIndex
 https://github.com/johnvorsten/py_cindex/tree/master
 
 Cindex =
 Sw − Smin
-Smax − Smin , Smin ?= Smax, Cindex ∈ (0, 1), (6)
+Smax − Smin , Smin ≠ Smax, Cindex ∈ (0, 1), (6)
 
 Smin = is the sum of the Nw smallest distances between all the pairs of points
 in the entire data set (there are Nt such pairs);
@@ -12,93 +12,12 @@ in the entire data set (there are Nt such pairs);
 Smax = is the sum of the Nw largest distances between all the pairs of points
 in the entire data set.
 
-
 Citation:
-A General Statistical Framework for Assessing Categorical Clustering in Free Recall.” Psychological Bulletin, 83(6), 1072–1080
+A General Statistical Framework for Assessing Categorical Clustering in Free Recall."
+Psychological Bulletin, 83(6), 1072–1080
 """
 import numpy as np
-from sklearn.cluster import KMeans
-from scipy.spatial.distance import pdist
-
-
-"""
-##### Here is the Nb-Clust implementation of the CIndex #####
-See https://cran.r-project.org/web/packages/NbClust/index.html
-Note these two lines (R Code) :
-    Dmin = min(v_min)
-    Dmax = max(v_max)
-    result <- (DU - r * Dmin)/(Dmax * r - Dmin * r)
-
-Indice.cindex <- function (d, cl)
-{
-    d <- data.matrix(d)
-    DU <- 0
-    r <- 0
-    v_max <- array(1, max(cl))
-    v_min <- array(1, max(cl))
-    for (i in 1:max(cl)) {
-        n <- sum(cl == i)
-
-        if (n > 1) {
-            t <- d[cl == i, cl == i]
-            DU = DU + sum(t)/2
-            v_max[i] = max(t)
-
-            if (sum(t == 0) == n)
-                v_min[i] <- min(t[t != 0])
-
-            else v_min[i] <- 0
-            r <- r + n * (n - 1)/2
-        }
-    }
-
-    Dmin = min(v_min)
-    Dmax = max(v_max)
-    if (Dmin == Dmax)
-        result <- NA
-    else result <- (DU - r * Dmin)/(Dmax * r - Dmin * r)
-    result
-
-}
-
-
-##### Here is the ClusterSim implementation of the CIndex #####
-See https://rdrr.io/cran/clusterSim/src/R/index.C.r
-Note these two lines :
-	Dmin=sum(sort(ddist)[1:r])
-	Dmax=sum(sort(ddist,decreasing = T)[1:r])
-They include the whole distance array, which includes all permutations of
-distances between points (instead of combinations). This means the high
-end and low end are double counted? I dont think that is the correct way to
-calculate C Index
-
-
-index.C<-function(d,cl)
-{
-  ddist<-d
-	d<-data.matrix(d)
-	DU<-0
-	r<-0
-	for (i in 1:max(cl))
-	{
-	  t<-d[cl==i,cl==i]
-		n<-sum(cl==i)
-		if (n>1)
-		{
-			DU=DU+sum(t)/2
-		}
-		r<-r+n*(n-1)/2
-	}
-	Dmin=sum(sort(ddist)[1:r])
-	Dmax=sum(sort(ddist,decreasing = T)[1:r])
-	if(Dmin==Dmax)
-		result<-NA
-	else
-		result<-(DU-Dmin)/(Dmax-Dmin)
-	result
-}
-
-"""
+from scipy.spatial.distance import pdist, squareform
 
 
 def c_index(X, labels):
@@ -107,31 +26,63 @@ def c_index(X, labels):
     -------
     X : (np.ndarray) an (n x m) array where n is the number of examples to cluster
         and m is the feature space of examples
-    cluster_labels : (np.array) of cluster labels, each cluster_labels[i]
-        related to X[i]
+    labels : (np.array) of cluster labels, each labels[i] related to X[i]
         ideally integer type
     output
     -------
     cindex : (float)"""
 
+    # Convert labels to numpy array once
+    labels = np.asarray(labels)
 
-
-    # Total Number of pairs of observations belonging to same cluster
-    Nw = calc_Nw(labels)
-
-    # Distances between all pairs of points in dataset
+    # Calculate all pairwise distances once
     distances = pdist(X, metric='euclidean')
 
-    # Sum of within-cluster distances
-    Sw = calc_sw(X, labels)
+    # Calculate within-cluster statistics efficiently
+    Sw, Nw = calc_sw_and_nw(distances, labels)
 
-    # Sum of Nw smallest distances between all poirs of points
-    # Sum of Nw largest distances between all pairs of points
+    # Sum of Nw smallest and largest distances
     Smin, Smax = calc_smin_smax(distances, Nw)
 
     # Calculate CIndex
     cindex = (Sw - Smin) / (Smax - Smin)
     return cindex
+
+
+def calc_sw_and_nw(distances, labels):
+    """Calculate both Sw (sum of within-cluster distances) and Nw (number of
+    within-cluster pairs) in a single pass.
+
+    inputs
+    -------
+    distances : (np.ndarray) condensed distance matrix from pdist
+    labels : (np.ndarray) cluster labels
+
+    outputs
+    -------
+    Sw : (float) sum of within-cluster distances
+    Nw : (int) total number of within-cluster pairs
+    """
+    n = len(labels)
+
+    # Convert condensed distance matrix to square form for easier indexing
+    dist_matrix = squareform(distances)
+
+    # Create a mask for within-cluster pairs
+    # This is more efficient than looping through clusters
+    label_match = labels[:, None] == labels[None, :]
+
+    # Get upper triangle only (to avoid double counting)
+    triu_indices = np.triu_indices(n, k=1)
+    within_cluster_mask = label_match[triu_indices]
+
+    # Extract within-cluster distances
+    within_distances = dist_matrix[triu_indices][within_cluster_mask]
+
+    Sw = np.sum(within_distances)
+    Nw = len(within_distances)
+
+    return Sw, Nw
 
 
 def calc_smin_smax(distances, n_incluster_pairs):
@@ -148,53 +99,24 @@ def calc_smin_smax(distances, n_incluster_pairs):
         m = n_points * (n_points - 1) / 2 where n_points is the number of points
         in the entire dataset
     n_incluster_pairs : (int) Total number of pairs of observations belonging
-        to the same cluster - See calc Nw
+        to the same cluster
     outputs
     -------
     Smin, Smax : (float)
     """
-    n_incluster_pairs = int(n_incluster_pairs) # For indexing
-    indicies = np.argsort(distances)
+    # Use partition instead of full sort for better performance
+    # partition finds the k smallest/largest elements without fully sorting
+    if n_incluster_pairs >= len(distances):
+        # Edge case: all pairs are within clusters
+        Smin = np.sum(distances)
+        Smax = np.sum(distances)
+    else:
+        # Get Nw smallest values efficiently
+        smallest_indices = np.argpartition(distances, n_incluster_pairs - 1)[:n_incluster_pairs]
+        Smin = np.sum(distances[smallest_indices])
 
-    Smin = np.sum(distances[indicies[:n_incluster_pairs]])
-    Smax = np.sum(distances[indicies[-n_incluster_pairs:]])
+        # Get Nw largest values efficiently
+        largest_indices = np.argpartition(distances, -n_incluster_pairs)[-n_incluster_pairs:]
+        Smax = np.sum(distances[largest_indices])
+
     return Smin, Smax
-
-
-def calc_sw(X, cluster_labels):
-    """Sum of within-cluster distances"""
-
-    labels = np.array(cluster_labels)
-    labels_set = set(cluster_labels)
-    n_labels = len(labels_set)
-
-    Sw = []
-    for label in labels_set:
-        # Loop through each cluster and calculate within cluster distance
-        pairs = np.where(labels == label)
-        pairs_distance = pdist(X[pairs[0]])
-        within_cluster_distance = np.sum(pairs_distance, axis=0)
-        Sw.append(within_cluster_distance)
-
-    return np.sum(Sw)
-
-
-def calc_Nw(cluster_labels):
-    """Total number of pairs of observations belonging to the same cluster
-
-    N_w = \sum_{k=1}^{q} \frac{n_k (n_k-1)}{2}
-    inputs
-    -------
-    labels : (iterable) of labels"""
-
-    cluster_labels = np.array(cluster_labels)
-    labels_set = set(cluster_labels)
-    n_labels = len(labels_set)
-
-    Nw = []
-    for label in labels_set:
-        n_examples = np.sum(np.where(cluster_labels == label, 1, 0))
-        n_cluster_pairs = n_examples * (n_examples - 1) / 2 # Combinations
-        Nw.append(n_cluster_pairs)
-
-    return int(np.sum(Nw))

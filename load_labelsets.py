@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def diagonal_line(points):
+def diagonal_line(points, type):
     if len(points) == 0:
         return None, None, None, None
 
@@ -15,7 +15,12 @@ def diagonal_line(points):
         min_y = min(min_y, y)
         max_y = max(max_y, y)
 
-    return ((min_x, min_y), (max_x, max_y))
+    if type == "first":
+        return ((min_x, min_y), (max_x, max_y)) # first diagonal
+    elif type == "second":
+        return ((min_x, max_y), (max_x, min_y))  # second diagonal
+    else:
+        return None
 
 
 def vertical_line(x):
