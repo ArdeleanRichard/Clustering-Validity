@@ -1,7 +1,10 @@
 import os
+import numpy as np
 
-from metrics.cdbw import CDbw
-from metrics.cs_index import cs_index
+
+random_state = 42
+np.random.seed(random_state)
+
 
 LABEL_COLOR_MAP = {
     -1: 'gray',
@@ -18,6 +21,7 @@ LABEL_COLOR_MAP = {
     10: 'tab:brown',
 }
 
+
 FOLDER_RESULTS = f"./results/"
 FOLDER_FIGS_DATA = f"./figs/data/"
 FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
@@ -31,8 +35,6 @@ import cvi
 from permetrics import ClusteringMetric
 from pycvi import cvi as pycvi_cvi
 from pycvi.cluster import get_clustering
-from ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
-from mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score, mst_idea
 
 from metrics.DBCV import dbcv
 from metrics.VIASCKDE import VIASCKDE
@@ -40,9 +42,14 @@ from metrics.c_index import c_index
 from metrics.i_index import i_index
 from metrics.cvi_set2.cop import cop
 from metrics.cvi_set2.gSym import gSym
+from metrics.cdbw import CDbw
+from metrics.cs_index import cs_index
 
 # from metrics.wrong.cvi_set1.DBCV import DBCV_Index
 # from metrics.cvi_set2.c_index import c_index2
+
+from ours.ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
+from ours.mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score, mst_idea
 
 
 MAP_METRIC_TO_FUNCTION = {
@@ -115,13 +122,13 @@ MAP_METRIC_TO_FUNCTION = {
     "CH": calinski_harabasz_score,
 
     # our metrics
-    # "ED-S": ed_silhouette_score,
-    # "ED-DB": ed_davies_bouldin_score,
-    # "ED-CH": ed_calinski_harabasz_score,
-    # "MST-S": mst_silhouette_score,
-    # "MST-DB": mst_davies_bouldin_score,
-    # "MST-CH": mst_calinski_harabasz_score,
-    # "idea": mst_idea,
+    "ED-S": ed_silhouette_score,
+    "ED-DB": ed_davies_bouldin_score,
+    "ED-CH": ed_calinski_harabasz_score,
+    "MST-S": mst_silhouette_score,
+    "MST-DB": mst_davies_bouldin_score,
+    "MST-CH": mst_calinski_harabasz_score,
+    # # "idea": mst_idea,
 }
 
 METRICS = list(MAP_METRIC_TO_FUNCTION.keys())

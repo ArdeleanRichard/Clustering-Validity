@@ -232,6 +232,38 @@ def create_g(dims=2, overlap=10):
     return read_data_and_labels(f"./data/g2mg/g2mg_{dims}_{overlap}.data", f"./data/g2mg/g2mg_{dims}_{overlap}.labels0")
 
 
+def create_ring(type):
+    return read_data_and_labels(f"./data/graves/ring{type}.data", f"./data/graves/ring{type}.labels0")
+
+def create_zigzag(type):
+    return read_data_and_labels(f"./data/graves/zigzag{type}.data", f"./data/graves/zigzag{type}.labels0")
+
+def create_parabolic():
+    return read_data_and_labels(f"./data/graves/parabolic.data", f"./data/graves/parabolic.labels0")
+
+def create_set_graves():
+    datasets = []
+    datasets.extend([("parabolic", create_parabolic())])
+    datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
+    datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
+
+    return datasets
+
+
+def create_x(n):
+    return read_data_and_labels(f"./data/wut/x{n}.data", f"./data/wut/x{n}.labels0")
+
+def create_trajectories():
+    return read_data_and_labels(f"./data/wut/trajectories.data", f"./data/wut/trajectories.labels0")
+
+def create_set_wut():
+    datasets = []
+    datasets.extend([("trajectories", create_trajectories())])
+    datasets.extend([(f"x{i}", create_x(i)) for i in [1,2,3]])
+
+    return datasets
+
+
 def create_set1(n_samples):
     datasets = [
         ("data1", create_data1(n_samples)),
@@ -248,12 +280,12 @@ def create_set1(n_samples):
 
 def create_set_uci():
     datasets = [
-        create_ecoli(),
-        create_glass(),
-        create_yeast(),
-        create_statlog(),
-        create_wdbc(),
-        create_wine(),
+        ("ecoli", create_ecoli()),
+        ("glass", create_glass()),
+        ("yeast", create_yeast()),
+        ("statlog", create_statlog()),
+        ("wdbc", create_wdbc()),
+        ("wine", create_wine()),
     ]
 
     return datasets
@@ -267,6 +299,42 @@ def create_set_a():
 def create_set_g(dims):
     return [(f"g{dims}_{i}", create_g(dims, i)) for i in [10,20,30,40,50,60,70,80,90]]
 
+
+
+def create_aggregation():
+    return read_data_and_labels(f"./data/sipu/aggregation.data", f"./data/sipu/aggregation.labels0")
+
+def create_compound():
+    return read_data_and_labels(f"./data/sipu/compound.data", f"./data/sipu/compound.labels0")
+
+def create_d31():
+    return read_data_and_labels(f"./data/sipu/d31.data", f"./data/sipu/d31.labels0")
+
+def create_jain():
+    return read_data_and_labels(f"./data/sipu/jain.data", f"./data/sipu/jain.labels0")
+
+def create_pathbased():
+    return read_data_and_labels(f"./data/sipu/pathbased.data", f"./data/sipu/pathbased.labels0")
+
+def create_spiral():
+    return read_data_and_labels(f"./data/sipu/spiral.data", f"./data/sipu/spiral.labels0")
+
+def create_unbalance():
+    return read_data_and_labels(f"./data/sipu/unbalance.data", f"./data/sipu/unbalance.labels0")
+
+
+def create_set_sipu():
+    datasets = [
+        ("aggregation", create_aggregation()),
+        ("compound", create_compound()),
+        ("d31", create_d31()),
+        ("jain", create_jain()),
+        ("pathbased", create_pathbased()),
+        ("spiral", create_spiral()),
+        ("unbalance", create_unbalance()),
+    ]
+
+    return datasets
 
 # n_samples = 1000
 # dims = 2

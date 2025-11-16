@@ -2,20 +2,19 @@ import time
 
 import numpy as np
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.utils import shuffle
 
 from load_datasets import create_data3, create_data6, create_data7, create_data4, create_data2, create_data1, create_data5, \
-    create_set1, create_set3d, create_set2
+    create_set1
 from constants import LABEL_COLOR_MAP
 
-from load_labelsets import diagonal_line, vertical_line, assign_labels_by_given_line, horizontal_line, assign_labels_by_given_plane
-from metric_clustering.ed_kmeans import ED_KMeansClustering
-from metric_clustering.ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
-from metric_clustering.np_kmeans import KMeansClustering
+from load_labelsets import diagonal_line, vertical_line, assign_labels_by_given_line, horizontal_line
+from ours.ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
+from ours.ed_kmeans import ED_KMeansClustering
+from ours.np_kmeans import KMeansClustering
 
 
 def run_score_set1(datasets, metric, k, la, plot=False):
@@ -117,94 +116,6 @@ def run_score_set2(datasets, metric, k, la, plot=False):
     print()
     # plt.show()
 
-def run_scores_set2(plot=False):
-    datasets = create_set2()
-
-    run_score_set2(datasets, "", k=0, la=0, plot=plot)
-
-    metric = "SS"
-    run_score_set2(datasets, metric, k=3, la=20)
-    # run_score(datasets, metric, n_neighbours=15, la=10)
-    # run_score(datasets, metric, n_neighbours=5, la=3)
-
-    metric = "DBS"
-    run_score_set2(datasets, metric, k=3, la=20)
-    # run_score(datasets, metric, n_neighbours=15, la=10)
-    # run_score(datasets, metric, n_neighbours=5, la=3)
-
-    metric = "CHS"
-    run_score_set2(datasets, metric, k=3, la=20)
-    # run_score(datasets, metric, n_neighbours=15, la=10)
-    # run_score(datasets, metric, n_neighbours=5, la=3)
-
-
-
-
-
-def run_score_3d(metric, k, la, plot=False):
-    n_samples = 1000
-
-    datasets = create_set3d(n_samples)
-
-    for i_dataset, (X, gt) in enumerate(datasets):
-        X = MinMaxScaler((-1, 1)).fit_transform(X)
-        rl = np.random.randint(0, len(np.unique(gt)), size=len(X))
-
-        dp = assign_labels_by_given_plane(X, plane=((-1, -1, 1), (1,1,1), (-1,-1,-1)))
-        vp = assign_labels_by_given_plane(X, plane="vertical")
-        hp = assign_labels_by_given_plane(X, plane="horizontal")
-
-        if metric == 'SS':
-            print(f"{silhouette_score(X, gt):.3f}, {ed_silhouette_score(X, gt, k=k, lookahead=la):.3f}, \t\t"
-                  f"{silhouette_score(X, dp):.3f}, {ed_silhouette_score(X, dp, k=k, lookahead=la):.3f}, \t\t"
-                  f"{silhouette_score(X, vp):.3f}, {ed_silhouette_score(X, vp, k=k, lookahead=la):.3f}, \t\t"
-                  f"{silhouette_score(X, hp):.3f}, {ed_silhouette_score(X, hp, k=k, lookahead=la):.3f}, \t\t"
-                  f"{silhouette_score(X, rl):.3f}, {ed_silhouette_score(X, rl, k=k, lookahead=la):.3f}, \t\t")
-        if metric == 'DBS':
-            print(f"{davies_bouldin_score(X, gt):.3f}, {ed_davies_bouldin_score(X, gt, k=k, lookahead=la, debug=False):.3f}, \t\t"
-                  f"{davies_bouldin_score(X, dp):.3f}, {ed_davies_bouldin_score(X, dp, k=k, lookahead=la, debug=False):.3f}, \t\t"
-                  f"{davies_bouldin_score(X, vp):.3f}, {ed_davies_bouldin_score(X, vp, k=k, lookahead=la, debug=False):.3f}, \t\t"
-                  f"{davies_bouldin_score(X, hp):.3f}, {ed_davies_bouldin_score(X, hp, k=k, lookahead=la, debug=False):.3f}, \t\t"
-                  f"{davies_bouldin_score(X, rl):.3f}, {ed_davies_bouldin_score(X, rl, k=k, lookahead=la, debug=False):.3f}, \t\t")
-        if metric == 'CHS':
-            print(f"{calinski_harabasz_score(X, gt):.2f}, {ed_calinski_harabasz_score(X, gt, k=k, lookahead=la):.2f}, \t\t"
-                  f"{calinski_harabasz_score(X, dp):.2f}, {ed_calinski_harabasz_score(X, dp, k=k, lookahead=la):.2f}, \t\t"
-                  f"{calinski_harabasz_score(X, vp):.2f}, {ed_calinski_harabasz_score(X, vp, k=k, lookahead=la):.2f}, \t\t"
-                  f"{calinski_harabasz_score(X, hp):.2f}, {ed_calinski_harabasz_score(X, hp, k=k, lookahead=la):.2f}, \t\t"
-                  f"{calinski_harabasz_score(X, rl):.2f}, {ed_calinski_harabasz_score(X, rl, k=k, lookahead=la):.2f}, \t\t")
-
-        if plot:
-            for name, labels in zip(["gt", "dp", "vp", "hp", "rl"], [gt, dp, vp, hp, rl]):
-                label_color = [LABEL_COLOR_MAP[i] for i in labels]
-                fig = plt.figure()
-                ax = Axes3D(fig)
-                ax.set_xlabel("x")
-                ax.set_ylabel("y")
-                ax.set_zlabel("z")
-                ax.view_init(elev=14., azim=-75)
-                ax.scatter(X[:, 0], X[:, 1], X[:, 2], marker='o', c=label_color, edgecolors='k', s=25, alpha=0.5)
-                # plt.savefig(f"./figs/data/data{i_dataset + 3}_3d_{name}.svg")
-                plt.savefig(f"./figs/data3d/data{i_dataset + 3}_3d_{name}.png")
-                plt.close()
-
-
-def run_scores_set3d(plot=False):
-    run_score_3d("", k=0, la=0, plot=plot)
-
-    metric = "SS"
-    run_score_3d(metric, k=3, la=10)
-    run_score_3d(metric, k=15, la=10)
-    run_score_3d(metric, k=5, la=3)
-
-    metric = "DBS"
-    run_score_3d(metric, k=3, la=50)
-    run_score_3d(metric, k=15, la=10)
-    run_score_3d(metric, k=5, la=3)
-
-    metric = "CHS"
-    run_score_3d(metric, k=3, la=50)
-    run_score_3d(metric, k=15, la=10)
-    run_score_3d(metric, k=5, la=3)
 
 
 def analyze_time_scores_examples():
@@ -293,24 +204,6 @@ def run_kmeans_set1():
         print(f"{adjusted_mutual_info_score(k_labels, gt):.3f}, {adjusted_mutual_info_score(nk_labels, gt):.3f}, {adjusted_mutual_info_score(s_labels, gt):.3f}")
         print()
 
-
-def run_kmeans_set2():
-    datasets = create_set2()
-
-    for i_dataset, (X, gt) in enumerate(datasets):
-
-        km = KMeans(n_clusters=2, ).fit(X)
-        k_labels = km.labels_
-
-        ed_Kmeans = ED_KMeansClustering(X, len(np.unique(gt)), neighbors=5, lookahead=20)
-        nk_labels, centroids = ed_Kmeans.fit(X)
-
-        sc = SpectralClustering(n_clusters=len(np.unique(gt)), eigen_solver="arpack", affinity="nearest_neighbors", random_state=0).fit(X)
-        s_labels = sc.labels_
-
-        print(f"{adjusted_rand_score(k_labels, gt):.3f}, {adjusted_rand_score(nk_labels, gt):.3f}, {adjusted_rand_score(s_labels, gt):.3f}")
-        print(f"{adjusted_mutual_info_score(k_labels, gt):.3f}, {adjusted_mutual_info_score(nk_labels, gt):.3f}, {adjusted_mutual_info_score(s_labels, gt):.3f}")
-        print()
 
 
 
@@ -427,15 +320,13 @@ def analyze_time_kmeans_features():
 
 
 if __name__ == '__main__':
+    pass
     # run_scores_set1()
-    run_scores_set2()
-    # run_scores_set3d()
 
     # analyze_time_scores_examples()
     # analyze_time_scores_features()
 
     # run_kmeans_set1()
-    # run_kmeans_set2()
 
     # analyze_time_kmeans_examples()
     # analyze_time_kmeans_features()
