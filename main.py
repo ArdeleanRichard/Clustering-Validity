@@ -7,7 +7,7 @@ from constants import LABEL_COLOR_MAP, FOLDER_RESULTS, FOLDER_FIGS_DATA
 from load_datasets import create_set1, create_set_g, create_set_a, create_set_s, create_set_graves, create_set_sipu, \
     create_set_uci, create_set_wut
 from load_labelsets import diagonal_line, vertical_line, assign_labels_by_given_line, horizontal_line
-from load_metrics import choose_metric, create_metric_table, create_metric_table_with_arrows
+from load_indices import choose_index, create_indices_table, create_indices_table_with_arrows
 
 
 def remove_dups(X, gt):
@@ -67,7 +67,7 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
         label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets)
 
         # Create and print metric table
-        create_metric_table_with_arrows(X, label_sets=label_sets, save=f"{FOLDER_RESULTS}/metrics_{name_data}.csv", prnt=True)
+        create_indices_table_with_arrows(X, label_sets=label_sets, save=f"{FOLDER_RESULTS}/metrics_{name_data}.csv", prnt=True)
 
         if plot:
             for name_labelset, labels in label_sets.items():
@@ -80,9 +80,9 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
 
 
 def run_scores_set1(plot=False):
-    datasets = create_set1(n_samples=1000)
+    # datasets = create_set1(n_samples=1000)
     # datasets = create_set_g(dims=2)
-    # datasets = create_set_a()
+    datasets = create_set_a()
     # datasets = create_set_s()
     # datasets = create_set_graves()
     # datasets = create_set_sipu()

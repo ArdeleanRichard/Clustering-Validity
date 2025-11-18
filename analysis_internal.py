@@ -49,7 +49,7 @@ def plot_analysis(cvi_str, measure_str, measure_arr, cvi_tl_arr, cvi_hl_arr, cho
     # Right: True labels
     label_colors_t = [LABEL_COLOR_MAP[i] for i in true_labels]
     axes[2].scatter(X_plot[:, 0], X_plot[:, 1], c=label_colors_t, s=25, alpha=0.7)
-    axes[2].set_title(f'True labels (TL) \n{val_name}={val}, {measure_name_acronym}={measure_arr[chosen_idx]:.2f}', fontsize=11, fontweight='bold')
+    axes[2].set_title(f'True labels (TL) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_arr[chosen_idx]:.2f}', fontsize=11, fontweight='bold')
     axes[2].set_xlabel('X')
     axes[2].set_ylabel('Y')
     axes[2].grid(alpha=0.3)
