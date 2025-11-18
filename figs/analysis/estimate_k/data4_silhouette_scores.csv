@@ -1,4 +1,4 @@
-K,Silhouette_Score,Is_Estimated_K,Is_True_K
+K,Silhouette Score,Is_Estimated_K,Is_True_K
 2,0.6364263807221828,True,False
 3,0.5105271551772785,False,True
 4,0.4600602378123358,False,False

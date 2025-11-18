@@ -1,7 +1,6 @@
 import os
 import numpy as np
 
-
 random_state = 42
 np.random.seed(random_state)
 
@@ -25,12 +24,18 @@ LABEL_COLOR_MAP = {
 FOLDER_RESULTS = f"./results/"
 FOLDER_FIGS_DATA = f"./figs/data/"
 FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
+FOLDER_FIGS_ANALYSIS_ESTIMATE = f"./figs/analysis/estimate_k/"
+FOLDER_FIGS_ANALYSIS_EXTERNAL = f"./figs/analysis/external/"
+FOLDER_FIGS_ANALYSIS_INTERNAL = f"./figs/analysis/internal/"
 
 os.makedirs(FOLDER_RESULTS, exist_ok=True)
 os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
+os.makedirs(FOLDER_FIGS_ANALYSIS_ESTIMATE, exist_ok=True)
+os.makedirs(FOLDER_FIGS_ANALYSIS_EXTERNAL, exist_ok=True)
+os.makedirs(FOLDER_FIGS_ANALYSIS_INTERNAL, exist_ok=True)
 
 
-from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, adjusted_rand_score, adjusted_mutual_info_score
 import cvi
 from permetrics import ClusteringMetric
 from pycvi import cvi as pycvi_cvi
@@ -160,3 +165,13 @@ MAP_LOWER_IS_BETTER = {
 }
 
 
+
+MAP_EXTERNAL_METRICS = {
+    "ari": ("ARI", "Adjusted Rand Index", adjusted_rand_score),
+    "ami": ("AMI", "Adjusted Mutual Information", adjusted_mutual_info_score),
+}
+
+
+MAP_INTERNAL_METRICS = {
+    "silhouette": ("Silhouette Score", silhouette_score),
+}

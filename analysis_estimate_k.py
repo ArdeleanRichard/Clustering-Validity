@@ -2,10 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-from typing import Tuple, Optional
-import os
 
+from constants import FOLDER_FIGS_ANALYSIS_ESTIMATE, MAP_INTERNAL_METRICS, random_state
 from load_datasets import create_data4
 
 
@@ -15,7 +13,8 @@ def compute_centroids(X, labels):
     return centroids
 
 
-def scatter_plot(ax, title, X, nr_clusts, random_state, labels=None):
+def scatter_plot(ax, title, cvi_str, X, nr_clusts, labels=None):
+    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
     # For visualization, use first 2 dimensions if data is high-dimensional
     if X.shape[1] == 2:
         X_plot = X
@@ -46,24 +45,16 @@ def scatter_plot(ax, title, X, nr_clusts, random_state, labels=None):
 
     ax.scatter(centroids[:, 0], centroids[:, 1], c='red', marker='X', s=300, edgecolors='black', linewidth=2, label='Centroids', zorder=5)
 
-    k_silhouette = silhouette_score(X, labels)
-    ax.set_title(title + f"\n(Silhouette: {k_silhouette:.4f})", fontsize=12, fontweight='bold')
+    k_score = cvi_function(X, labels)
+    ax.set_title(title + f"\n({cvi_name_full}: {k_score:.4f})", fontsize=12, fontweight='bold')
     ax.legend(fontsize=9)
     plt.colorbar(scatter2, ax=ax, label='Cluster')
 
 
 
-
-def analyze_silhouette_score(
-        X: np.ndarray,
-        true_labels: np.ndarray,
-        k_range: Optional[Tuple[int, int]] = None,
-        dataset_name: str = "dataset",
-        output_dir: str = "results",
-        random_state: int = 42
-) -> pd.DataFrame:
+def analyze_score(cvi_str, X, true_labels, k_range=None, dataset_name="dataset"):
     """
-    Analyze K-Means clustering using Silhouette score to estimate optimal K.
+    Analyze K-Means clustering using cvi to estimate optimal K.
 
     Parameters:
     -----------
@@ -84,14 +75,15 @@ def analyze_silhouette_score(
     Returns:
     --------
     pd.DataFrame
-        DataFrame containing K values and their Silhouette scores
+        DataFrame containing K values and their scores
     """
+    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
 
     true_k = len(np.unique(true_labels))
 
     # Set default k_range if not provided
     if k_range is None:
-        k_range = (2, min(10, X.shape[0] - 1))
+        k_range = (2, 10)
 
     min_k, max_k = k_range
 
@@ -103,12 +95,9 @@ def analyze_silhouette_score(
     if true_k < 2:
         raise ValueError("True K must be at least 2")
 
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Calculate Silhouette scores for different K values
+    # Calculate scores for different K values
     k_values = range(min_k, max_k + 1)
-    silhouette_scores = []
+    scores = []
 
     print(f"Analyzing {dataset_name}...")
     print(f"Testing K values from {min_k} to {max_k}")
@@ -118,54 +107,54 @@ def analyze_silhouette_score(
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=random_state, n_init=10)
         labels = kmeans.fit_predict(X)
-        score = silhouette_score(X, labels)
-        silhouette_scores.append(score)
-        print(f"K={k}: Silhouette Score = {score:.4f}")
+        score = cvi_function(X, labels)
+        scores.append(score)
+        print(f"K={k}: {cvi_name_full} = {score:.4f}")
 
-    # Find the K with maximum Silhouette score
-    optimal_idx = np.argmax(silhouette_scores)
+    # Find the K with maximum score
+    optimal_idx = np.argmax(scores)
     estimated_k = k_values[optimal_idx]
 
     print("-" * 50)
-    print(f"Estimated K (max Silhouette): {estimated_k}")
+    print(f"Estimated K (max {cvi_name_full}): {estimated_k}")
     print(f"True K: {true_k}")
     print(f"Match: {'✓ YES' if estimated_k == true_k else '✗ NO'}")
-    print(f"Max Silhouette Score: {silhouette_scores[optimal_idx]:.4f}")
+    print(f"Max {cvi_name_full}: {scores[optimal_idx]:.4f}")
 
     # Create DataFrame with results
     results_df = pd.DataFrame({
         'K': list(k_values),
-        'Silhouette_Score': silhouette_scores,
+        f'{cvi_name_full}': scores,
         'Is_Estimated_K': [k == estimated_k for k in k_values],
         'Is_True_K': [k == true_k for k in k_values]
     })
 
     # Save results to CSV
-    csv_path = os.path.join(output_dir, f"{dataset_name}_silhouette_scores.csv")
+    csv_path = f"{FOLDER_FIGS_ANALYSIS_ESTIMATE}/{dataset_name}_{cvi_str}_scores.csv"
     results_df.to_csv(csv_path, index=False)
     print(f"\nResults saved to: {csv_path}")
 
     # Create figure with 3 subplots
     fig = plt.figure(figsize=(18, 5))
 
-    # Plot 1: Silhouette scores
+    # Plot 1: scores
     ax1 = plt.subplot(1, 4, 1)
-    ax1.plot(k_values, silhouette_scores, 'b-o', linewidth=2, markersize=6, label='Silhouette Score')
+    ax1.plot(k_values, scores, 'b-o', linewidth=2, markersize=6, label=f'{cvi_name_full}')
 
-    # Mark the estimated K (max Silhouette)
-    ax1.plot(estimated_k, silhouette_scores[optimal_idx], 'r*', markersize=20, label=f'Estimated K={estimated_k}', zorder=5)
+    # Mark the estimated K (max score)
+    ax1.plot(estimated_k, scores[optimal_idx], 'r*', markersize=20, label=f'Estimated K={estimated_k}', zorder=5)
 
     # Mark the true K
     if true_k in k_values:
         true_k_idx = list(k_values).index(true_k)
-        ax1.plot(true_k, silhouette_scores[true_k_idx], 'g^', markersize=15, label=f'True K={true_k}', zorder=5)
+        ax1.plot(true_k, scores[true_k_idx], 'g^', markersize=15, label=f'True K={true_k}', zorder=5)
     else:
         # If true_k is outside the range, add a vertical line
         ax1.axvline(x=true_k, color='g', linestyle='--', linewidth=2, label=f'True K={true_k} (outside range)')
 
     ax1.set_xlabel('Number of Clusters (K)', fontsize=11, fontweight='bold')
-    ax1.set_ylabel('Silhouette Score', fontsize=11, fontweight='bold')
-    ax1.set_title('Silhouette Score vs K', fontsize=12, fontweight='bold')
+    ax1.set_ylabel(f'{cvi_name_full}', fontsize=11, fontweight='bold')
+    ax1.set_title(f'{cvi_name_full} vs K', fontsize=12, fontweight='bold')
     ax1.grid(True, alpha=0.3, linestyle='--')
     ax1.legend(fontsize=9, loc='best')
     ax1.set_xticks(k_values)
@@ -182,24 +171,24 @@ def analyze_silhouette_score(
 
     # Plot 2: K-Means clustering with estimated K
     ax2 = plt.subplot(1, 4, 2)
-    scatter_plot(ax2, f'K-Means with estimated K={estimated_k}', X, estimated_k, random_state)
+    scatter_plot(ax2, f'K-Means with estimated K={estimated_k}', cvi_str, X, estimated_k)
 
     # Plot 3: K-Means clustering with true K
     ax3 = plt.subplot(1, 4, 3)
-    scatter_plot(ax3, f'K-Means with true K={true_k}', X, true_k, random_state)
+    scatter_plot(ax3, f'K-Means with true K={true_k}', cvi_str, X, true_k)
 
     # Plot 4: True labels
     ax4 = plt.subplot(1, 4, 4)
-    scatter_plot(ax4, f'True labels', X, true_k, random_state, labels=true_labels)
+    scatter_plot(ax4, f'True labels', cvi_str, X, true_k, labels=true_labels)
 
 
     # Main title
-    fig.suptitle(f'K-Means Silhouette Analysis - {dataset_name}', fontsize=14, fontweight='bold', y=1.02)
+    fig.suptitle(f'K-Means {cvi_name_full} Analysis - {dataset_name}', fontsize=14, fontweight='bold', y=1.02)
 
     plt.tight_layout()
 
     # Save plot
-    plot_path = os.path.join(output_dir, f"{dataset_name}_silhouette_plot.png")
+    plot_path = f"{FOLDER_FIGS_ANALYSIS_ESTIMATE}/{dataset_name}_{cvi_str}_plot.png"
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     print(f"Plot saved to: {plot_path}")
 
@@ -219,12 +208,12 @@ if __name__ == "__main__":
     X, y_true = create_data4(n_samples)
 
     # Analyze with Silhouette score
-    results = analyze_silhouette_score(
+    results = analyze_score(
+        cvi_str="silhouette",
         X=X,
         true_labels=y_true,
         k_range=(2, 10),
-        dataset_name="example_aniso",
-        output_dir="figs/analysis/"
+        dataset_name="data4"
     )
 
     print("\n" + "=" * 50)

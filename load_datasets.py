@@ -5,8 +5,7 @@ from sklearn import datasets
 from sklearn.preprocessing import LabelEncoder
 from ucimlrepo import fetch_ucirepo
 
-seed = 30
-random_state = 170
+from constants import random_state
 
 
 def create_data1(n_samples):
@@ -52,7 +51,7 @@ def create_data2(n_samples):
 
 
 def create_data3(n_samples):
-    return datasets.make_blobs(n_samples=n_samples, random_state=seed)
+    return datasets.make_blobs(n_samples=n_samples, random_state=random_state)
 
 
 def create_data4(n_samples):
@@ -70,11 +69,11 @@ def create_data5(n_samples, n_features=2):
 
 
 def create_data6(n_samples):
-    return datasets.make_moons(n_samples=n_samples, noise=0.05, random_state=seed)
+    return datasets.make_moons(n_samples=n_samples, noise=0.05, random_state=random_state)
 
 
 def create_data7(n_samples):
-    return datasets.make_circles(n_samples=n_samples, factor=0.5, noise=0.05, random_state=seed)
+    return datasets.make_circles(n_samples=n_samples, factor=0.5, noise=0.05, random_state=random_state)
 
 
 
@@ -363,6 +362,96 @@ def create_set_sipu():
 #     ]
 #
 # }
+
+
+
+
+from load_datasets import create_unbalance
+
+def cluster_stats(X, labels):
+    X = np.asarray(X)
+    labels = np.asarray(labels)
+    stats = {}
+
+    for label in np.unique(labels):
+        cluster_points = X[labels == label]
+        n = len(cluster_points)
+        mean = cluster_points.mean(axis=0)
+        cov = np.cov(cluster_points, rowvar=False)
+
+        stats[int(label)] = {
+            "n": int(n),
+            "mean": mean.tolist(),
+            "cov": cov.tolist()
+        }
+
+    return stats
+
+def obtain_UNBALANCE_STATS():
+    X, labels = create_unbalance()
+    stats = cluster_stats(X, labels)
+
+    for k, v in stats.items():
+        print(f"    {k}: {v},")
+
+
+def load_UNBALANCE_STATS():
+    UNBALANCE_STATS = {
+        0: {'n': 2000, 'mean': [150006.7365, 350103.876], 'cov': [[9982716.372253874, 1193299.6986753377], [1193299.6986753377, 10042633.918583289]]},
+        1: {'n': 2000, 'mean': [179954.98, 380007.9705], 'cov': [[9869979.581390698, 1179290.3195697847], [1179290.3195697847, 9674416.364812154]]},
+        2: {'n': 2000, 'mean': [209948.245, 349963.26], 'cov': [[9665368.451200599, 517801.0848424211], [517801.0848424211, 9168240.486643318]]},
+        3: {'n': 100, 'mean': [440754.33, 298283.2], 'cov': [[85839933.63747482, -2361146.793939391], [-2361146.793939391, 89169344.6868687]]},
+        4: {'n': 100, 'mean': [440134.41, 400135.41], 'cov': [[120445372.18373743, 4221838.76959596], [4221838.76959596, 125848151.05242425]]},
+        5: {'n': 100, 'mean': [491036.01, 349798.33], 'cov': [[107976910.91909094, -3136604.417474747], [-3136604.417474747, 97399620.34454548]]},
+        6: {'n': 100, 'mean': [539379.19, 299652.83], 'cov': [[97408312.98373738, 1546637.083131312], [1546637.083131312, 94213029.71828282]]},
+        7: {'n': 100, 'mean': [538883.52, 400947.36], 'cov': [[93971552.77737373, 6441541.154343435], [6441541.154343435, 75038436.87919189]]},
+    }
+
+    # Identify minority clusters (5 smallest)
+    MINORITY_IDS = sorted(UNBALANCE_STATS.keys(), key=lambda k: UNBALANCE_STATS[k]['n'])[:5]
+    MAJORITY_IDS = [k for k in UNBALANCE_STATS.keys() if k not in MINORITY_IDS]
+
+    return UNBALANCE_STATS, MAJORITY_IDS, MINORITY_IDS
+
+
+def generate_unbalance_like(UNBALANCE_STATS, MAJORITY_IDS, MINORITY_IDS, scale_minority=1.0):
+    """Generate data similar to unbalance.csv with option to scale minority clusters."""
+
+    X_parts, y_parts = [], []
+    for cid, stats in UNBALANCE_STATS.items():
+        n = stats['n']
+        if cid in MINORITY_IDS:
+            n = int(n * scale_minority)
+        mean = np.array(stats['mean'])
+        cov = np.array(stats['cov'])
+        Xi = np.random.multivariate_normal(mean, cov, size=n)
+        yi = np.full(n, cid)
+        X_parts.append(Xi)
+        y_parts.append(yi)
+    return np.vstack(X_parts), np.concatenate(y_parts)
+
+
+
+
+def generate_clusters_analysis(centers, sizes, cluster_std=1.0):
+    """
+    Generate a dataset from Gaussian blobs centered at `centers` with sample counts `sizes`.
+    Returns (X, labels) where X is (N, 2) and labels is length N.
+    """
+    centers = np.asarray(centers)
+    X_parts = []
+    labels_parts = []
+    for i, (c, n) in enumerate(zip(centers, sizes)):
+        X_i =  np.random.normal(loc=0.0, scale=cluster_std, size=(n, centers.shape[1])) + np.asarray(c)
+        X_parts.append(X_i)
+        labels_parts.append(np.full(n, i, dtype=int))
+    X = np.vstack(X_parts)
+    labels = np.concatenate(labels_parts)
+    return X, labels
+
+
+
+
 
 if __name__ == '__main__':
     X, y = create_data1(1000)

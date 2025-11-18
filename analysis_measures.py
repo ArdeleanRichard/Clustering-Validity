@@ -1,289 +1,313 @@
 import numpy as np
-from collections import Counter
-from sklearn.metrics import silhouette_score, adjusted_rand_score, normalized_mutual_info_score
-from scipy.spatial.distance import cdist
-from scipy.stats import multivariate_normal
-import pandas as pd
+from matplotlib import pyplot as plt
+
+from constants import random_state, LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS
+from load_datasets import generate_clusters_analysis
+
 
 
 # ==================== DATASET IMBALANCE MEASURES ====================
 
-def imbalance_ratio(y):
+
+def imbalance_ratio(X, labels):
     """
-    Calculate the Imbalance Ratio (IR) for binary or multi-class datasets.
-    IR = majority_class_size / minority_class_size
-
-    Parameters:
-    -----------
-    y : array-like
-        Class labels
-
-    Returns:
-    --------
-    float : Imbalance ratio
-    dict : Class distribution
+    Imbalance Ratio (IR) = majority_class_size / minority_class_size.
+    If a class has 0 members, returns np.inf.
     """
-    counts = Counter(y)
-    max_count = max(counts.values())
-    min_count = min(counts.values())
+    unique_labels, counts = np.unique(labels, return_counts=True)
 
-    ir = max_count / min_count
+    max_count = np.max(counts)
+    min_count = np.min(counts)
+    if min_count == 0:
+        return np.inf
 
-    return ir, dict(counts)
+    return max_count / min_count
 
 
-def multi_label_imbalance_metrics(y_multilabel):
+def overlap_ratio(X, labels, slack=1.2):
     """
-    Calculate imbalance metrics for multi-label datasets.
-
-    Parameters:
-    -----------
-    y_multilabel : array-like, shape (n_samples, n_labels)
-        Binary matrix where each column is a label
-
-    Returns:
-    --------
-    dict : Dictionary containing IRLbl, MeanIR, MaxIR, and CVIR
+    Vectorized computation of the R-value (overlap rate).
+    For each point, compute distance to its cluster center and the nearest other center.
+    Point is 'overlapping' if dist_to_nearest_other <= slack * dist_to_own.
+    Returns fraction of overlapping points.
     """
-    n_samples, n_labels = y_multilabel.shape
+    if X.ndim != 2:
+        raise ValueError("X must be 2D array (N, dims)")
+    unique_labels, inv = np.unique(labels, return_inverse=True)
 
-    # Calculate imbalance ratio per label
-    ir_per_label = []
-    for i in range(n_labels):
-        pos = np.sum(y_multilabel[:, i] == 1)
-        neg = np.sum(y_multilabel[:, i] == 0)
-        if pos > 0 and neg > 0:
-            ir = max(pos, neg) / min(pos, neg)
-            ir_per_label.append(ir)
+    # compute centers in the order of unique_labels
+    centers = np.vstack([X[labels == lab].mean(axis=0) for lab in unique_labels])
 
-    ir_per_label = np.array(ir_per_label)
+    # distances: shape (N_points, n_centers)
+    # broadcasting: points[:, None, :] - centers[None, :, :]
+    dists = np.linalg.norm(X[:, None, :] - centers[None, :, :], axis=2)
 
-    metrics = {
-        'IRLbl': ir_per_label,  # Imbalance ratio per label
-        'MeanIR': np.mean(ir_per_label),  # Mean imbalance ratio
-        'MaxIR': np.max(ir_per_label),  # Maximum imbalance ratio
-        'CVIR': np.std(ir_per_label) / np.mean(ir_per_label)  # Coefficient of variation
-    }
+    # own center distance for each point
+    own_center_idx = inv  # maps each point to index in centers
+    idx = np.arange(X.shape[0])
+    dist_to_own = dists[idx, own_center_idx]
 
-    return metrics
+    # distance to nearest other center: set own center distance to +inf and take min
+    dists_other = dists.copy()
+    dists_other[idx, own_center_idx] = np.inf
+    dist_to_nearest_other = dists_other.min(axis=1)
+
+    # overlapping condition
+    overlapping = dist_to_nearest_other <= (slack * dist_to_own)
+    overlap_rate = overlapping.sum() / X.shape[0]
+    return overlap_rate
 
 
-# ==================== CLUSTER OVERLAP MEASURES ====================
+# -------------------- Plot helpers --------------------
 
-def silhouette_coefficient(X, labels):
+def save_fig(fig, filename, dpi=300):
+    fig.savefig(f"./{FOLDER_FIGS_ANALYSIS}/{filename}", dpi=dpi, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: ./{FOLDER_FIGS_ANALYSIS}/{filename}")
+
+
+def set_plot_style():
+    plt.rcParams.update({
+        "figure.figsize": (10, 6),
+        "axes.titlesize": 14,
+        "axes.labelsize": 12,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11,
+    })
+
+
+# -------------------- Analysis: Overlap vs centroid distance --------------------
+
+def analyze_cluster_overlap(
+    distances=np.linspace(6, 1, 20),
+    n_per_cluster=300,
+    cluster_std=1.0,
+    save_prefix="analysis_overlap",
+):
     """
-    Calculate Silhouette Coefficient.
-    Range: [-1, 1], where 0 indicates overlapping clusters.
-
-    Parameters:
-    -----------
-    X : array-like, shape (n_samples, n_features)
-        Feature matrix
-    labels : array-like
-        Cluster assignments
-
-    Returns:
-    --------
-    float : Silhouette coefficient
-    array : Per-sample silhouette scores
+    Generate three clusters where cluster 0 and 1 move closer by `distances`.
+    Compute R-value for each distance and plot results + example scatter plots.
+    Returns (centroid_distances, overlap_ratios).
     """
-    score = silhouette_score(X, labels)
-    from sklearn.metrics import silhouette_samples
-    sample_scores = silhouette_samples(X, labels)
+    set_plot_style()
 
-    return score, sample_scores
+    overlap_ratios = []
+    centroid_distances = []
+    small_examples = []  # store small datasets for plotting examples
+
+    for d in distances:
+        centers = [(0.0, 0.0), (d, 0.0), (3.0, 5.0)]
+        sizes = [n_per_cluster, n_per_cluster, n_per_cluster]
+        # generate a larger dataset for metric computation
+        X, labels = generate_clusters_analysis(centers, sizes, cluster_std=cluster_std)
+        r_val = overlap_ratio(X, labels)
+        overlap_ratios.append(r_val)
+        centroid_distances.append(float(np.linalg.norm(np.array(centers[0]) - np.array(centers[1]))))
+
+        # generate a smaller dataset for plotting examples (keeps variety with rng)
+        X_small, labels_small = generate_clusters_analysis(centers, [100, 100, 100], cluster_std=cluster_std)
+        small_examples.append((X_small, labels_small, centers))
+
+    # Plot Distance vs Overlap
+    fig1, ax1 = plt.subplots()
+    ax1.plot(centroid_distances, overlap_ratios, 'o-', linewidth=3, markersize=8)
+    ax1.set_xlabel('Distance Between Centroids (Clusters 0 & 1)', fontsize=14, fontweight='bold')
+    ax1.set_ylabel('Overlap Ratio (R-value)', fontsize=14, fontweight='bold')
+    ax1.set_title('Centroid Distance vs. Cluster Overlap', fontsize=16, fontweight='bold', pad=12)
+    ax1.grid(True, alpha=0.3)
+    ax1.invert_xaxis()
+    ax1.tick_params(labelsize=11)
+
+    # Annotations
+    ax1.annotate('Far - Low Overlap',
+                 xy=(centroid_distances[0], overlap_ratios[0]),
+                 xytext=(centroid_distances[0] - 0.6, overlap_ratios[0] + 0.06),
+                 fontsize=10, ha='right',
+                 bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.5),
+                 arrowprops=dict(arrowstyle='->', lw=1.5))
+    ax1.annotate('Close - High Overlap',
+                 xy=(centroid_distances[-1], overlap_ratios[-1]),
+                 xytext=(centroid_distances[-1] + 0.6, overlap_ratios[-1] - 0.06),
+                 fontsize=10, ha='left',
+                 bbox=dict(boxstyle='round,pad=0.5', facecolor='orange', alpha=0.5),
+                 arrowprops=dict(arrowstyle='->', lw=1.5))
+
+    save_fig(fig1, f"{save_prefix}.png")
+
+    # Example scatter plots: pick far, mid, close
+    fig2, axes2 = plt.subplots(1, 3, figsize=(15, 5))
+    example_indices = [0, len(distances) // 2, -1]
+    for ax, idx in zip(axes2, example_indices):
+        Xs, labs, centers = small_examples[idx]
+        for k in range(3):
+            mask = labs == k
+            ax.scatter(Xs[mask, 0], Xs[mask, 1], c=LABEL_COLOR_MAP[k], alpha=0.6, s=30, label=f"Cluster {k}")
+            ax.scatter(*centers[k], c=LABEL_COLOR_MAP[k], marker='X', s=200, edgecolors='black', linewidths=2, zorder=5)
+        d_val = distances[idx]
+        ax.set_title(f"d={d_val:.1f}, R={overlap_ratios[idx]:.2f}", fontsize=12, fontweight='bold')
+        ax.set_xlim(-4, 8)
+        ax.set_ylim(-3, 8)
+        ax.grid(True, alpha=0.3)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.legend(fontsize=9)
+
+    plt.tight_layout()
+    save_fig(fig2, f"{save_prefix}_examples.png")
+
+    return centroid_distances, overlap_ratios
 
 
-def adjusted_rand_index(y_true, y_pred):
+
+# -------------------- Analysis: Imbalance Ratio --------------------
+
+def analyze_imbalance_ratio(
+    initial_size=300,
+    cluster_std=1.0,
+    cluster_2_sizes=None,
+    centers=None,
+    save_prefix="analysis_imbalance"
+):
     """
-    Calculate Adjusted Rand Index for comparing clustering with ground truth.
-    Range: [-1, 1], where 1 indicates perfect agreement.
-
-    Parameters:
-    -----------
-    y_true : array-like
-        Ground truth labels
-    y_pred : array-like
-        Predicted cluster labels
-
-    Returns:
-    --------
-    float : ARI score
+    Vary the size of the minority cluster (cluster index 2) and compute Imbalance Ratio (IR).
+    Returns (minority_sizes, imbalance_ratios) and also saves:
+      - a line plot of IR vs minority cluster size
+      - a 3-panel figure showing example scatter plots (start / middle / end)
     """
-    return adjusted_rand_score(y_true, y_pred)
+    set_plot_style()
+    if cluster_2_sizes is None:
+        cluster_2_sizes = np.linspace(initial_size, int(initial_size * 0.1), 20).astype(int)
+    if centers is None:
+        centers = [(0, 0), (5, 0), (2.5, 4)]
+
+    imbalance_ratios = []
+    minority_sizes = []
+    small_examples = []  # store small datasets for plotting examples
+
+    for size_2 in cluster_2_sizes:
+        # full dataset for metric computation
+        X, labels = generate_clusters_analysis(centers, [initial_size, initial_size, int(size_2)], cluster_std=cluster_std)
+        ir = imbalance_ratio(labels)
+        imbalance_ratios.append(ir)
+        minority_sizes.append(int(size_2))
+
+        # small dataset for plotting (keeps same relative sizes)
+        # use smaller per-cluster counts for visualization clarity
+        small_sizes = [min(100, initial_size), min(100, initial_size), min(100, int(size_2))]
+        X_small, labels_small = generate_clusters_analysis(centers, small_sizes, cluster_std=cluster_std)
+        small_examples.append((X_small, labels_small, centers))
+
+    # --- Plot IR vs minority size ---
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(minority_sizes, imbalance_ratios, 'o-', linewidth=2, markersize=7)
+    ax.set_xlabel('Minority Cluster Size (samples)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Imbalance Ratio (IR)', fontsize=12, fontweight='bold')
+    ax.set_title('Cluster Size vs. Imbalance Ratio', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.invert_xaxis()
+    ax.axhline(y=1.0, linestyle='--', linewidth=2, label='Balanced (IR=1)')
+    ax.legend()
+
+    save_fig(fig, f"{save_prefix}.png")
+
+    # --- Example scatter plots: pick start, middle, end ---
+    fig2, axes2 = plt.subplots(1, 3, figsize=(15, 5))
+    example_indices = [0, len(minority_sizes) // 2, -1]
+
+    for ax, idx in zip(axes2, example_indices):
+        Xs, labs, ctrs = small_examples[idx]
+        for k in range(3):
+            mask = labs == k
+            ax.scatter(Xs[mask, 0], Xs[mask, 1], c=LABEL_COLOR_MAP[k], alpha=0.6, s=30, label=f"Cluster {k}")
+            # center marker
+            ax.scatter(*ctrs[k], c=LABEL_COLOR_MAP[k], marker='X', s=200,
+                       edgecolors='black', linewidths=2, zorder=5)
+        size_val = minority_sizes[idx]
+        ir_val = imbalance_ratios[idx]
+        ax.set_title(f'n_minority={size_val}, IR={ir_val:.2f}', fontsize=12, fontweight='bold')
+        ax.set_xlim(-4, 8)
+        ax.set_ylim(-3, 8)
+        ax.grid(True, alpha=0.3)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.legend(fontsize=9)
+
+    plt.tight_layout()
+    save_fig(fig2, f"{save_prefix}_examples.png")
+
+    return minority_sizes, imbalance_ratios
 
 
-def normalized_mutual_information(y_true, y_pred):
-    """
-    Calculate Normalized Mutual Information.
-    Range: [0, 1], where 1 indicates perfect agreement.
-
-    Parameters:
-    -----------
-    y_true : array-like
-        Ground truth labels
-    y_pred : array-like
-        Predicted cluster labels
-
-    Returns:
-    --------
-    float : NMI score
-    """
-    return normalized_mutual_info_score(y_true, y_pred)
 
 
-def overlap_rate_rvalue(X, labels):
-    """
-    Calculate R-value (overlap rate) between clusters.
-    Uses distance-based approach to identify overlapping points.
-
-    Parameters:
-    -----------
-    X : array-like, shape (n_samples, n_features)
-        Feature matrix
-    labels : array-like
-        Cluster assignments
-
-    Returns:
-    --------
-    float : R-value (proportion of overlapping points)
-    dict : Pairwise overlap information
-    """
-    unique_labels = np.unique(labels)
-    n_clusters = len(unique_labels)
-
-    # Calculate cluster centers
-    centers = np.array([X[labels == label].mean(axis=0) for label in unique_labels])
-
-    # For each point, calculate distance to its cluster center and to nearest other center
-    overlapping_points = 0
-    total_points = len(X)
-
-    for i, point in enumerate(X):
-        own_label = labels[i]
-        own_center_idx = np.where(unique_labels == own_label)[0][0]
-
-        # Distance to own cluster center
-        dist_to_own = np.linalg.norm(point - centers[own_center_idx])
-
-        # Distance to nearest other cluster center
-        other_centers = np.delete(centers, own_center_idx, axis=0)
-        if len(other_centers) > 0:
-            dist_to_nearest_other = np.min(cdist([point], other_centers))
-
-            # Point is overlapping if it's closer to or similar distance to another cluster
-            if dist_to_nearest_other <= dist_to_own * 1.2:  # 20% tolerance
-                overlapping_points += 1
-
-    r_value = overlapping_points / total_points
-
-    return r_value
+def safe_percent_change(start, end):
+    """Return percent change from start to end. If start == 0, return None."""
+    if start == 0:
+        return None
+    return (end / start - 1.0) * 100.0
 
 
-def bhattacharyya_coefficient(X, labels):
-    """
-    Calculate Bhattacharyya coefficient between cluster pairs.
-    Assumes Gaussian distributions for each cluster.
-    Range: [0, 1], where 0 = no overlap, 1 = complete overlap.
-
-    Parameters:
-    -----------
-    X : array-like, shape (n_samples, n_features)
-        Feature matrix
-    labels : array-like
-        Cluster assignments
-
-    Returns:
-    --------
-    dict : Pairwise Bhattacharyya coefficients
-    """
-    unique_labels = np.unique(labels)
-    n_clusters = len(unique_labels)
-
-    # Fit Gaussian to each cluster
-    distributions = {}
-    for label in unique_labels:
-        cluster_data = X[labels == label]
-        mean = np.mean(cluster_data, axis=0)
-        cov = np.cov(cluster_data.T)
-        # Add small regularization to avoid singular matrices
-        cov += np.eye(cov.shape[0]) * 1e-6
-        distributions[label] = (mean, cov)
-
-    # Calculate pairwise Bhattacharyya coefficients
-    bc_matrix = {}
-    for i, label1 in enumerate(unique_labels):
-        for label2 in unique_labels[i + 1:]:
-            mu1, sigma1 = distributions[label1]
-            mu2, sigma2 = distributions[label2]
-
-            # Bhattacharyya distance
-            sigma = (sigma1 + sigma2) / 2
-
-            try:
-                term1 = 0.125 * (mu1 - mu2).T @ np.linalg.inv(sigma) @ (mu1 - mu2)
-                term2 = 0.5 * np.log(np.linalg.det(sigma) /
-                                     np.sqrt(np.linalg.det(sigma1) * np.linalg.det(sigma2)))
-
-                bc_distance = term1 + term2
-                bc_coefficient = np.exp(-bc_distance)
-
-                bc_matrix[f"{label1}-{label2}"] = bc_coefficient
-            except:
-                bc_matrix[f"{label1}-{label2}"] = np.nan
-
-    return bc_matrix
 
 
-# ==================== EXAMPLE USAGE ====================
+
+
+MAP_MEASURES = {
+    "imbalance": ("IR", "Imbalance Ratio", imbalance_ratio),
+    "overlap": ("OR", "Overlap Ratio", overlap_ratio),
+}
+
+
 
 if __name__ == "__main__":
-    # Generate sample imbalanced dataset
-    np.random.seed(42)
-
-    # Example 1: Binary classification with imbalance
+    print("=== IMBALANCE MEASURE ===")
+    # Example: Binary classification with imbalance
     y_binary = np.array([0] * 100 + [1] * 900)
-    ir, dist = imbalance_ratio(y_binary)
-    print("=== IMBALANCE MEASURES ===")
+    ir = imbalance_ratio(y_binary)
     print(f"Imbalance Ratio: {ir:.2f}")
-    print(f"Class Distribution: {dist}")
+    print(f"Class Distribution: {np.unique(y_binary, return_counts=True)}")
     print()
 
-    # Example 2: Multi-label dataset
-    y_multilabel = np.random.randint(0, 2, size=(1000, 5))
-    y_multilabel[:, 0] = np.random.choice([0, 1], size=1000, p=[0.9, 0.1])  # Imbalanced label
-    ml_metrics = multi_label_imbalance_metrics(y_multilabel)
-    print("Multi-label Imbalance Metrics:")
-    print(f"Mean IR: {ml_metrics['MeanIR']:.2f}")
-    print(f"Max IR: {ml_metrics['MaxIR']:.2f}")
-    print(f"CV IR: {ml_metrics['CVIR']:.2f}")
-    print()
-
+    print("=== CLUSTER OVERLAP MEASURE ===")
     # Example 3: Clustering with overlap
     from sklearn.datasets import make_blobs
-
-    X, y_true = make_blobs(n_samples=300, centers=3, n_features=2,
-                           cluster_std=1.5, random_state=42)
-
-    print("=== CLUSTER OVERLAP MEASURES ===")
-
-    # Silhouette Score
-    sil_score, _ = silhouette_coefficient(X, y_true)
-    print(f"Silhouette Coefficient: {sil_score:.3f}")
-
+    X, y_true = make_blobs(n_samples=300, centers=3, n_features=2, cluster_std=1.5, random_state=random_state)
     # R-value
-    r_val = overlap_rate_rvalue(X, y_true)
+    r_val = overlap_ratio(X, y_true)
     print(f"R-value (Overlap Rate): {r_val:.3f} ({r_val * 100:.1f}% overlapping)")
 
-    # Bhattacharyya Coefficient
-    bc_scores = bhattacharyya_coefficient(X, y_true)
-    print("Bhattacharyya Coefficients (pairwise):")
-    for pair, score in bc_scores.items():
-        print(f"  Clusters {pair}: {score:.3f}")
 
-    # If you have ground truth and predictions
-    y_pred = y_true.copy()
-    y_pred[::10] = (y_pred[::10] + 1) % 3  # Add some noise
+    print("=" * 60)
+    print("ANALYSIS 1: CLUSTER OVERLAP VS CENTROID DISTANCE")
+    print("=" * 60)
+    centroid_dists, overlap_ratios = analyze_cluster_overlap(
+        distances=np.linspace(6, 1, 20),
+        n_per_cluster=300,
+        cluster_std=1.0,
+        save_prefix="overlap"
+    )
+    print(f"Distance range: {centroid_dists[0]:.2f} to {centroid_dists[-1]:.2f}")
+    print(f"Overlap ratio range: {overlap_ratios[0]:.3f} to {overlap_ratios[-1]:.3f}")
+    pct = safe_percent_change(overlap_ratios[0], overlap_ratios[-1])
+    if pct is None:
+        print("Cannot compute percent change for overlap (initial value is 0).")
+    else:
+        print(f"As centroids get closer, overlap increases by {pct:.1f}%")
 
-    print(f"\nAdjusted Rand Index: {adjusted_rand_index(y_true, y_pred):.3f}")
-    print(f"Normalized Mutual Information: {normalized_mutual_information(y_true, y_pred):.3f}")
+
+    print("\n" + "=" * 60)
+    print("ANALYSIS 2: IMBALANCE RATIO VS CLUSTER SIZE")
+    print("=" * 60)
+    minority_sizes, imb_ratios = analyze_imbalance_ratio(
+        initial_size=300,
+        cluster_std=1.0,
+        cluster_2_sizes=np.linspace(300, 30, 20).astype(int),
+        centers=[(0, 0), (5, 0), (2.5, 4)],
+        save_prefix="imbalance",
+    )
+    print(f"Minority cluster size range: {minority_sizes[0]} to {minority_sizes[-1]}")
+    print(f"Imbalance ratio range: {imb_ratios[0]:.2f} to {imb_ratios[-1]:.2f}")
+    pct2 = safe_percent_change(imb_ratios[0], imb_ratios[-1])
+    if pct2 is None:
+        print("Cannot compute percent change for imbalance (initial value is 0).")
+    else:
+        print(f"As minority cluster shrinks, imbalance increases by {pct2:.1f}%")
