@@ -112,25 +112,25 @@ def analyze_cluster_overlap(
     fig1, ax1 = plt.subplots()
     ax1.plot(centroid_distances, overlap_ratios, 'o-', linewidth=3, markersize=8)
     ax1.set_xlabel('Distance Between Centroids (Clusters 0 & 1)', fontsize=14, fontweight='bold')
-    ax1.set_ylabel('Overlap Ratio (R-value)', fontsize=14, fontweight='bold')
+    ax1.set_ylabel('Overlap Ratio (OR)', fontsize=14, fontweight='bold')
     ax1.set_title('Centroid Distance vs. Cluster Overlap', fontsize=16, fontweight='bold', pad=12)
     ax1.grid(True, alpha=0.3)
     ax1.invert_xaxis()
     ax1.tick_params(labelsize=11)
 
     # Annotations
-    ax1.annotate('Far - Low Overlap',
-                 xy=(centroid_distances[0], overlap_ratios[0]),
-                 xytext=(centroid_distances[0] - 0.6, overlap_ratios[0] + 0.06),
-                 fontsize=10, ha='right',
-                 bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.5),
-                 arrowprops=dict(arrowstyle='->', lw=1.5))
-    ax1.annotate('Close - High Overlap',
-                 xy=(centroid_distances[-1], overlap_ratios[-1]),
-                 xytext=(centroid_distances[-1] + 0.6, overlap_ratios[-1] - 0.06),
-                 fontsize=10, ha='left',
-                 bbox=dict(boxstyle='round,pad=0.5', facecolor='orange', alpha=0.5),
-                 arrowprops=dict(arrowstyle='->', lw=1.5))
+    # ax1.annotate('Far - Low Overlap',
+    #              xy=(centroid_distances[0], overlap_ratios[0]),
+    #              xytext=(centroid_distances[0] - 0.6, overlap_ratios[0] + 0.06),
+    #              fontsize=10, ha='right',
+    #              bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.5),
+    #              arrowprops=dict(arrowstyle='->', lw=1.5))
+    # ax1.annotate('Close - High Overlap',
+    #              xy=(centroid_distances[-1], overlap_ratios[-1]),
+    #              xytext=(centroid_distances[-1] + 0.6, overlap_ratios[-1] - 0.06),
+    #              fontsize=10, ha='left',
+    #              bbox=dict(boxstyle='round,pad=0.5', facecolor='orange', alpha=0.5),
+    #              arrowprops=dict(arrowstyle='->', lw=1.5))
 
     save_fig(fig1, f"{save_prefix}.png")
 
@@ -144,7 +144,7 @@ def analyze_cluster_overlap(
             ax.scatter(Xs[mask, 0], Xs[mask, 1], c=LABEL_COLOR_MAP[k], alpha=0.6, s=30, label=f"Cluster {k}")
             ax.scatter(*centers[k], c=LABEL_COLOR_MAP[k], marker='X', s=200, edgecolors='black', linewidths=2, zorder=5)
         d_val = distances[idx]
-        ax.set_title(f"d={d_val:.1f}, R={overlap_ratios[idx]:.2f}", fontsize=12, fontweight='bold')
+        ax.set_title(f"distance={d_val:.1f}, OR={overlap_ratios[idx]:.2f}", fontsize=12, fontweight='bold')
         ax.set_xlim(-4, 8)
         ax.set_ylim(-3, 8)
         ax.grid(True, alpha=0.3)
@@ -187,7 +187,7 @@ def analyze_imbalance_ratio(
     for size_2 in cluster_2_sizes:
         # full dataset for metric computation
         X, labels = generate_clusters_analysis(centers, [initial_size, initial_size, int(size_2)], cluster_std=cluster_std)
-        ir = imbalance_ratio(labels)
+        ir = imbalance_ratio(None, labels)
         imbalance_ratios.append(ir)
         minority_sizes.append(int(size_2))
 
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     print("=== IMBALANCE MEASURE ===")
     # Example: Binary classification with imbalance
     y_binary = np.array([0] * 100 + [1] * 900)
-    ir = imbalance_ratio(y_binary)
+    ir = imbalance_ratio(None, y_binary)
     print(f"Imbalance Ratio: {ir:.2f}")
     print(f"Class Distribution: {np.unique(y_binary, return_counts=True)}")
     print()
@@ -273,7 +273,7 @@ if __name__ == "__main__":
     X, y_true = make_blobs(n_samples=300, centers=3, n_features=2, cluster_std=1.5, random_state=random_state)
     # R-value
     r_val = overlap_ratio(X, y_true)
-    print(f"R-value (Overlap Rate): {r_val:.3f} ({r_val * 100:.1f}% overlapping)")
+    print(f"OR-value (Overlap Rate): {r_val:.3f} ({r_val * 100:.1f}% overlapping)")
 
 
     print("=" * 60)

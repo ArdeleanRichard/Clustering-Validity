@@ -92,7 +92,7 @@ def build_mst(data, k=5, start=0):
     return edges
 
 
-def build_adjacency_list(edges, n_points):
+def build_adjacency_list(edges):
     """
     Build adjacency list from MST edges.
     """
@@ -112,7 +112,7 @@ def find_path_max_edge(edges, start, end):
         return 0.0, np.array([start])
 
     # Build adjacency list (reuse if called multiple times by caching externally)
-    adj = build_adjacency_list(edges, len(edges) + 1)
+    adj = build_adjacency_list(edges)
 
     # BFS to find path with parent tracking for faster reconstruction
     queue = deque([start])
