@@ -4,13 +4,13 @@ from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 
 from analysis_measures import measure_function
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS, FOLDER_FIGS_ANALYSIS_EXTERNAL
-from constants_maps import MAP_EXTERNAL_METRICS
+from constants_maps import MAP_ANALYSIS_EXTERNAL_METRICS
 from load_datasets import load_UNBALANCE_STATS, generate_unbalance_like
 from ours.external_scores import balanced_external
 
 
 def analyze_external_metric_vs_imbalance(cvi_str, scales=np.linspace(1.0, 10.0, 10), save_prefix="analysis_imbalance"):
-    cvi_name_acronym, cvi_name_full, cvi_function = MAP_EXTERNAL_METRICS[cvi_str]
+    cvi_name_acronym, cvi_name_full, cvi_function = MAP_ANALYSIS_EXTERNAL_METRICS[cvi_str]
 
     UNBALANCE_STATS, MAJORITY_IDS, MINORITY_IDS = load_UNBALANCE_STATS()
 

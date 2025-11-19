@@ -4,7 +4,7 @@ from sklearn.metrics import silhouette_score
 
 from analysis_measures import MAP_MEASURES
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_INTERNAL
-from constants_maps import MAP_INTERNAL_METRICS
+from constants_maps import MAP_ANALYSIS_INTERNAL_METRICS
 from load_datasets import generate_clusters_analysis
 
 
@@ -12,7 +12,7 @@ from load_datasets import generate_clusters_analysis
 # -------------------- Plot helpers --------------------
 
 def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, cvi_fl_arr, chosen_idx, datasets, save_filename):
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_ANALYSIS_INTERNAL_METRICS[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
     val_name = MAP_MEASURE_TO_VARIABLE[measure_str]
     labelset_name, labelset, line_func = MAP_LABELSET[labelset_str]
@@ -147,7 +147,7 @@ def analyze_measure(
     the true labeling (or the horizontal split with max silhouette if none).
     Returns (measure_arr, cvi_tl_arr, cvi_hl_arr).
     """
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_ANALYSIS_INTERNAL_METRICS[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
 
     set_plot_style()

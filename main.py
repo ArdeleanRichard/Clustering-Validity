@@ -80,9 +80,9 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
 
 
 def run_scores_set1(plot=False):
-    datasets = create_set1(n_samples=1000)
+    # datasets = create_set1(n_samples=1000)
     # datasets = create_set_g(dims=2)
-    # datasets = create_set_a()
+    datasets = create_set_a()
     # datasets = create_set_s()
     # datasets = create_set_graves()
     # datasets = create_set_sipu()
