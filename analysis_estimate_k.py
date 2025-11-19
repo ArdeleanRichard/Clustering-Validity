@@ -3,7 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-from constants import FOLDER_FIGS_ANALYSIS_ESTIMATE, MAP_INTERNAL_METRICS, random_state
+from constants import FOLDER_FIGS_ANALYSIS_ESTIMATE, random_state
+from constants_maps import MAP_INTERNAL_METRICS
 from load_datasets import create_data4
 
 

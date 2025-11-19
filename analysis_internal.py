@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
 
 from analysis_measures import MAP_MEASURES
-from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_INTERNAL, MAP_INTERNAL_METRICS
+from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_INTERNAL
+from constants_maps import MAP_INTERNAL_METRICS
 from load_datasets import generate_clusters_analysis
 
 

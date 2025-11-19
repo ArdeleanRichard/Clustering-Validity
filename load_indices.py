@@ -3,7 +3,8 @@ import pandas as pd
 import time
 from tabulate import tabulate
 
-from constants import METRICS, MAP_LOWER_IS_BETTER, MAP_METRIC_TO_FUNCTION
+from constants_maps import MAP_METRIC_TO_FUNCTION, METRICS, MAP_LOWER_IS_BETTER
+
 
 def get_index(name):
     """

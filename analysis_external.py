@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 
 from analysis_measures import measure_function
-from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS, FOLDER_FIGS_ANALYSIS_EXTERNAL, MAP_EXTERNAL_METRICS
+from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS, FOLDER_FIGS_ANALYSIS_EXTERNAL
+from constants_maps import MAP_EXTERNAL_METRICS
 from load_datasets import load_UNBALANCE_STATS, generate_unbalance_like
 from ours.external_scores import balanced_external
 
