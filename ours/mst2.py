@@ -271,7 +271,7 @@ def mst_davies_bouldin_score(data, labels, k=5):
     for i in range(n_clusters):
         max_similarity = -np.inf
         for j in range(n_clusters):
-            if i != j and cluster_distances[i, j] > 0:
+            if i != j:
                 similarity = (cluster_scatter[i] + cluster_scatter[j]) / cluster_distances[i, j]
                 max_similarity = max(max_similarity, similarity)
         if max_similarity > -np.inf:

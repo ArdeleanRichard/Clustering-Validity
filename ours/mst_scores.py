@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 
 from load_datasets import create_data4
 from ours.mst_distance import centroid_id_from_data, find_path_max_edge, build_mst
@@ -108,10 +107,10 @@ def mst_davies_bouldin_score(data, labels, k=5):
     for i in range(n_clusters):
         max_similarity = -np.inf
         for j in range(n_clusters):
-            if i != j:
+            if i!=j:
                 similarity = (cluster_scatter[i] + cluster_scatter[j]) / cluster_distances[i, j]
-                if similarity > max_similarity:
-                    max_similarity = similarity
+                max_similarity = max(max_similarity, similarity)
+
         db_index += max_similarity
     db_index /= n_clusters
 
@@ -176,63 +175,58 @@ def mst_idea(data, labels, k=5):
     n_clusters = len(unique_labels)
 
 
-
     # within cluster distances
-    all_dists = []
-    all_dists_by_cluster = []
+    intra_dists = []
     for i in range(n_clusters):
         dists_by_cluster = []
         cluster = data[labels == i]
         cluster_centroid = centroid_id_from_data(cluster)
-        mst_edges = build_mst(cluster, k=k)
+        cluster_mst_edges = build_mst(cluster, k=k)
 
-        test = [dist for x,y,dist in mst_edges]
+        # test = [dist for x,y,dist in mst_edges]
         # print(np.max(np.array(test)))
         # print(np.mean(np.array(test)))
 
         for sid, sample in enumerate(cluster):
-            dist = find_path_max_edge(mst_edges, sid, cluster_centroid)[0]
-            all_dists.append(dist)
-            dists_by_cluster.append(dist)
-
-        all_dists_by_cluster.append(dists_by_cluster)
-
+            dist = find_path_max_edge(cluster_mst_edges, sid, cluster_centroid)[0]
+            intra_dists.append(dist)
 
     # print([np.max(np.array(dists)) for dists in all_dists_by_cluster])
     # print([np.mean(np.array(dists)) for dists in all_dists_by_cluster])
 
-    all_dists = np.array(all_dists)
+    intra_dists = np.array(intra_dists)
     # print(np.max(all_dists))
     # print(np.mean(all_dists))
 
-
-
     # Calculate cluster means
     centroid_ids = np.array([centroid_id_from_data(data[labels == i], np.where(labels == i)[0]) for i in unique_labels])
-    mst_edges = build_mst(data, k=k)
+    data_mst_edges = build_mst(data, k=k)
 
     inter_dists = []
     for i in range(n_clusters):
-        for j in range(n_clusters):
-            if i != j:
-                inter_dists.append(find_path_max_edge(mst_edges, centroid_ids[i], centroid_ids[j])[0])
+        for j in range(i + 1, n_clusters):
+            inter_dists.append(find_path_max_edge(data_mst_edges, centroid_ids[i], centroid_ids[j])[0])
 
     inter_dists = np.array(inter_dists)
     # print(inter_dists)
     # print(np.min(inter_dists))
     # print()
 
-    return np.max(all_dists) / np.min(inter_dists)
+    return np.max(intra_dists) / np.min(inter_dists)
 
 
 if __name__ == '__main__':
+    import time
+    from sklearn.preprocessing import MinMaxScaler
+    from sklearn.metrics import calinski_harabasz_score
+
     n_samples = 1000
     X, gt = create_data4(n_samples)
 
     X = MinMaxScaler((-1, 1)).fit_transform(X)
     # X, gt = shuffle(X, gt, random_state=7)
 
-    line = diagonal_line(X)
+    line = diagonal_line(X, "first")
     dp = assign_labels_by_given_line(X, line)
 
     line = vertical_line(0)
@@ -265,13 +259,13 @@ if __name__ == '__main__':
     # print(f"ED-DBS: {score} in {time.time() - start:.2f}s")
     # print()
     #
-    # start = time.time()
-    # score = calinski_harabasz_score(X, y)
-    # print(f"CHS: {score} in {time.time() - start:.2f}s")
-    # start = time.time()
-    # score = mst_calinski_harabasz_score(X, y, k=k)
-    # print(f"ED-CHS: {score} in {time.time() - start:.2f}s")
-    # print()
+    start = time.time()
+    score = calinski_harabasz_score(X, y)
+    print(f"CHS: {score} in {time.time() - start:.2f}s")
+    start = time.time()
+    score = mst_calinski_harabasz_score(X, y, k=k)
+    print(f"ED-CHS: {score} in {time.time() - start:.2f}s")
+    print()
 
     score = mst_idea(X, y, k=k)
 

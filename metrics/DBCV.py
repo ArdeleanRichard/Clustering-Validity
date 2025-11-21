@@ -424,3 +424,11 @@ def prim_mst(
     mst[inds_b, inds_a] = weights
 
     return mst
+
+
+if __name__ == "__main__":
+    from load_datasets import create_data1
+    X, y = create_data1(1000)
+
+    dbcv(X, y)
+

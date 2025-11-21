@@ -18,7 +18,7 @@ from metrics.i_index import i_index
 
 from ours.ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 from ours.mst2 import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score
-from ours.mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score
+from ours.mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score, mst_idea
 
 MAP_METRIC_TO_FUNCTION = {
     # CVI metrics
@@ -90,17 +90,17 @@ MAP_METRIC_TO_FUNCTION = {
     "CH": calinski_harabasz_score,
 
     # our metrics
-    # "ED-S": ed_silhouette_score,
-    # "ED-DB": ed_davies_bouldin_score,
-    # "ED-CH": ed_calinski_harabasz_score,
-    # "MST-S": mst_silhouette_score,
-    # "MST-DB": mst_davies_bouldin_score,
-    # "MST-CH": mst_calinski_harabasz_score,
+    "ED-S": ed_silhouette_score,
+    "ED-DB": ed_davies_bouldin_score,
+    "ED-CH": ed_calinski_harabasz_score,
+    "MST-S": mst_silhouette_score,
+    "MST-DB": mst_davies_bouldin_score,
+    "MST-CH": mst_calinski_harabasz_score,
 
     "MST2-S": mst_silhouette_score,
     "MST2-DB": mst_davies_bouldin_score,
     "MST2-CH": mst_calinski_harabasz_score,
-    # # "idea": mst_idea,
+    "idea": mst_idea,
 }
 
 
@@ -132,14 +132,10 @@ MAP_LOWER_IS_BETTER = {
     "mst2-db",
     "idea",
 }
-
-
-MAP_ANALYSIS_EXTERNAL_METRICS = {
+MAP_EXTERNAL_METRICS = {
     "ari": ("ARI", "Adjusted Rand Index", adjusted_rand_score),
     "ami": ("AMI", "Adjusted Mutual Information", adjusted_mutual_info_score),
 }
-
-
-MAP_ANALYSIS_INTERNAL_METRICS = {
+MAP_INTERNAL_METRICS = {
     "silhouette": ("Silhouette Score", silhouette_score),
 }
