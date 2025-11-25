@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
 from constants import FOLDER_FIGS_ANALYSIS_ESTIMATE, random_state
-from constants_maps import MAP_ANALYSIS_INTERNAL_METRICS
+from constants_maps import MAP_INTERNAL_METRICS
 from load_datasets import create_data4
 
 
@@ -15,7 +15,7 @@ def compute_centroids(X, labels):
 
 
 def scatter_plot(ax, title, cvi_str, X, nr_clusts, labels=None):
-    cvi_name_full, cvi_function = MAP_ANALYSIS_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
     # For visualization, use first 2 dimensions if data is high-dimensional
     if X.shape[1] == 2:
         X_plot = X
@@ -78,7 +78,7 @@ def analyze_score(cvi_str, X, true_labels, k_range=None, dataset_name="dataset")
     pd.DataFrame
         DataFrame containing K values and their scores
     """
-    cvi_name_full, cvi_function = MAP_ANALYSIS_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
 
     true_k = len(np.unique(true_labels))
 

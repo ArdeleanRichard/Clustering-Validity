@@ -21,18 +21,22 @@ LABEL_COLOR_MAP = {
 }
 
 
-FOLDER_RESULTS = f"./results/"
-FOLDER_FIGS_DATA = f"./figs/data/"
-FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
-FOLDER_FIGS_ANALYSIS_ESTIMATE = f"./figs/analysis/estimate_k/"
-FOLDER_FIGS_ANALYSIS_EXTERNAL = f"./figs/analysis/external/"
-FOLDER_FIGS_ANALYSIS_INTERNAL = f"./figs/analysis/internal/"
+target_path = "C:/WORK/Clustering-Validity/"
+current_path = os.getcwd()
 
-os.makedirs(FOLDER_RESULTS, exist_ok=True)
-os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
-os.makedirs(FOLDER_FIGS_ANALYSIS_ESTIMATE, exist_ok=True)
-os.makedirs(FOLDER_FIGS_ANALYSIS_EXTERNAL, exist_ok=True)
-os.makedirs(FOLDER_FIGS_ANALYSIS_INTERNAL, exist_ok=True)
+if os.path.abspath(current_path) == os.path.abspath(target_path):
+    FOLDER_RESULTS = f"./results/"
+    FOLDER_FIGS_DATA = f"./figs/data/"
+    FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
+    FOLDER_FIGS_ANALYSIS_ESTIMATE = f"./figs/analysis/estimate_k/"
+    FOLDER_FIGS_ANALYSIS_EXTERNAL = f"./figs/analysis/external/"
+    FOLDER_FIGS_ANALYSIS_INTERNAL = f"./figs/analysis/internal/"
+
+    os.makedirs(FOLDER_RESULTS, exist_ok=True)
+    os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
+    os.makedirs(FOLDER_FIGS_ANALYSIS_ESTIMATE, exist_ok=True)
+    os.makedirs(FOLDER_FIGS_ANALYSIS_EXTERNAL, exist_ok=True)
+    os.makedirs(FOLDER_FIGS_ANALYSIS_INTERNAL, exist_ok=True)
 
 
 

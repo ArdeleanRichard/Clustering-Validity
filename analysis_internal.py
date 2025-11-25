@@ -2,9 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
 
-from analysis_measures import MAP_MEASURES
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_INTERNAL
-from constants_maps import MAP_ANALYSIS_INTERNAL_METRICS
+from constants_maps import MAP_INTERNAL_METRICS, MAP_MEASURES
 from load_datasets import generate_clusters_analysis
 
 
@@ -12,7 +11,7 @@ from load_datasets import generate_clusters_analysis
 # -------------------- Plot helpers --------------------
 
 def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, cvi_fl_arr, chosen_idx, datasets, save_filename):
-    cvi_name_full, cvi_function = MAP_ANALYSIS_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
     val_name = MAP_MEASURE_TO_VARIABLE[measure_str]
     labelset_name, labelset, line_func = MAP_LABELSET[labelset_str]
@@ -38,7 +37,7 @@ def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, c
     # Line-split labeling
     labelset_false_colors = [LABEL_COLOR_MAP[i] for i in false_labels]
     axes[1].scatter(X_plot[:, 0], X_plot[:, 1], c=labelset_false_colors, s=25, alpha=0.7)
-    p1, p2 = line_func(X)  # Get the two points for plotting
+    p1, p2 = line_func(X_plot)  # Get the two points for plotting
     axes[1].plot([p1[0], p2[0]], [p1[1], p2[1]], 'k--', linewidth=2, alpha=0.8)  # general line
     axes[1].set_title(
         f'{labelset_name} split labels ({labelset_str.upper()}) \n{val_name}={val}, {measure_name_acronym}={measure_val:.2f}\n'
@@ -110,28 +109,6 @@ def generate_analysis_datasets(
     return datasets
 
 
-MAP_MEASURE_TO_VARIABLE = {
-    "imbalance": "n_minority",
-    "overlap": "distance"
-}
-
-
-
-MAP_LABELSET = {
-    "hl": (
-        "Horizontal",
-        lambda X: (X[:, 1] > ((X[:, 1].min() + X[:, 1].max()) / 2.0)).astype(int),
-        lambda X: ((X[:, 0].min(), (X[:, 1].min() + X[:, 1].max()) / 2.0), (X[:, 0].max(), (X[:, 1].min() + X[:, 1].max()) / 2.0))
-    ),
-    "vl": (
-        "Vertical",
-        lambda X: (X[:, 0] > ((X[:, 0].min() + X[:, 0].max()) / 2.0)).astype(int),
-        lambda X: (((X[:, 0].min() + X[:, 0].max()) / 2.0, X[:, 1].min()), ((X[:, 0].min() + X[:, 0].max()) / 2.0, X[:, 1].max())),
-    ),
-}
-
-
-
 def analyze_measure(
     cvi_str,
     measure_str,
@@ -147,7 +124,7 @@ def analyze_measure(
     the true labeling (or the horizontal split with max silhouette if none).
     Returns (measure_arr, cvi_tl_arr, cvi_hl_arr).
     """
-    cvi_name_full, cvi_function = MAP_ANALYSIS_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
 
     set_plot_style()
@@ -171,7 +148,7 @@ def analyze_measure(
         cvi_tl_list.append(cvi_true)
 
         # split by horizontal/vertical
-        labels_false = MAP_LABELSET[measure_str]
+        labelset_name, line, labels_false = MAP_LABELSET[measure_str]
 
         if len(np.unique(labels_false)) < 2:
             cvi_horiz = np.nan
@@ -182,7 +159,7 @@ def analyze_measure(
                 cvi_horiz = np.nan
         cvi_hl_list.append(cvi_horiz)
 
-        datasets_infos.append((X, labels_false, labels_true, y_mid, val, measure_score))
+        datasets_infos.append((X, labels_false, labels_true, line, val, measure_score))
 
     measure_arr = np.asarray(measure_list)
     cvi_tl_arr = np.asarray(cvi_tl_list)

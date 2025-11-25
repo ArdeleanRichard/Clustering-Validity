@@ -17,6 +17,7 @@ from metrics.i_index import i_index
 
 
 from ours.ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
+from ours.measures import imbalance_ratio, overlap_ratio
 from ours.mst2 import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score
 from ours.mst_scores import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score, mst_idea
 
@@ -132,10 +133,43 @@ MAP_LOWER_IS_BETTER = {
     "mst2-db",
     "idea",
 }
+
+
 MAP_EXTERNAL_METRICS = {
     "ari": ("ARI", "Adjusted Rand Index", adjusted_rand_score),
     "ami": ("AMI", "Adjusted Mutual Information", adjusted_mutual_info_score),
 }
+
+
 MAP_INTERNAL_METRICS = {
     "silhouette": ("Silhouette Score", silhouette_score),
 }
+
+
+MAP_MEASURES = {
+    "imbalance": ("IR", "Imbalance Ratio", imbalance_ratio),
+    "overlap": ("OR", "Overlap Ratio", overlap_ratio),
+}
+
+
+MAP_MEASURE_TO_VARIABLE = {
+    "imbalance": "n_minority",
+    "overlap": "distance"
+}
+
+
+
+MAP_LABELSET = {
+    "hl": (
+        "Horizontal",
+        lambda X: (X[:, 1] > ((X[:, 1].min() + X[:, 1].max()) / 2.0)).astype(int),
+        lambda X: ((X[:, 0].min(), (X[:, 1].min() + X[:, 1].max()) / 2.0), (X[:, 0].max(), (X[:, 1].min() + X[:, 1].max()) / 2.0))
+    ),
+    "vl": (
+        "Vertical",
+        lambda X: (X[:, 0] > ((X[:, 0].min() + X[:, 0].max()) / 2.0)).astype(int),
+        lambda X: (((X[:, 0].min() + X[:, 0].max()) / 2.0, X[:, 1].min()), ((X[:, 0].min() + X[:, 0].max()) / 2.0, X[:, 1].max())),
+    ),
+}
+
+
