@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
 
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_INTERNAL
-from constants_maps import MAP_INTERNAL_METRICS, MAP_MEASURES
+from constants_maps import MAP_INTERNAL_METRICS, MAP_MEASURES, MAP_MEASURE_TO_VARIABLE, MAP_LABELSET
 from load_datasets import generate_clusters_analysis
 
 
@@ -148,7 +148,8 @@ def analyze_measure(
         cvi_tl_list.append(cvi_true)
 
         # split by horizontal/vertical
-        labelset_name, line, labels_false = MAP_LABELSET[measure_str]
+        labelset_name, labelset_function, line = MAP_LABELSET[labelset_str]
+        labels_false = labelset_function(X)
 
         if len(np.unique(labels_false)) < 2:
             cvi_horiz = np.nan
@@ -173,6 +174,7 @@ def analyze_measure(
 
     plot_analysis(cvi_str,
                   measure_str,
+                  labelset_str,
                   measure_arr,
                   cvi_tl_arr,
                   cvi_fl_arr,
@@ -180,7 +182,7 @@ def analyze_measure(
                   chosen_idx=chosen_idx,
                   datasets=datasets_infos,
 
-                  save_filename=f"{save_filename}_{measure_str}_{labelset_str}_{cvi_str}")
+                  save_filename=f"{save_filename}_{cvi_str}_{measure_str}_{labelset_str}")
 
 
     return measure_arr, cvi_tl_arr, cvi_fl_arr
@@ -192,12 +194,14 @@ def main():
     print("\n" + "=" * 60)
     print("ANALYSIS: Overlap vs SILHOUETTE")
     print("=" * 60)
-    analyze_measure("silhouette", "overlap")
+    analyze_measure("silhouette", "overlap", "hl")
+    analyze_measure("silhouette", "overlap", "vl")
 
     print("\n" + "=" * 60)
     print("ANALYSIS: Imbalance vs SILHOUETTE")
     print("=" * 60)
-    analyze_measure("silhouette", "imbalance")
+    analyze_measure("silhouette", "imbalance", "hl")
+    analyze_measure("silhouette", "imbalance", "vl")
 
 
 if __name__ == "__main__":

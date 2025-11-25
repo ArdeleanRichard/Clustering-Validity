@@ -19,7 +19,7 @@ def analyze_external_index_vs_imbalance(cvi_str, measure_str, scales=np.linspace
 
     for i, s in enumerate(scales):
         X, y_true = generate_unbalance_like(UNBALANCE_STATS, MAJORITY_IDS, MINORITY_IDS, scale_minority=s)
-        measure_value = measure_function(y_true)
+        measure_value = measure_function(X, y_true)
 
         # Randomize labels ONLY for originally small clusters
         y_rand = y_true.copy()
