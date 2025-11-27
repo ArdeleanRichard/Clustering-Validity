@@ -31,11 +31,113 @@ _MP = mpmath.mp.clone()
 def compute_pair_to_pair_dists(
     X: npt.NDArray[np.float64], metric: str
 ) -> npt.NDArray[np.float64]:
+    """
+    Compute the full pairwise dissimilarity matrix between rows of X using scipy.spatial.distance.cdist.
+    - ensures diagonal is set to +inf (so a point is never considered its own nearest neighbor),
+    - clips minimal distances to a small positive constant to avoid exact zeros.
+    """
     dists = scipy.spatial.distance.cdist(X, X, metric=metric)
+    # Avoid zeros (for stable inverse/power ops later)
     np.maximum(dists, 1e-12, out=dists)
-    # NOTE: set self-distance to +inf to prevent points being self-neighbors.
+    # NOTE: set self-distance to +inf to avoid self-neighbors.
     np.fill_diagonal(dists, val=np.inf)
     return dists
+
+
+
+def _check_duplicated_samples(X: npt.NDArray[np.float64], threshold: float = 1e-9):
+    """
+    Detect near-duplicate rows in X using 1-NN distances.
+    Raises ValueError if any pair distance < threshold.
+    """
+    if X.shape[0] <= 1:
+        return
+
+    nn = sklearn.neighbors.NearestNeighbors(n_neighbors=1)
+    nn.fit(X)
+    dists, _ = nn.kneighbors(return_distance=True)
+
+    if np.any(dists < threshold):
+        raise ValueError("Duplicated samples have been found in X.")
+
+
+
+def _convert_singleton_clusters_to_noise(
+    y: npt.NDArray[np.int32], noise_id: int
+) -> npt.NDArray[np.int32]:
+    """
+    Convert clusters with a single member to noise.
+    """
+    cluster_ids, cluster_sizes = np.unique(y, return_counts=True)
+    singleton_clusters = cluster_ids[cluster_sizes == 1]
+
+    if singleton_clusters.size == 0:
+        return y
+
+    return np.where(np.isin(y, singleton_clusters), noise_id, y)
+
+
+
+
+
+
+def prim_mst(
+    graph: npt.NDArray[np.float32], ind_root: int = 0
+) -> npt.NDArray[np.float32]:
+    """Python translation of the original implementation of Prim's MST in MATLAB.
+
+    Reference source: https://github.com/pajaskowiak/dbcv/blob/main/src/MST_Edges.m
+    """
+    n = len(graph)
+    intree = np.full(n, fill_value=False) # nodes already in tree
+    d = np.full(n, fill_value=np.inf) # best distance to tree for each node
+
+    d[ind_root] = 0
+    v = ind_root
+    counter = 0
+
+    # OPTIMIZATION: Pre-allocate arrays to store edges and weights (n-1 edges)
+    node_inds = np.zeros((n - 1, 2), dtype=int)
+    weights = np.zeros(n - 1, dtype=float)
+    mst_parent = np.arange(n)
+
+    # OPTIMIZATION: Pre-compute range
+    node_range = np.arange(n)
+
+    while counter < n - 1:
+        intree[v] = True
+        dist = np.inf
+
+        # OPTIMIZATION: Vectorize inner loop where possible
+        mask = ~intree & (node_range != v)
+        candidates = node_range[mask]
+
+        for w in candidates:
+            weight = graph[v, w]
+
+            # update best-known connection to the tree
+            if d[w] > weight:
+                d[w] = weight
+                mst_parent[w] = v
+
+            # pick the next vertex with smallest distance to the tree
+            if dist > d[w]:
+                dist = d[w]
+                next_v = w
+
+        counter += 1
+        node_inds[counter - 1, :] = (mst_parent[next_v], next_v)
+        weights[counter - 1] = graph[mst_parent[next_v], next_v]
+        v = next_v
+
+    # OPTIMIZATION: Construct sparse result more efficiently
+    inds_a, inds_b = node_inds.T
+
+    mst = np.zeros_like(graph)
+    mst[inds_a, inds_b] = weights
+    mst[inds_b, inds_a] = weights
+
+    return mst
 
 
 def get_subarray(
@@ -51,6 +153,59 @@ def get_subarray(
         return arr[np.ix_(inds_a, inds_a)]
     # OPTIMIZATION: Use np.ix_ instead of meshgrid (more efficient)
     return arr[np.ix_(inds_a, inds_b)]
+
+
+def compute_cluster_core_distance(
+    dists: npt.NDArray[np.float64], d: int, enable_dynamic_precision: bool
+) -> npt.NDArray[np.float64]:
+    """
+    Compute the core distance for each object in a cluster given the pairwise distances matrix dists.
+    For a cluster of size n, the core distance of object i is:
+        core_i = ( (1/(n-1)) * sum_j d_ij^{-d} )^{-1/d}
+    Here d is the dimensionality parameter passed in (the original algorithm uses embedding dimension).
+    If enable_dynamic_precision is True, use mpmath with increased precision for the power/sum operations
+    to avoid underflow/overflow in high dimensions.
+    """
+    n, _ = dists.shape
+    orig_dists_dtype = dists.dtype
+
+    if enable_dynamic_precision:
+        # convert to mpmath-friendly representation (object dtype with high precision arithmetic)
+        dists = np.asarray(_MP.matrix(dists), dtype=object).reshape(*dists.shape)
+
+    # OPTIMIZATION: Combine power operations more efficiently
+    # core_dists = ( (1/(n-1)) * sum_j (d_ij^{-d}) )^{-1/d}
+    core_dists = np.power(dists, -d).sum(axis=-1, keepdims=True) / (n - 1)
+
+    if not enable_dynamic_precision:
+        # clip extreme values for numeric stability if not using high precision
+        np.clip(core_dists, a_min=0.0, a_max=1e12, out=core_dists)
+
+    # final power to compute inverse -1/d
+    np.power(core_dists, -1.0 / d, out=core_dists)
+
+    if enable_dynamic_precision:
+        # convert back to float array type
+        core_dists = np.asarray(core_dists, dtype=orig_dists_dtype)
+
+    return core_dists
+
+
+def compute_mutual_reach_dists(
+    dists: npt.NDArray[np.float64],
+    d: float,
+    enable_dynamic_precision: bool,
+) -> npt.NDArray[np.float64]:
+    """
+    Compute core distances and mutual reachability distances for all pairs in a cluster.
+    mutual_reach(i,j) = max( d_ij, core_i, core_j )
+    """
+    core_dists = compute_cluster_core_distance(
+        d=d, dists=dists, enable_dynamic_precision=enable_dynamic_precision
+    )
+    # OPTIMIZATION: Use np.maximum chaining more efficiently
+    mutual_reach_dists = np.maximum(np.maximum(dists, core_dists), core_dists.T)
+    return (core_dists, mutual_reach_dists)
 
 
 def get_internal_objects(
@@ -75,48 +230,14 @@ def get_internal_objects(
     if internal_node_inds.size == 0:
         return np.arange(mutual_reach_dists.shape[0]), mst
 
+    # restrict MST to internal nodes
     internal_edge_weights = mst[np.ix_(internal_node_inds, internal_node_inds)]
 
+    # if the internal subgraph has <= 1 weight entry, nothing more to compute
     if internal_edge_weights.size <= 1:
         return internal_node_inds, mst
 
     return internal_node_inds, internal_edge_weights
-
-
-def compute_cluster_core_distance(
-    dists: npt.NDArray[np.float64], d: int, enable_dynamic_precision: bool
-) -> npt.NDArray[np.float64]:
-    n, _ = dists.shape
-    orig_dists_dtype = dists.dtype
-
-    if enable_dynamic_precision:
-        dists = np.asarray(_MP.matrix(dists), dtype=object).reshape(*dists.shape)
-
-    # OPTIMIZATION: Combine power operations more efficiently
-    core_dists = np.power(dists, -d).sum(axis=-1, keepdims=True) / (n - 1)
-
-    if not enable_dynamic_precision:
-        np.clip(core_dists, a_min=0.0, a_max=1e12, out=core_dists)
-
-    np.power(core_dists, -1.0 / d, out=core_dists)
-
-    if enable_dynamic_precision:
-        core_dists = np.asarray(core_dists, dtype=orig_dists_dtype)
-
-    return core_dists
-
-
-def compute_mutual_reach_dists(
-    dists: npt.NDArray[np.float64],
-    d: float,
-    enable_dynamic_precision: bool,
-) -> npt.NDArray[np.float64]:
-    core_dists = compute_cluster_core_distance(
-        d=d, dists=dists, enable_dynamic_precision=enable_dynamic_precision
-    )
-    # OPTIMIZATION: Use np.maximum chaining more efficiently
-    mutual_reach_dists = np.maximum(np.maximum(dists, core_dists), core_dists.T)
-    return (core_dists, mutual_reach_dists)
 
 
 def fn_density_sparseness(
@@ -126,6 +247,12 @@ def fn_density_sparseness(
     enable_dynamic_precision: bool,
     use_original_mst_implementation: bool,
 ) -> t.Tuple[float, npt.NDArray[np.float32], npt.NDArray[np.int32]]:
+    """
+    Compute Density Sparseness (DSC) and internal-core-distances for a single cluster.
+    Inputs:
+      - cls_inds: indices of points (global indices) belonging to this cluster (used only to map internal node indices back)
+      - dists: pairwise distances between points in the cluster (cluster-local matrix)
+    """
     (core_dists, mutual_reach_dists) = compute_mutual_reach_dists(
         dists=dists, d=d, enable_dynamic_precision=enable_dynamic_precision
     )
@@ -146,35 +273,19 @@ def fn_density_separation(
     internal_core_dists_i: npt.NDArray[np.float64],
     internal_core_dists_j: npt.NDArray[np.float64],
 ) -> t.Tuple[int, int, float]:
+    """
+    Compute Density Separation (DSPC) between two clusters using their internal nodes and core distances.
+    The separation matrix between internal nodes is:
+       sep_ij = max( dists_ij, core_i (broadcasted), core_j^T (broadcasted) )
+    The DSPC is the minimal value of this sep matrix.
+    """
     # OPTIMIZATION: Use np.maximum chaining instead of multiple in-place operations
     sep = np.maximum(np.maximum(dists, internal_core_dists_i), internal_core_dists_j.T)
     dspc_ij = float(sep.min()) if sep.size else np.inf
     return (cls_i, cls_j, dspc_ij)
 
 
-def _check_duplicated_samples(X: npt.NDArray[np.float64], threshold: float = 1e-9):
-    if X.shape[0] <= 1:
-        return
 
-    nn = sklearn.neighbors.NearestNeighbors(n_neighbors=1)
-    nn.fit(X)
-    dists, _ = nn.kneighbors(return_distance=True)
-
-    if np.any(dists < threshold):
-        raise ValueError("Duplicated samples have been found in X.")
-
-
-def _convert_singleton_clusters_to_noise(
-    y: npt.NDArray[np.int32], noise_id: int
-) -> npt.NDArray[np.int32]:
-    """Cast clusters containing a single instance as noise."""
-    cluster_ids, cluster_sizes = np.unique(y, return_counts=True)
-    singleton_clusters = cluster_ids[cluster_sizes == 1]
-
-    if singleton_clusters.size == 0:
-        return y
-
-    return np.where(np.isin(y, singleton_clusters), noise_id, y)
 
 
 def dbcv(
@@ -368,62 +479,6 @@ def dbcv(
 
     return dbcv
 
-
-def prim_mst(
-    graph: npt.NDArray[np.float32], ind_root: int = 0
-) -> npt.NDArray[np.float32]:
-    """Python translation of the original implementation of Prim's MST in MATLAB.
-
-    Reference source: https://github.com/pajaskowiak/dbcv/blob/main/src/MST_Edges.m
-    """
-    n = len(graph)
-    intree = np.full(n, fill_value=False)
-    d = np.full(n, fill_value=np.inf)
-
-    d[ind_root] = 0
-    v = ind_root
-    counter = 0
-
-    # OPTIMIZATION: Pre-allocate arrays
-    node_inds = np.zeros((n - 1, 2), dtype=int)
-    weights = np.zeros(n - 1, dtype=float)
-    mst_parent = np.arange(n)
-
-    # OPTIMIZATION: Pre-compute range
-    node_range = np.arange(n)
-
-    while counter < n - 1:
-        intree[v] = True
-        dist = np.inf
-
-        # OPTIMIZATION: Vectorize inner loop where possible
-        mask = ~intree & (node_range != v)
-        candidates = node_range[mask]
-
-        for w in candidates:
-            weight = graph[v, w]
-
-            if d[w] > weight:
-                d[w] = weight
-                mst_parent[w] = v
-
-            if dist > d[w]:
-                dist = d[w]
-                next_v = w
-
-        counter += 1
-        node_inds[counter - 1, :] = (mst_parent[next_v], next_v)
-        weights[counter - 1] = graph[mst_parent[next_v], next_v]
-        v = next_v
-
-    # OPTIMIZATION: Construct sparse result more efficiently
-    inds_a, inds_b = node_inds.T
-
-    mst = np.zeros_like(graph)
-    mst[inds_a, inds_b] = weights
-    mst[inds_b, inds_a] = weights
-
-    return mst
 
 
 if __name__ == "__main__":

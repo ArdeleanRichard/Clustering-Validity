@@ -1,9 +1,10 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.utils import shuffle
 
-from constants import LABEL_COLOR_MAP, FOLDER_RESULTS, FOLDER_FIGS_DATA
+from constants import LABEL_COLOR_MAP, FOLDER_RESULTS, FOLDER_FIGS_DATA, LABEL_COLOR_MAP_LARGE
 from load_datasets import create_set1, create_set_g, create_set_a, create_set_s, create_set_graves, create_set_sipu, \
     create_set_uci, create_set_wut
 from load_labelsets import diagonal_line, vertical_line, assign_labels_by_given_line, horizontal_line
@@ -46,8 +47,7 @@ def load_labelsets(X, gt, scale, label_sets, list_labelsets):
 
 def choose_colors(labels):
     if len(np.unique(labels)) > len(LABEL_COLOR_MAP.keys()):
-        cmap = plt.cm.get_cmap("gist_ncar", len(labels))
-        label_color = [cmap(i) for i in range(len(labels))]
+        label_color = [LABEL_COLOR_MAP_LARGE[i] for i in labels]
     else:
         # use your custom colors
         label_color = [LABEL_COLOR_MAP[i] for i in labels]
@@ -80,9 +80,9 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
 
 
 def run_scores_set1(plot=False):
-    datasets = create_set1(n_samples=1000)
+    # datasets = create_set1(n_samples=1000)
     # datasets = create_set_g(dims=2)
-    # datasets = create_set_a()
+    datasets = create_set_a()
     # datasets = create_set_s()
     # datasets = create_set_graves()
     # datasets = create_set_sipu()
