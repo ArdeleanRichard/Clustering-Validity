@@ -3,38 +3,33 @@ from collections import defaultdict, deque
 import heapq
 
 
-class MSTDistanceComputer:
+class DistanceCalculator:
     """
-    Efficient MST-based distance computation with caching and optimizations.
-    Build MST once, query distances many times.
+    MST-based distance computation
     """
 
-    def __init__(self, data, k=5, precompute_all=False):
+    def __init__(self, data, k=5):
         """
-        Initialize with data and build MST once.
+        Initialize with data and build MST.
 
         Parameters:
         - data: ndarray, shape (n_samples, n_features)
         - k: int, number of nearest neighbors for MST construction
-        - precompute_all: bool, whether to precompute all pairwise distances (memory vs speed tradeoff)
         """
         self.data = data
         self.n_samples = len(data)
         self.k = k
 
-        # Build MST once
+        # Build MST
         self.edges = self._build_mst_optimized()
         self.adj = self._build_adjacency_list()
 
         # Cache for distance queries
         self._distance_cache = {}
 
-        # Optionally precompute all distances (O(n²) space, O(1) query)
-        if precompute_all and self.n_samples < 5000:  # Only for smaller datasets
-            self._precompute_all_distances()
 
     def _build_mst_optimized(self):
-        """Build MST using Prim's with k-NN, optimized version."""
+        """Build MST using Prim's with k-NN"""
         n = self.n_samples
         visited = np.zeros(n, dtype=bool)
         edges = []
@@ -82,15 +77,6 @@ class MSTDistanceComputer:
             adj[u].append((v, dist))
             adj[v].append((u, dist))
         return adj
-
-    def _precompute_all_distances(self):
-        """Precompute all pairwise MST distances. Use for small datasets only."""
-        print(f"Precomputing all {self.n_samples}² distances...")
-        for i in range(self.n_samples):
-            for j in range(i + 1, self.n_samples):
-                dist = self.get_distance(i, j)
-                # Both directions are cached by get_distance
-        print("Precomputation complete!")
 
     def get_distance(self, start, end):
         """
@@ -140,7 +126,7 @@ class MSTDistanceComputer:
 
     def get_distances_to_point(self, target):
         """
-        Get distances from target to all other points efficiently.
+        Distances from a target to all other points
         Returns array of shape (n_samples,).
         """
         distances = np.zeros(self.n_samples)
@@ -166,7 +152,7 @@ class MSTDistanceComputer:
 
     def get_distances_to_multiple(self, targets):
         """
-        Efficiently compute distances from multiple targets to all points.
+        Distances from multiple targets to all points.
         Returns matrix of shape (len(targets), n_samples).
         """
         distance_matrix = np.zeros((len(targets), self.n_samples))
@@ -176,7 +162,7 @@ class MSTDistanceComputer:
 
 
 def centroid_id_from_data_fast(data, indices=None):
-    """Optimized centroid finding using vectorization."""
+    """Optimized centroid finding - vectorization."""
     if len(data) == 1:
         return indices[0] if indices is not None else 0
 
@@ -199,17 +185,16 @@ def mst_silhouette_score(data, labels, k=5):
         return 0.0
 
     # Build MST once
-    mst_computer = MSTDistanceComputer(data, k=k)
+    dist_calculator = DistanceCalculator(data, k=k)
 
     # Find centroids
     centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label],
-                                   indices=np.where(labels == label)[0])
+        centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
         for label in unique_labels
     ])
 
     # Get distances from all centroids to all points efficiently
-    distance_matrix = mst_computer.get_distances_to_multiple(centroid_ids).T
+    distance_matrix = dist_calculator.get_distances_to_multiple(centroid_ids).T
 
     # Compute intra-cluster distances (distance to own cluster centroid)
     label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
@@ -239,12 +224,11 @@ def mst_davies_bouldin_score(data, labels, k=5):
     n_clusters = len(unique_labels)
 
     # Build MST once
-    mst_computer = MSTDistanceComputer(data, k=k)
+    dist_calculator = DistanceCalculator(data, k=k)
 
     # Find centroids
     centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label],
-                                   indices=np.where(labels == label)[0])
+        centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
         for label in unique_labels
     ])
 
@@ -252,7 +236,7 @@ def mst_davies_bouldin_score(data, labels, k=5):
     cluster_distances = np.zeros((n_clusters, n_clusters))
     for i in range(n_clusters):
         for j in range(i + 1, n_clusters):
-            dist = mst_computer.get_distance(centroid_ids[i], centroid_ids[j])
+            dist = dist_calculator.get_distance(centroid_ids[i], centroid_ids[j])
             cluster_distances[i, j] = dist
             cluster_distances[j, i] = dist
 
@@ -263,7 +247,7 @@ def mst_davies_bouldin_score(data, labels, k=5):
         cluster_indices = np.where(cluster_mask)[0]
 
         if len(cluster_indices) > 0:
-            distances = mst_computer.get_distances_to_point(centroid_ids[i])
+            distances = dist_calculator.get_distances_to_point(centroid_ids[i])
             cluster_scatter[i] = np.mean(distances[cluster_indices])
 
     # Compute Davies-Bouldin index
@@ -287,12 +271,11 @@ def mst_calinski_harabasz_score(data, labels, k=5):
     n_clusters = len(unique_labels)
 
     # Build MST once
-    mst_computer = MSTDistanceComputer(data, k=k)
+    dist_calculator = DistanceCalculator(data, k=k)
 
     # Find cluster centroids
     centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label],
-                                   indices=np.where(labels == label)[0])
+        centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
         for label in unique_labels
     ])
 
@@ -303,14 +286,14 @@ def mst_calinski_harabasz_score(data, labels, k=5):
     between_ss = 0.0
     for i, label in enumerate(unique_labels):
         cluster_size = np.sum(labels == label)
-        dist = mst_computer.get_distance(overall_centroid_id, centroid_ids[i])
+        dist = dist_calculator.get_distance(overall_centroid_id, centroid_ids[i])
         between_ss += dist * cluster_size
 
     # Within-cluster sum of squares
     within_ss = 0.0
     for i, label in enumerate(unique_labels):
         cluster_indices = np.where(labels == label)[0]
-        distances = mst_computer.get_distances_to_point(centroid_ids[i])
+        distances = dist_calculator.get_distances_to_point(centroid_ids[i])
         within_ss += np.sum(distances[cluster_indices])
 
     # Calinski-Harabasz index
@@ -335,7 +318,7 @@ def mst_separation_ratio(data, labels, k=5):
     for label in unique_labels:
         cluster_data = data[labels == label]
         if len(cluster_data) > 1:
-            cluster_mst = MSTDistanceComputer(cluster_data, k=min(k, len(cluster_data) - 1))
+            cluster_mst = DistanceCalculator(cluster_data, k=min(k, len(cluster_data) - 1))
             cluster_centroid_id = centroid_id_from_data_fast(cluster_data)
 
             # Maximum distance from centroid to any point in cluster
@@ -343,7 +326,7 @@ def mst_separation_ratio(data, labels, k=5):
             max_intra_dist = max(max_intra_dist, np.max(distances))
 
     # For inter-cluster distances, use full MST
-    full_mst = MSTDistanceComputer(data, k=k)
+    full_mst = DistanceCalculator(data, k=k)
     centroid_ids = np.array([
         centroid_id_from_data_fast(data[labels == label],
                                    indices=np.where(labels == label)[0])

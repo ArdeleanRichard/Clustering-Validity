@@ -1,11 +1,11 @@
 import numpy as np
 
 from load_datasets import create_data4
-from ours.mst_distance import centroid_id_from_data, find_path_max_edge, build_mst
+from ours.old.mst_distance import centroid_id_from_data, find_path_max_edge, build_mst
 from load_labelsets import diagonal_line, assign_labels_by_given_line, vertical_line, horizontal_line
 
 
-def mst_silhouette_score(data, labels, k=5):
+def mst_silhouette_score_first(data, labels, k=5):
     """
     Calculate the Silhouette score for a given set of labels.
 
@@ -54,7 +54,7 @@ def mst_silhouette_score(data, labels, k=5):
     return mean_silhouette_score
 
 
-def mst_davies_bouldin_score(data, labels, k=5):
+def mst_davies_bouldin_score_first(data, labels, k=5):
     """
     Calculate the Davies-Bouldin score for a given set of labels.
 
@@ -117,7 +117,7 @@ def mst_davies_bouldin_score(data, labels, k=5):
     return db_index
 
 
-def mst_calinski_harabasz_score(data, labels, k=5):
+def mst_calinski_harabasz_score_first(data, labels, k=5):
     """
     Calculate the Calinski-Harabasz score for a given set of labels.
 
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     score = calinski_harabasz_score(X, y)
     print(f"CHS: {score} in {time.time() - start:.2f}s")
     start = time.time()
-    score = mst_calinski_harabasz_score(X, y, k=k)
+    score = mst_calinski_harabasz_score_first(X, y, k=k)
     print(f"ED-CHS: {score} in {time.time() - start:.2f}s")
     print()
 

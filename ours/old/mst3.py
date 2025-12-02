@@ -358,7 +358,7 @@ from typing import Tuple, Optional
 # CORE PRINCIPLE FROM DBCV: Precompute expensive structures, reuse everywhere
 # ============================================================================
 
-def mst_silhouette_score(data, labels, k=5):
+def mst_silhouette_score3(data, labels, k=5):
     """
     HIGHLY OPTIMIZED: MST-based Silhouette score.
 
@@ -416,7 +416,7 @@ def mst_silhouette_score(data, labels, k=5):
     return float(np.mean(silhouette_coefficients))
 
 
-def mst_davies_bouldin_score(data, labels, k=5):
+def mst_davies_bouldin_score3(data, labels, k=5):
     """
     HIGHLY OPTIMIZED: MST-based Davies-Bouldin score.
 
@@ -465,7 +465,7 @@ def mst_davies_bouldin_score(data, labels, k=5):
     return float(db_index / n_clusters) if n_clusters > 0 else 0.0
 
 
-def mst_calinski_harabasz_score(data, labels, k=5):
+def mst_calinski_harabasz_score3(data, labels, k=5):
     """
     HIGHLY OPTIMIZED: MST-based Calinski-Harabasz score.
 
