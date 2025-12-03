@@ -8,21 +8,6 @@ np.random.seed(random_state)
 LABEL_COLOR_MAP = {
     -1: 'gray',
     0: 'red',
-    1: 'blue',
-    2: 'green',
-    3: 'yellow',
-    4: 'magenta',
-    5: 'cyan',
-    6: 'wheat',
-    7: 'yellowgreen',
-    8: 'orchid',
-    9: 'tab:orange',
-    10: 'tab:brown',
-}
-
-LABEL_COLOR_MAP_LARGE = {
-    -1: 'gray',
-    0: 'red',
     1: 'mediumblue',
     2: 'green',
     3: 'yellow',

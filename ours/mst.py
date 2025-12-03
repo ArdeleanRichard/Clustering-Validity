@@ -326,7 +326,7 @@ def mst_separation_ratio(data, labels, k=5):
             max_intra_dist = max(max_intra_dist, np.max(distances))
 
     # For inter-cluster distances, use full MST
-    full_mst = DistanceCalculator(data, k=k)
+    mst = DistanceCalculator(data, k=k)
     centroid_ids = np.array([
         centroid_id_from_data_fast(data[labels == label],
                                    indices=np.where(labels == label)[0])
@@ -337,7 +337,7 @@ def mst_separation_ratio(data, labels, k=5):
     min_inter_dist = np.inf
     for i in range(n_clusters):
         for j in range(i + 1, n_clusters):
-            dist = full_mst.get_distance(centroid_ids[i], centroid_ids[j])
+            dist = mst.get_distance(centroid_ids[i], centroid_ids[j])
             min_inter_dist = min(min_inter_dist, dist)
 
     if min_inter_dist == 0 or min_inter_dist == np.inf:
@@ -346,9 +346,8 @@ def mst_separation_ratio(data, labels, k=5):
     return max_intra_dist / min_inter_dist
 
 
-# Performance comparison utility
+
 def compare_performance():
-    """Compare old vs new implementation performance."""
     from time import time
     from load_datasets import create_data4
     from sklearn.preprocessing import MinMaxScaler
@@ -362,7 +361,6 @@ def compare_performance():
         X = MinMaxScaler((-1, 1)).fit_transform(X)
 
         k = 5
-
         # Silhouette score
         start = time()
         score_opt = mst_silhouette_score(X, labels, k=k)
@@ -380,12 +378,6 @@ def compare_performance():
         score_opt = mst_calinski_harabasz_score(X, labels, k=k)
         time_opt = time() - start
         print(f"  Optimized Calinski-Harabasz: {score_opt:.4f} in {time_opt:.3f}s")
-
-        # Separation ratio
-        start = time()
-        score_opt = mst_separation_ratio(X, labels, k=k)
-        time_opt = time() - start
-        print(f"  Separation Ratio: {score_opt:.4f} in {time_opt:.3f}s")
 
 
 if __name__ == "__main__":

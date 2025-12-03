@@ -9,8 +9,8 @@ from metrics.VIASCKDE import VIASCKDE
 from metrics.c_index import c_index
 from metrics.cdbw import CDbw
 from metrics.cs_index import cs_index
-from metrics.cvi_set2.cop import cop
-from metrics.cvi_set2.gSym import gSym
+from metrics.cvi_set.cop import cop
+from metrics.cvi_set.gSym import gSym
 from metrics.i_index import i_index
 # from metrics.wrong.cvi_set1.DBCV import DBCV_Index
 # from metrics.cvi_set2.c_index import c_index2
@@ -138,7 +138,6 @@ MAP_LOWER_IS_BETTER = {
     # ours
     "ed-db",
     "mst-db",
-    "mst2-db",
     "idea",
 }
 
