@@ -4,8 +4,8 @@ from pycvi import cvi as pycvi_cvi
 from pycvi.cluster import get_clustering
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, adjusted_rand_score, adjusted_mutual_info_score
 
-from metrics.DBCV import dbcv
-from metrics.VIASCKDE import VIASCKDE
+from metrics.DBCV_opt import dbcv
+from metrics.VIASCKDE_opt import VIASCKDE
 from metrics.c_index import c_index
 from metrics.cdbw import CDbw
 from metrics.cs_index import cs_index

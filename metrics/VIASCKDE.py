@@ -1,5 +1,5 @@
 """
-Optimized implementation of VIASCKDE
+Implementation of VIASCKDE
 https://github.com/senolali/VIASCKDE/blob/main/VIASCKDE.py
 https://www.researchgate.net/publication/361177430_VIASCKDE_Index_A_Novel_Internal_Cluster_Validity_Index_for_Arbitrary-Shaped_Clusters_Based_on_the_Kernel_Density_Estimation
 https://onlinelibrary.wiley.com/doi/10.1155/2022/4059302
@@ -15,65 +15,46 @@ import numpy as np
 from scipy.spatial import KDTree
 from sklearn.neighbors import KernelDensity
 import warnings
+
 warnings.filterwarnings("ignore")
+
+
+def closest_node(n, v):
+    kdtree = KDTree(v)
+    d, i = kdtree.query(n)
+    return d
 
 
 def VIASCKDE(X, labels, kernel='gaussian', b_width=0.05):
     num_k = np.unique(labels)
-
-    if len(num_k) <= 1:
-        return float("nan")
-
-    # Compute KDE once for all data
     kde = KernelDensity(kernel=kernel, bandwidth=b_width).fit(X)
     iso = kde.score_samples(X)
 
-    # Build KDTree once for all data
-    kdtree_all = KDTree(X)
+    ASC = np.array([])
+    numC = np.array([])
+    CoSeD = np.array([])
+    viasc = 0
+    if len(num_k) > 1:
+        for i in num_k:
+            data_of_cluster = X[labels == i]
+            data_of_not_its = X[labels != i]
+            isos = iso[labels == i]
+            isos = (isos - min(isos)) / (max(isos) - min(isos))
+            for j in range(len(data_of_cluster)):  # for each data of cluster j
+                row = np.delete(data_of_cluster, j, 0)  # exclude the data j
+                XX = data_of_cluster[j]
+                a = closest_node(XX, row)
+                b = closest_node(XX, data_of_not_its)
+                ASC = np.hstack((ASC, ((b - a) / max(a, b)) * isos[j]))
+            numC = np.hstack((numC, ASC.size))
+            CoSeD = np.hstack((CoSeD, ASC.mean()))
 
-    total_weighted_score = 0.0
-    total_count = 0
+        for k in range(len(numC)):
+            viasc += numC[k] * CoSeD[k]
 
-    for i in num_k:
-        cluster_mask = labels == i
-        cluster_indices = np.where(cluster_mask)[0]
-        other_indices = np.where(~cluster_mask)[0]
+        viasc = viasc / sum(numC)
+    else:
+        viasc = float("nan")
 
-        data_of_cluster = X[cluster_mask]
-        data_of_not_its = X[~cluster_mask]
-        isos = iso[cluster_mask]
-
-        # Normalize isos
-        iso_min = isos.min()
-        iso_max = isos.max()
-        if iso_max > iso_min:
-            isos = (isos - iso_min) / (iso_max - iso_min)
-        else:
-            isos = np.zeros_like(isos)
-
-        # Build KDTree for cluster and other clusters
-        kdtree_cluster = KDTree(data_of_cluster)
-        kdtree_other = KDTree(data_of_not_its)
-
-        # Query distances for all points at once
-        # For within-cluster: k=2 to get nearest neighbor excluding self
-        dist_within, _ = kdtree_cluster.query(data_of_cluster, k=2)
-        a = dist_within[:, 1]  # Second closest is the nearest neighbor (first is self)
-
-        # For other clusters: k=1 to get nearest neighbor
-        b, _ = kdtree_other.query(data_of_cluster, k=1)
-        b = b.ravel()
-
-        # Compute ASC for all points in cluster at once
-        max_ab = np.maximum(a, b)
-        ASC = ((b - a) / max_ab) * isos
-
-        # Accumulate weighted sum
-        cluster_count = len(ASC)
-        cluster_mean = ASC.mean()
-
-        total_weighted_score += cluster_count * cluster_mean
-        total_count += cluster_count
-
-    viasc = total_weighted_score / total_count
     return viasc
+

@@ -1,5 +1,6 @@
 """
-Optimized Implementation of Density-Based Clustering Validation "DBCV" (Higher is better)
+
+Implementation of Density-Based Clustering Validation "DBCV" (Higher is better)
 https://github.com/FelSiq/DBCV
 
 Citation:
@@ -7,7 +8,6 @@ Moulavi, Davoud, et al. "Density-based clustering validation."
 Proceedings of the 2014 SIAM International Conference on Data Mining.
 Society for Industrial and Applied Mathematics, 2014.
 
-OPTIMIZED VERSION - maintains identical results with improved performance
 
 """
 
@@ -31,113 +31,11 @@ _MP = mpmath.mp.clone()
 def compute_pair_to_pair_dists(
     X: npt.NDArray[np.float64], metric: str
 ) -> npt.NDArray[np.float64]:
-    """
-    Compute the full pairwise dissimilarity matrix between rows of X using scipy.spatial.distance.cdist.
-    - ensures diagonal is set to +inf (so a point is never considered its own nearest neighbor),
-    - clips minimal distances to a small positive constant to avoid exact zeros.
-    """
     dists = scipy.spatial.distance.cdist(X, X, metric=metric)
-    # Avoid zeros (for stable inverse/power ops later)
     np.maximum(dists, 1e-12, out=dists)
-    # NOTE: set self-distance to +inf to avoid self-neighbors.
+    # NOTE: set self-distance to +inf to prevent points being self-neighbors.
     np.fill_diagonal(dists, val=np.inf)
     return dists
-
-
-
-def _check_duplicated_samples(X: npt.NDArray[np.float64], threshold: float = 1e-9):
-    """
-    Detect near-duplicate rows in X using 1-NN distances.
-    Raises ValueError if any pair distance < threshold.
-    """
-    if X.shape[0] <= 1:
-        return
-
-    nn = sklearn.neighbors.NearestNeighbors(n_neighbors=1)
-    nn.fit(X)
-    dists, _ = nn.kneighbors(return_distance=True)
-
-    if np.any(dists < threshold):
-        raise ValueError("Duplicated samples have been found in X.")
-
-
-
-def _convert_singleton_clusters_to_noise(
-    y: npt.NDArray[np.int32], noise_id: int
-) -> npt.NDArray[np.int32]:
-    """
-    Convert clusters with a single member to noise.
-    """
-    cluster_ids, cluster_sizes = np.unique(y, return_counts=True)
-    singleton_clusters = cluster_ids[cluster_sizes == 1]
-
-    if singleton_clusters.size == 0:
-        return y
-
-    return np.where(np.isin(y, singleton_clusters), noise_id, y)
-
-
-
-
-
-
-def prim_mst(
-    graph: npt.NDArray[np.float32], ind_root: int = 0
-) -> npt.NDArray[np.float32]:
-    """Python translation of the original implementation of Prim's MST in MATLAB.
-
-    Reference source: https://github.com/pajaskowiak/dbcv/blob/main/src/MST_Edges.m
-    """
-    n = len(graph)
-    intree = np.full(n, fill_value=False) # nodes already in tree
-    d = np.full(n, fill_value=np.inf) # best distance to tree for each node
-
-    d[ind_root] = 0
-    v = ind_root
-    counter = 0
-
-    # OPTIMIZATION: Pre-allocate arrays to store edges and weights (n-1 edges)
-    node_inds = np.zeros((n - 1, 2), dtype=int)
-    weights = np.zeros(n - 1, dtype=float)
-    mst_parent = np.arange(n)
-
-    # OPTIMIZATION: Pre-compute range
-    node_range = np.arange(n)
-
-    while counter < n - 1:
-        intree[v] = True
-        dist = np.inf
-
-        # OPTIMIZATION: Vectorize inner loop where possible
-        mask = ~intree & (node_range != v)
-        candidates = node_range[mask]
-
-        for w in candidates:
-            weight = graph[v, w]
-
-            # update best-known connection to the tree
-            if d[w] > weight:
-                d[w] = weight
-                mst_parent[w] = v
-
-            # pick the next vertex with smallest distance to the tree
-            if dist > d[w]:
-                dist = d[w]
-                next_v = w
-
-        counter += 1
-        node_inds[counter - 1, :] = (mst_parent[next_v], next_v)
-        weights[counter - 1] = graph[mst_parent[next_v], next_v]
-        v = next_v
-
-    # OPTIMIZATION: Construct sparse result more efficiently
-    inds_a, inds_b = node_inds.T
-
-    mst = np.zeros_like(graph)
-    mst[inds_a, inds_b] = weights
-    mst[inds_b, inds_a] = weights
-
-    return mst
 
 
 def get_subarray(
@@ -149,64 +47,63 @@ def get_subarray(
     if inds_a is None:
         return arr
     if inds_b is None:
-        # OPTIMIZATION: Use advanced indexing instead of meshgrid for same indices
-        return arr[np.ix_(inds_a, inds_a)]
-    # OPTIMIZATION: Use np.ix_ instead of meshgrid (more efficient)
-    return arr[np.ix_(inds_a, inds_b)]
+        inds_b = inds_a
+    inds_a_mesh, inds_b_mesh = np.meshgrid(inds_a, inds_b)
+    return arr[inds_a_mesh, inds_b_mesh].T
 
 
-def compute_cluster_core_distance(
-    dists: npt.NDArray[np.float64], d: int, enable_dynamic_precision: bool
-) -> npt.NDArray[np.float64]:
-    """
-    Compute the core distance for each object in a cluster given the pairwise distances matrix dists.
-    For a cluster of size n, the core distance of object i is:
-        core_i = ( (1/(n-1)) * sum_j d_ij^{-d} )^{-1/d}
-    Here d is the dimensionality parameter passed in (the original algorithm uses embedding dimension).
-    If enable_dynamic_precision is True, use mpmath with increased precision for the power/sum operations
-    to avoid underflow/overflow in high dimensions.
-    """
-    n, _ = dists.shape
-    orig_dists_dtype = dists.dtype
 
-    if enable_dynamic_precision:
-        # convert to mpmath-friendly representation (object dtype with high precision arithmetic)
-        dists = np.asarray(_MP.matrix(dists), dtype=object).reshape(*dists.shape)
+def prim_mst(
+    graph: npt.NDArray[np.float32], ind_root: int = 0
+) -> npt.NDArray[np.float32]:
+    n = len(graph)
+    intree = np.full(n, fill_value=False)
+    d = np.full(n, fill_value=np.inf)
 
-    # OPTIMIZATION: Combine power operations more efficiently
-    # core_dists = ( (1/(n-1)) * sum_j (d_ij^{-d}) )^{-1/d}
-    core_dists = np.power(dists, -d).sum(axis=-1, keepdims=True) / (n - 1)
+    d[ind_root] = 0
+    v = ind_root
+    counter = 0
 
-    if not enable_dynamic_precision:
-        # clip extreme values for numeric stability if not using high precision
-        np.clip(core_dists, a_min=0.0, a_max=1e12, out=core_dists)
+    G = {
+        "MST_edges": {
+            "node_inds": np.zeros((n - 1, 2), dtype=int),
+            "weights": np.zeros(n - 1, dtype=float),
+        },
+        "MST_degrees": np.zeros(n, dtype=int),
+        "MST_parent": np.arange(n),
+    }
 
-    # final power to compute inverse -1/d
-    np.power(core_dists, -1.0 / d, out=core_dists)
+    while counter < n - 1:
+        intree[v] = True
+        dist = np.inf
 
-    if enable_dynamic_precision:
-        # convert back to float array type
-        core_dists = np.asarray(core_dists, dtype=orig_dists_dtype)
+        for w in np.arange(n):
+            if w != v and not intree[w]:
+                weight = graph[v, w]
 
-    return core_dists
+                if d[w] > weight:
+                    d[w] = weight
+                    G["MST_parent"][w] = v
 
+                if dist > d[w]:
+                    dist = d[w]
+                    next_v = w
 
-def compute_mutual_reach_dists(
-    dists: npt.NDArray[np.float64],
-    d: float,
-    enable_dynamic_precision: bool,
-) -> npt.NDArray[np.float64]:
-    """
-    Compute core distances and mutual reachability distances for all pairs in a cluster.
-    mutual_reach(i,j) = max( d_ij, core_i, core_j )
-    """
-    core_dists = compute_cluster_core_distance(
-        d=d, dists=dists, enable_dynamic_precision=enable_dynamic_precision
-    )
-    # OPTIMIZATION: Use np.maximum chaining more efficiently
-    mutual_reach_dists = np.maximum(np.maximum(dists, core_dists), core_dists.T)
-    return (core_dists, mutual_reach_dists)
+        counter += 1
+        G["MST_edges"]["node_inds"][counter - 1, :] = (G["MST_parent"][next_v], next_v)
+        G["MST_edges"]["weights"][counter - 1] = graph[G["MST_parent"][next_v], next_v]
+        G["MST_degrees"][G["MST_parent"][next_v]] += 1
+        G["MST_degrees"][next_v] += 1
+        v = next_v
 
+    (inds_a, inds_b) = G["MST_edges"]["node_inds"].T
+    weights = G["MST_edges"]["weights"]
+
+    mst = np.zeros_like(graph)
+    mst[inds_a, inds_b] = weights
+    mst[inds_b, inds_a] = weights
+
+    return mst
 
 def get_internal_objects(
     mutual_reach_dists: npt.NDArray[np.float64], use_original_mst_implementation: bool
@@ -221,23 +118,60 @@ def get_internal_objects(
         mst = mst.toarray()
         mst += mst.T
 
-    # OPTIMIZATION: Combine operations to reduce passes over data
-    is_mst_edges = mst > 0.0
-    degree = is_mst_edges.sum(axis=0)
-    internal_node_inds = np.flatnonzero(degree > 1)
+    is_mst_edges = (mst > 0.0).astype(int, copy=False)
 
-    # OPTIMIZATION: Early return pattern
-    if internal_node_inds.size == 0:
-        return np.arange(mutual_reach_dists.shape[0]), mst
+    internal_node_inds = is_mst_edges.sum(axis=0) > 1
+    internal_node_inds = np.flatnonzero(internal_node_inds)
 
-    # restrict MST to internal nodes
-    internal_edge_weights = mst[np.ix_(internal_node_inds, internal_node_inds)]
+    internal_edge_weights = get_subarray(mst, inds_a=internal_node_inds)
 
-    # if the internal subgraph has <= 1 weight entry, nothing more to compute
-    if internal_edge_weights.size <= 1:
-        return internal_node_inds, mst
+    graph_has_internal_nodes = bool(internal_node_inds.size > 0)
+    graph_has_at_least_two_internal_nodes = bool(internal_edge_weights.size > 1)
 
-    return internal_node_inds, internal_edge_weights
+    return (
+        (
+            internal_node_inds
+            if graph_has_internal_nodes
+            else np.arange(mutual_reach_dists.shape[0])
+        ),
+        internal_edge_weights if graph_has_at_least_two_internal_nodes else mst,
+    )
+
+
+def compute_cluster_core_distance(
+    dists: npt.NDArray[np.float64], d: int, enable_dynamic_precision: bool
+) -> npt.NDArray[np.float64]:
+    n, _ = dists.shape
+    orig_dists_dtype = dists.dtype
+
+    if enable_dynamic_precision:
+        dists = np.asarray(_MP.matrix(dists), dtype=object).reshape(*dists.shape)
+
+    core_dists = np.power(dists, -d).sum(axis=-1, keepdims=True) / (n - 1)
+
+    if not enable_dynamic_precision:
+        np.clip(core_dists, a_min=0.0, a_max=1e12, out=core_dists)
+
+    np.power(core_dists, -1.0 / d, out=core_dists)
+
+    if enable_dynamic_precision:
+        core_dists = np.asarray(core_dists, dtype=orig_dists_dtype)
+
+    return core_dists
+
+
+def compute_mutual_reach_dists(
+    dists: npt.NDArray[np.float64],
+    d: float,
+    enable_dynamic_precision: bool,
+) -> npt.NDArray[np.float64]:
+    core_dists = compute_cluster_core_distance(
+        d=d, dists=dists, enable_dynamic_precision=enable_dynamic_precision
+    )
+    mutual_reach_dists = dists.copy()
+    np.maximum(mutual_reach_dists, core_dists, out=mutual_reach_dists)
+    np.maximum(mutual_reach_dists, core_dists.T, out=mutual_reach_dists)
+    return (core_dists, mutual_reach_dists)
 
 
 def fn_density_sparseness(
@@ -247,12 +181,6 @@ def fn_density_sparseness(
     enable_dynamic_precision: bool,
     use_original_mst_implementation: bool,
 ) -> t.Tuple[float, npt.NDArray[np.float32], npt.NDArray[np.int32]]:
-    """
-    Compute Density Sparseness (DSC) and internal-core-distances for a single cluster.
-    Inputs:
-      - cls_inds: indices of points (global indices) belonging to this cluster (used only to map internal node indices back)
-      - dists: pairwise distances between points in the cluster (cluster-local matrix)
-    """
     (core_dists, mutual_reach_dists) = compute_mutual_reach_dists(
         dists=dists, d=d, enable_dynamic_precision=enable_dynamic_precision
     )
@@ -273,19 +201,36 @@ def fn_density_separation(
     internal_core_dists_i: npt.NDArray[np.float64],
     internal_core_dists_j: npt.NDArray[np.float64],
 ) -> t.Tuple[int, int, float]:
-    """
-    Compute Density Separation (DSPC) between two clusters using their internal nodes and core distances.
-    The separation matrix between internal nodes is:
-       sep_ij = max( dists_ij, core_i (broadcasted), core_j^T (broadcasted) )
-    The DSPC is the minimal value of this sep matrix.
-    """
-    # OPTIMIZATION: Use np.maximum chaining instead of multiple in-place operations
-    sep = np.maximum(np.maximum(dists, internal_core_dists_i), internal_core_dists_j.T)
+    sep = dists.copy()
+    np.maximum(sep, internal_core_dists_i, out=sep)
+    np.maximum(sep, internal_core_dists_j.T, out=sep)
     dspc_ij = float(sep.min()) if sep.size else np.inf
     return (cls_i, cls_j, dspc_ij)
 
 
+def _check_duplicated_samples(X: npt.NDArray[np.float64], threshold: float = 1e-9):
+    if X.shape[0] <= 1:
+        return
 
+    nn = sklearn.neighbors.NearestNeighbors(n_neighbors=1)
+    nn.fit(X)
+    dists, _ = nn.kneighbors(return_distance=True)
+
+    if np.any(dists < threshold):
+        raise ValueError("Duplicated samples have been found in X.")
+
+
+def _convert_singleton_clusters_to_noise(
+    y: npt.NDArray[np.int32], noise_id: int
+) -> npt.NDArray[np.int32]:
+    """Cast clusters containing a single instance as noise."""
+    cluster_ids, cluster_sizes = np.unique(y, return_counts=True)
+    singleton_clusters = cluster_ids[cluster_sizes == 1]
+
+    if singleton_clusters.size == 0:
+        return y
+
+    return np.where(np.isin(y, singleton_clusters), noise_id, y)
 
 
 def dbcv(
@@ -406,84 +351,94 @@ def dbcv(
     # internal core distances = core distances of internal nodes
     internal_core_dists_per_cls: t.Dict[int, npt.NDArray[np.float32]] = {}
 
-    # OPTIMIZATION: Pre-compute cluster indices
     cls_inds = [np.flatnonzero(y == cls_id) for cls_id in cluster_ids]
 
     if n_processes == "auto":
         n_processes = 4 if y.size > 500 else 1
 
-    # OPTIMIZATION: Only create pool if beneficial
-    use_multiprocessing = n_processes > 1 and cluster_ids.size > 1
+    with _MP.workprec(bits_of_precision), multiprocessing.Pool(
+        processes=min(n_processes, cluster_ids.size)
+    ) as ppool:
+        fn_density_sparseness_ = functools.partial(
+            fn_density_sparseness,
+            d=d,
+            enable_dynamic_precision=enable_dynamic_precision,
+            use_original_mst_implementation=use_original_mst_implementation,
+        )
 
-    fn_density_sparseness_ = functools.partial(
-        fn_density_sparseness,
-        d=d,
-        enable_dynamic_precision=enable_dynamic_precision,
-        use_original_mst_implementation=use_original_mst_implementation,
-    )
+        args = [(cls_ind, get_subarray(dists, inds_a=cls_ind)) for cls_ind in cls_inds]
 
-    args = [(cls_ind, get_subarray(dists, inds_a=cls_ind)) for cls_ind in cls_inds]
-
-    if use_multiprocessing:
-        with _MP.workprec(bits_of_precision), multiprocessing.Pool(
-            processes=min(n_processes, cluster_ids.size)
-        ) as ppool:
-            results = ppool.starmap(fn_density_sparseness_, args)
-    else:
-        with _MP.workprec(bits_of_precision):
-            results = [fn_density_sparseness_(*arg) for arg in args]
-
-    for cls_id, (dsc, internal_core_dists, internal_node_inds) in enumerate(results):
-        internal_objects_per_cls[cls_id] = internal_node_inds
-        internal_core_dists_per_cls[cls_id] = internal_core_dists
-        dscs[cls_id] = dsc
+        for cls_id, (dsc, internal_core_dists, internal_node_inds) in enumerate(
+            ppool.starmap(fn_density_sparseness_, args)
+        ):
+            internal_objects_per_cls[cls_id] = internal_node_inds
+            internal_core_dists_per_cls[cls_id] = internal_core_dists
+            dscs[cls_id] = dsc
 
     n_cls_pairs = (cluster_ids.size * (cluster_ids.size - 1)) // 2
 
     if n_cls_pairs > 0:
-        use_multiprocessing_pairs = n_processes > 1 and n_cls_pairs > 1
+        with _MP.workprec(bits_of_precision), multiprocessing.Pool(
+            processes=min(n_processes, n_cls_pairs)
+        ) as ppool:
+            args = [
+                (
+                    cls_i,
+                    cls_j,
+                    get_subarray(
+                        dists,
+                        inds_a=internal_objects_per_cls[cls_i],
+                        inds_b=internal_objects_per_cls[cls_j],
+                    ),
+                    internal_core_dists_per_cls[cls_i],
+                    internal_core_dists_per_cls[cls_j],
+                )
+                for cls_i, cls_j in itertools.combinations(cluster_ids, 2)
+            ]
 
-        args = [
-            (
-                cls_i,
-                cls_j,
-                get_subarray(
-                    dists,
-                    inds_a=internal_objects_per_cls[cls_i],
-                    inds_b=internal_objects_per_cls[cls_j],
-                ),
-                internal_core_dists_per_cls[cls_i],
-                internal_core_dists_per_cls[cls_j],
-            )
-            for cls_i, cls_j in itertools.combinations(cluster_ids, 2)
-        ]
-
-        if use_multiprocessing_pairs:
-            with _MP.workprec(bits_of_precision), multiprocessing.Pool(
-                processes=min(n_processes, n_cls_pairs)
-            ) as ppool:
-                results = ppool.starmap(fn_density_separation, args)
-        else:
-            with _MP.workprec(bits_of_precision):
-                results = [fn_density_separation(*arg) for arg in args]
-
-        for cls_i, cls_j, dspc_ij in results:
-            min_dspcs[cls_i] = min(min_dspcs[cls_i], dspc_ij)
-            min_dspcs[cls_j] = min(min_dspcs[cls_j], dspc_ij)
+            for cls_i, cls_j, dspc_ij in ppool.starmap(fn_density_separation, args):
+                min_dspcs[cls_i] = min(min_dspcs[cls_i], dspc_ij)
+                min_dspcs[cls_j] = min(min_dspcs[cls_j], dspc_ij)
 
     np.nan_to_num(min_dspcs, copy=False, posinf=1e12)
-    # OPTIMIZATION: Vectorize final calculation
     vcs = (min_dspcs - dscs) / (1e-12 + np.maximum(min_dspcs, dscs))
     np.nan_to_num(vcs, copy=False, nan=0.0)
-    dbcv = float(np.dot(vcs, cluster_sizes)) / n
+    dbcv = float(np.sum(vcs * cluster_sizes)) / n
 
     return dbcv
 
 
+def dbcv_DEBUG():
+    from sklearn.datasets import make_blobs
+    print("\n" + "="*80)
+    print("DBCV DEBUG: DENSITY-BASED CLUSTERING VALIDATION")
+    print("="*80)
+
+    # Create larger test data: 3 well-separated clusters with 50 points
+    np.random.seed(42)
+    n_samples_per_cluster = [18, 16, 16]
+    centers = [[2, 2], [8, 8], [14, 2]]
+    cluster_std = [0.8, 0.9, 0.7]
+
+    X, y = make_blobs(n_samples=n_samples_per_cluster,
+                      centers=centers,
+                      cluster_std=cluster_std,
+                      random_state=42)
+
+    print(f"\nDataset shape: {X.shape}")
+    print(f"Number of points: {len(X)}")
+    print(f"Cluster distribution:")
+    for i in range(len(centers)):
+        print(f"  Cluster {i}: {np.sum(y == i)} points")
+
+    dbcv_score = dbcv(X, y)
+
+    return dbcv_score
+
+
+# ============================================================================
+# RUN IT
+# ============================================================================
 
 if __name__ == "__main__":
-    from load_datasets import create_data1
-    X, y = create_data1(1000)
-
-    dbcv(X, y)
-
+    dbcv_DEBUG()

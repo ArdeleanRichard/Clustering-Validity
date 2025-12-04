@@ -8,13 +8,12 @@ Moulavi, Davoud, et al. "Density-based clustering validation."
 Proceedings of the 2014 SIAM International Conference on Data Mining.
 Society for Industrial and Applied Mathematics, 2014.
 
+MODIFIED: Removed all multiprocessing for easier debugging
 
 """
 
-import multiprocessing
 import typing as t
 import itertools
-import functools
 
 import numpy as np
 import numpy.typing as npt
@@ -181,6 +180,7 @@ def fn_density_sparseness(
     enable_dynamic_precision: bool,
     use_original_mst_implementation: bool,
 ) -> t.Tuple[float, npt.NDArray[np.float32], npt.NDArray[np.int32]]:
+
     (core_dists, mutual_reach_dists) = compute_mutual_reach_dists(
         dists=dists, d=d, enable_dynamic_precision=enable_dynamic_precision
     )
@@ -239,7 +239,7 @@ def dbcv(
     metric: str = "sqeuclidean",
     noise_id: int = -1,
     check_duplicates: bool = True,
-    n_processes: t.Union[int, str] = "auto",
+    n_processes: t.Union[int, str] = "auto",  # IGNORED - kept for API compatibility
     enable_dynamic_precision: bool = False,
     bits_of_precision: int = 512,
     use_original_mst_implementation: bool = False,
@@ -275,9 +275,7 @@ def dbcv(
         duplicates.
 
     n_processes : int or "auto", default="auto"
-        Maximum number of parallel processes for processing clusters and cluster pairs.
-        If `n_processes="auto"`, the number of parallel processes will be set to 1 for
-        datasets with 500 or fewer instances, and 4 for datasets with more than 500 instances.
+        IGNORED in this version. Kept for API compatibility.
 
     enable_dynamic_precision : bool, default=False
         If set to True, this activates a dynamic quantity of bits of precision for floating point during
@@ -353,24 +351,28 @@ def dbcv(
 
     cls_inds = [np.flatnonzero(y == cls_id) for cls_id in cluster_ids]
 
-    if n_processes == "auto":
-        n_processes = 4 if y.size > 500 else 1
-
-    with _MP.workprec(bits_of_precision), multiprocessing.Pool(
-        processes=min(n_processes, cluster_ids.size)
-    ) as ppool:
-        fn_density_sparseness_ = functools.partial(
-            fn_density_sparseness,
-            d=d,
-            enable_dynamic_precision=enable_dynamic_precision,
-            use_original_mst_implementation=use_original_mst_implementation,
-        )
-
-        args = [(cls_ind, get_subarray(dists, inds_a=cls_ind)) for cls_ind in cls_inds]
-
-        for cls_id, (dsc, internal_core_dists, internal_node_inds) in enumerate(
-            ppool.starmap(fn_density_sparseness_, args)
-        ):
+    # REMOVED MULTIPROCESSING: Simple iterative loop
+    with _MP.workprec(bits_of_precision):
+        for cls_id, cls_ind in enumerate(cls_inds):
+            # get_subarray(dists, inds_a=cls_ind),
+            # - extract submatrix of distances based on indexes in this case intracluster
+            # # fn_density_sparseness
+            # # - compute_mutual_reach_dists
+            # # - - compute_cluster_core_distance
+            # # - - - takes submatrix of intracluster distances and creates core_dists through formula (should be size of cluster n_i)
+            # # - - max of distances to get mutual reach dists (size of n_i x n_i)
+            # # - get_internal_objects
+            # # - - create mst
+            # # - - find internal nodes (>1 edges)
+            # # - - get mst weights for internal nodes
+            # # - dsc = max internal weight
+            dsc, internal_core_dists, internal_node_inds = fn_density_sparseness(
+                cls_inds=cls_ind,
+                dists=get_subarray(dists, inds_a=cls_ind),
+                d=d,
+                enable_dynamic_precision=enable_dynamic_precision,
+                use_original_mst_implementation=use_original_mst_implementation,
+            )
             internal_objects_per_cls[cls_id] = internal_node_inds
             internal_core_dists_per_cls[cls_id] = internal_core_dists
             dscs[cls_id] = dsc
@@ -378,31 +380,59 @@ def dbcv(
     n_cls_pairs = (cluster_ids.size * (cluster_ids.size - 1)) // 2
 
     if n_cls_pairs > 0:
-        with _MP.workprec(bits_of_precision), multiprocessing.Pool(
-            processes=min(n_processes, n_cls_pairs)
-        ) as ppool:
-            args = [
-                (
-                    cls_i,
-                    cls_j,
-                    get_subarray(
+        # REMOVED MULTIPROCESSING: Simple iterative loop
+        with _MP.workprec(bits_of_precision):
+            for cls_i, cls_j in itertools.combinations(cluster_ids, 2):
+                # get_subarray(dists, inds_a=cls_ind),
+                # - extract submatrix of distances based on indexes in this case inter cluster (from each point to all of the other cluster)
+                # fn_density_separation
+                # - simple max of max formula
+                # find minimum distances between clusters
+                cls_i_int, cls_j_int, dspc_ij = fn_density_separation(
+                    cls_i=cls_i,
+                    cls_j=cls_j,
+                    dists=get_subarray(
                         dists,
                         inds_a=internal_objects_per_cls[cls_i],
                         inds_b=internal_objects_per_cls[cls_j],
                     ),
-                    internal_core_dists_per_cls[cls_i],
-                    internal_core_dists_per_cls[cls_j],
+                    internal_core_dists_i=internal_core_dists_per_cls[cls_i],
+                    internal_core_dists_j=internal_core_dists_per_cls[cls_j],
                 )
-                for cls_i, cls_j in itertools.combinations(cluster_ids, 2)
-            ]
-
-            for cls_i, cls_j, dspc_ij in ppool.starmap(fn_density_separation, args):
-                min_dspcs[cls_i] = min(min_dspcs[cls_i], dspc_ij)
-                min_dspcs[cls_j] = min(min_dspcs[cls_j], dspc_ij)
+                min_dspcs[cls_i_int] = min(min_dspcs[cls_i_int], dspc_ij)
+                min_dspcs[cls_j_int] = min(min_dspcs[cls_j_int], dspc_ij)
 
     np.nan_to_num(min_dspcs, copy=False, posinf=1e12)
+    # Silhouette formula
     vcs = (min_dspcs - dscs) / (1e-12 + np.maximum(min_dspcs, dscs))
     np.nan_to_num(vcs, copy=False, nan=0.0)
     dbcv = float(np.sum(vcs * cluster_sizes)) / n
 
     return dbcv
+
+
+def dbcv_DEBUG():
+    from sklearn.datasets import make_blobs
+    # Create test data: 3 well-separated clusters with 50 points
+    np.random.seed(42)
+    n_samples_per_cluster = [18, 16, 16]
+    centers = [[2, 2], [8, 8], [14, 2]]
+    cluster_std = [0.8, 0.9, 0.7]
+
+    X, y = make_blobs(n_samples=n_samples_per_cluster,
+                      centers=centers,
+                      cluster_std=cluster_std,
+                      random_state=42)
+
+    print(f"\nDataset shape: {X.shape}")
+    print(f"Number of points: {len(X)}")
+    print(f"Cluster distribution:")
+    for i in range(len(centers)):
+        print(f"  Cluster {i}: {np.sum(y == i)} points")
+
+    dbcv_score = dbcv(X, y)
+
+    return dbcv_score
+
+if __name__ == "__main__":
+    dbcv_DEBUG()
