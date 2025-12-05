@@ -60,7 +60,7 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
         X = MinMaxScaler(scale).fit_transform(X)
 
         label_sets = {"gt": gt}
-        label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets)
+        label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"])
 
         # Create and print metric table
         create_indices_table_with_arrows(X, label_sets=label_sets, save=f"{FOLDER_RESULTS}/metrics_{name_data}.csv", prnt=True)
@@ -79,12 +79,12 @@ def run_scores_set1(plot=False):
     # each element is a set of datasets
     sets = [
         create_set1(n_samples=1000),
-        create_set_g(dims=2),
-        create_set_a(),
-        create_set_s(),
-        create_set_graves(),
-        create_set_sipu(),
-        create_set_wut(),
+        # create_set_g(dims=2),
+        # create_set_a(),
+        # create_set_s(),
+        # create_set_graves(),
+        # create_set_sipu(),
+        # create_set_wut(),
     ]
     for set in sets:
         run_score_set(set, plot=plot)

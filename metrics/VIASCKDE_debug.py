@@ -19,9 +19,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def closest_node(n, v):
-    kdtree = KDTree(v)
-    d, i = kdtree.query(n)
+def closest_node(node, data):
+    kdtree = KDTree(data)
+    d, i = kdtree.query(node)
     return d
 
 
