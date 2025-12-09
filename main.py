@@ -53,6 +53,7 @@ def choose_colors(labels):
 
 def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plot=False):
     for name_data, (X, gt) in datasets:
+        print(name_data)
         # X, gt = shuffle(X, gt, random_state=random_state)
         scale = (-1, 1)
         X, gt = remove_dups(X, gt)
@@ -60,7 +61,7 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
         X = MinMaxScaler(scale).fit_transform(X)
 
         label_sets = {"gt": gt}
-        label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"])
+        label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets=list_labelsets)
 
         # Create and print metric table
         create_indices_table_with_arrows(X, label_sets=label_sets, save=f"{FOLDER_RESULTS}/metrics_{name_data}.csv", prnt=True)
@@ -78,9 +79,9 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
 def run_scores_set1(plot=False):
     # each element is a set of datasets
     sets = [
-        create_set1(n_samples=1000),
+        # create_set1(n_samples=1000),
         # create_set_g(dims=2),
-        # create_set_a(),
+        create_set_a(),
         # create_set_s(),
         # create_set_graves(),
         # create_set_sipu(),

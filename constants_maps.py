@@ -1,9 +1,7 @@
-import cvi
-from permetrics import ClusteringMetric
-from pycvi import cvi as pycvi_cvi
-from pycvi.cluster import get_clustering
-from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, adjusted_rand_score, adjusted_mutual_info_score
+from sklearn.metrics import silhouette_score, adjusted_rand_score, adjusted_mutual_info_score
 
+# from metrics.wrong.cvi_set1.DBCV import DBCV_Index
+# from metrics.cvi_set2.c_index import c_index2
 from metrics.DBCV_opt import dbcv
 from metrics.VIASCKDE_opt import VIASCKDE
 from metrics.c_index import c_index
@@ -17,10 +15,11 @@ from metrics.i_index import i_index
 
 
 from ours.measures import imbalance_ratio, overlap_ratio
-from ours.mst import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score
-from ours.old.mst3 import mst_silhouette_score3, mst_davies_bouldin_score3, mst_calinski_harabasz_score3
-from ours.old.mst_scores import mst_calinski_harabasz_score_first, mst_davies_bouldin_score_first, mst_silhouette_score_first
-from ours.trial import AdaptiveGridMST
+from ours.mst import mst_silhouette_score, mst_davies_bouldin_score, mst_calinski_harabasz_score, mst_separation_ratio
+
+from ours.measures import imbalance_ratio, overlap_ratio
+from ours.old.trial import AdaptiveGridMST
+
 
 MAP_METRIC_TO_FUNCTION = {
     # # CVI metrics
@@ -97,12 +96,12 @@ MAP_METRIC_TO_FUNCTION = {
     # # "ED-CH": ed_calinski_harabasz_score,
     #
     #
-    # "MST-S": mst_silhouette_score,
-    # "MST-DB": mst_davies_bouldin_score,
-    # "MST-CH": mst_calinski_harabasz_score,
-    #
+    "MST-S": mst_silhouette_score,
+    "MST-DB": mst_davies_bouldin_score,
+    "MST-CH": mst_calinski_harabasz_score,
 
-    # "idea": mst_idea,
+
+    "idea": mst_separation_ratio,
 
     # "MSTog-S": mst_silhouette_score_first,
     # "MSTog-DB": mst_davies_bouldin_score_first,
@@ -112,7 +111,7 @@ MAP_METRIC_TO_FUNCTION = {
     # "MST3-DB": mst_davies_bouldin_score3,
     # "MST3-CH": mst_calinski_harabasz_score3,
 
-    "sbcvi":  lambda data, labels: AdaptiveGridMST(data, labels, min_points=8, max_depth=8).compute_cluster_validity_score()['final_score']
+    # "sbcvi":  lambda data, labels: AdaptiveGridMST(data, labels, min_points=5, max_depth=20).compute_cluster_validity_score()['final_score']
 }
 
 
@@ -140,8 +139,7 @@ MAP_LOWER_IS_BETTER = {
 
     # ours
     "ed-db",
-    "mst-db",
-    "idea",
+    "mst-db"
 }
 
 

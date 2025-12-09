@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from sklearn.preprocessing import MinMaxScaler
 
-from load_datasets import create_data1, create_data2
+from load_datasets import create_data1, create_data2, create_data7
 from load_labelsets import assign_labels_by_given_line, vertical_line, diagonal_line, horizontal_line
 
 import numpy as np
@@ -221,14 +221,10 @@ class AdaptiveGridMST:
         # Euclidean distance between bounding box centers
         euclidean_dist = np.linalg.norm(cell1.centroid - cell2.centroid)
 
-        # Geometric mean of densities (avoids issues with zero density)
-        eps = 1e-10
-        geometric_mean_density = np.sqrt(max(cell1.density, eps) * max(cell2.density, eps))
-
         # Weight: distance divided by density
         # High density regions -> low weight (should be connected)
         # Low density regions -> high weight (boundaries)
-        weight = euclidean_dist # / geometric_mean_density
+        weight = euclidean_dist
 
         return weight
 
@@ -546,10 +542,6 @@ class AdaptiveGridMST:
 
             if cell1.n_points > 0 and cell2.n_points > 0:
                 # Get majority label for each cell
-                # label1 = np.bincount(self.labels[cell1.indices]).argmax()
-                # label2 = np.bincount(self.labels[cell2.indices]).argmax()
-
-                # if label1 == label2:
                 if (len(np.setdiff1d(np.unique(self.labels[cell1.indices]), np.unique(self.labels[cell2.indices]))) == 0 and
                         len(np.setdiff1d(np.unique(self.labels[cell2.indices]), np.unique(self.labels[cell1.indices]))) == 0):
                     intra_weights.append(weight)
@@ -607,21 +599,21 @@ class AdaptiveGridMST:
             print("Labels required for analysis")
             return
 
-        print("\n" + "=" * 60)
-        print("CLUSTER ANALYSIS")
-        print("=" * 60)
+        # print("\n" + "=" * 60)
+        # print("CLUSTER ANALYSIS")
+        # print("=" * 60)
 
         # Cell statistics
-        print(f"\nGrid Statistics:")
-        print(f"  Total cells: {len(self.leaf_cells)}")
-        print(f"  Points per cell: {self.n_samples / len(self.leaf_cells):.2f} (avg)")
-
-        densities = [cell.density for cell in self.leaf_cells]
-        print(f"  Relative density range: [{min(densities):.6f}, {max(densities):.6f}]")
-        print(f"  Relative density mean: {np.mean(densities):.6f}")
-
-        volumes = [cell.volume for cell in self.leaf_cells]
-        print(f"  Cell volume range: [{min(volumes):.6f}, {max(volumes):.6f}]")
+        # print(f"\nGrid Statistics:")
+        # print(f"  Total cells: {len(self.leaf_cells)}")
+        # print(f"  Points per cell: {self.n_samples / len(self.leaf_cells):.2f} (avg)")
+        #
+        # densities = [cell.density for cell in self.leaf_cells]
+        # print(f"  Relative density range: [{min(densities):.6f}, {max(densities):.6f}]")
+        # print(f"  Relative density mean: {np.mean(densities):.6f}")
+        #
+        # volumes = [cell.volume for cell in self.leaf_cells]
+        # print(f"  Cell volume range: [{min(volumes):.6f}, {max(volumes):.6f}]")
 
         # Cluster purity per cell
         purities = []
@@ -633,15 +625,15 @@ class AdaptiveGridMST:
                 purities.append(purity)
                 impurities.append(impurity)
 
-        print(f"\nCell Purity Analysis:")
-        print(f"  Mean purity: {np.mean(purities):.4f}")
-        print(f"  Median purity: {np.median(purities):.4f}")
-        print(f"  Cells with 100% purity: {sum(1 for p in purities if p == 1.0)}/{len(purities)}")
-        print(f"  Cells with <50% purity: {sum(1 for p in purities if p < 0.5)}/{len(purities)}")
-
-        print(f"\nCell Impurity (Entropy) Analysis:")
-        print(f"  Mean impurity: {np.mean(impurities):.4f}")
-        print(f"  Max possible entropy: {np.log2(len(np.unique(self.labels))):.4f}")
+        # print(f"\nCell Purity Analysis:")
+        # print(f"  Mean purity: {np.mean(purities):.4f}")
+        # print(f"  Median purity: {np.median(purities):.4f}")
+        # print(f"  Cells with 100% purity: {sum(1 for p in purities if p == 1.0)}/{len(purities)}")
+        # print(f"  Cells with <50% purity: {sum(1 for p in purities if p < 0.5)}/{len(purities)}")
+        #
+        # print(f"\nCell Impurity (Entropy) Analysis:")
+        # print(f"  Mean impurity: {np.mean(impurities):.4f}")
+        # print(f"  Max possible entropy: {np.log2(len(np.unique(self.labels))):.4f}")
 
         # MST edge analysis
         if self.cell_mst:
@@ -667,23 +659,25 @@ class AdaptiveGridMST:
             print(f"  Inter-cluster edges: {len(inter_weights)}")
 
             if intra_weights:
-                print(f"\n  Intra-cluster edge weights:")
+                print(f"\n  Intra-cluster edge weights: ")
+                print(f"    All: {intra_weights}")
                 print(f"    Mean: {np.mean(intra_weights):.4f}")
                 print(f"    Std: {np.std(intra_weights):.4f}")
                 print(f"    Min: {np.min(intra_weights):.4f}")
-                print(f"    Max: {np.max(intra_weights):.4f}")
+                print(f"    Max*: {np.max(intra_weights):.4f}")
 
             if inter_weights:
                 print(f"\n  Inter-cluster edge weights:")
+                print(f"    All: {inter_weights}")
                 print(f"    Mean: {np.mean(inter_weights):.4f}")
                 print(f"    Std: {np.std(inter_weights):.4f}")
-                print(f"    Min: {np.min(inter_weights):.4f}")
+                print(f"    Min*: {np.min(inter_weights):.4f}")
                 print(f"    Max: {np.max(inter_weights):.4f}")
 
             result = self.compute_cluster_validity_score()
-            print(f"\n" + "=" * 60)
-            print("VALIDITY SCORE BREAKDOWN:")
-            print("=" * 60)
+            # print(f"\n" + "=" * 60)
+            # print("VALIDITY SCORE BREAKDOWN:")
+            # print("=" * 60)
             print(f"  Separation Ratio (inter/intra): {result['separation_ratio']:.4f}")
             print(f"  Average Cell Purity: {result['avg_purity']:.4f}")
             print(f"  Average Cell Impurity (entropy): {result['avg_impurity']:.4f}")
@@ -723,36 +717,31 @@ def demo_adaptive_grid_mst():
     # X, labels = make_blobs(n_samples=500, n_features=2, centers=4, cluster_std=0.6, random_state=42)
     # each element is a set of datasets
 
-
-
-    X, gt = create_data2(1000)
+    X, gt = create_data7(1000)
     scale = (-1, 1)
     label_sets = {"gt": gt}
     label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"])
     X = MinMaxScaler(scale).fit_transform(X)
 
     print("\nBuilding Adaptive Grid MST...")
-    grid_mst = AdaptiveGridMST(X, gt, min_points=8, max_depth=8)
+    grid_mst = AdaptiveGridMST(X, gt, min_points=5, max_depth=20)
 
     print("\nGenerating visualizations...")
-    grid_mst.visualize_grid('01_adaptive_grid.png')
-    grid_mst.visualize_cell_graph('02_cell_graph.png')
-    grid_mst.visualize_mst('03_cell_mst.png')
-
-    # Test with different clustering qualities
-    print("\n" + "=" * 60)
-    print("COMPARING DIFFERENT CLUSTERINGS")
-    print("=" * 60)
+    grid_mst.visualize_grid('./trial/01_adaptive_grid.png')
+    grid_mst.visualize_cell_graph('./trial/02_cell_graph.png')
+    grid_mst.visualize_mst('./trial/03_cell_mst.png')
 
     for label_name, label_set in label_sets.items():
         # Good clustering (original)
-        print(f"\nX. CLUSTERING ({label_name}):")
-        grid_mst = AdaptiveGridMST(X, label_set, min_points=8, max_depth=8)
+        print("\n" + "=" * 60)
+        print(f"X. CLUSTERING ({label_name}):")
+        print("\n" + "=" * 60)
+        grid_mst = AdaptiveGridMST(X, label_set, min_points=5, max_depth=20)
         score = grid_mst.compute_cluster_validity_score()['final_score']
         print(f"   Validity Score: {score:.4f}")
 
         grid_mst.analyze_clustering()
-        grid_mst.visualize_mst(f'04_{label_name}_clustering_mst.png')
+        grid_mst.visualize_mst(f'./trial/04_{label_name}_clustering_mst.png')
 
 
 if __name__ == "__main__":

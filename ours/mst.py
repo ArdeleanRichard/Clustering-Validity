@@ -2,6 +2,8 @@ import numpy as np
 from collections import defaultdict, deque
 import heapq
 
+from sklearn.neighbors import NearestNeighbors
+
 
 class DistanceCalculator:
     """
@@ -21,14 +23,13 @@ class DistanceCalculator:
         self.k = k
 
         # Build MST
-        self.edges = self._build_mst_optimized()
-        self.adj = self._build_adjacency_list()
+        self.mst_edges = self._build_mst()
+        self.adj = self._build_adj_list()
 
         # Cache for distance queries
         self._distance_cache = {}
 
-
-    def _build_mst_optimized(self):
+    def _build_mst(self):
         """Build MST using Prim's with k-NN"""
         n = self.n_samples
         visited = np.zeros(n, dtype=bool)
@@ -70,10 +71,10 @@ class DistanceCalculator:
 
         return edges
 
-    def _build_adjacency_list(self):
+    def _build_adj_list(self):
         """Build adjacency list from edges."""
         adj = defaultdict(list)
-        for u, v, dist in self.edges:
+        for u, v, dist in self.mst_edges:
             adj[u].append((v, dist))
             adj[v].append((u, dist))
         return adj
@@ -161,7 +162,7 @@ class DistanceCalculator:
         return distance_matrix
 
 
-def centroid_id_from_data_fast(data, indices=None):
+def _get_centroid_id_from_data_fast(data, indices=None):
     """Optimized centroid finding - vectorization."""
     if len(data) == 1:
         return indices[0] if indices is not None else 0
@@ -174,6 +175,13 @@ def centroid_id_from_data_fast(data, indices=None):
 
     return indices[min_idx] if indices is not None else min_idx
 
+def _get_find_cluster_centroids_ids(data, labels, unique_labels):
+    centroid_ids = np.array([
+        _get_centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
+        for label in unique_labels
+    ])
+    return centroid_ids
+
 
 def mst_silhouette_score(data, labels, k=5):
     """Silhouette score using MST distances."""
@@ -184,14 +192,11 @@ def mst_silhouette_score(data, labels, k=5):
     if n_clusters == 1:
         return 0.0
 
-    # Build MST once
+    # Build MST
     dist_calculator = DistanceCalculator(data, k=k)
 
     # Find centroids
-    centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
-        for label in unique_labels
-    ])
+    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
 
     # Get distances from all centroids to all points efficiently
     distance_matrix = dist_calculator.get_distances_to_multiple(centroid_ids).T
@@ -202,9 +207,8 @@ def mst_silhouette_score(data, labels, k=5):
     intra_distances = distance_matrix[np.arange(n_samples), cluster_indices]
 
     # Compute inter-cluster distances (minimum distance to other cluster centroids)
-    # Set own cluster distance to inf
     distance_matrix_masked = distance_matrix.copy()
-    distance_matrix_masked[np.arange(n_samples), cluster_indices] = np.inf
+    distance_matrix_masked[np.arange(n_samples), cluster_indices] = np.inf      # Set own cluster distance to inf
     inter_distances = np.min(distance_matrix_masked, axis=1)
 
     # Compute silhouette coefficients
@@ -223,14 +227,11 @@ def mst_davies_bouldin_score(data, labels, k=5):
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
 
-    # Build MST once
+    # Build MST
     dist_calculator = DistanceCalculator(data, k=k)
 
     # Find centroids
-    centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
-        for label in unique_labels
-    ])
+    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
 
     # Compute inter-cluster distances (between centroids)
     cluster_distances = np.zeros((n_clusters, n_clusters))
@@ -270,17 +271,14 @@ def mst_calinski_harabasz_score(data, labels, k=5):
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
 
-    # Build MST once
+    # Build MST
     dist_calculator = DistanceCalculator(data, k=k)
 
-    # Find cluster centroids
-    centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
-        for label in unique_labels
-    ])
+    # Find centroids
+    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
 
     # Find overall centroid
-    overall_centroid_id = centroid_id_from_data_fast(data)
+    overall_centroid_id = _get_centroid_id_from_data_fast(data)
 
     # Between-cluster sum of squares
     between_ss = 0.0
@@ -304,6 +302,95 @@ def mst_calinski_harabasz_score(data, labels, k=5):
     return ch_index
 
 
+
+def compute_purity(data, labels, k=5, mode='euclidean', distance_calculator=None):
+    """
+    Compute per-point purity: how many of the k nearest neighbors differ in label.
+
+    Parameters
+    ----------
+    data : ndarray, shape (n_samples, n_features)
+    labels : 1d array-like, shape (n_samples,)
+    k : int
+        Number of neighbors to consider (neighbors excluded self).
+    mode : {'euclidean', 'mst'}
+        'euclidean' uses Euclidean k-NN (fast via sklearn where available).
+        'mst' uses MST-based distances (slower: computes MST-distance to all points).
+    distance_calculator : DistanceCalculator or None
+        If mode == 'mst' you can pass a pre-built DistanceCalculator to avoid rebuilding.
+    """
+    data = np.asarray(data)
+    labels = np.asarray(labels)
+    n_samples = len(data)
+
+    if k <= 0:
+        raise ValueError("k must be >= 1")
+
+    # Find k nearest neighbors for each point
+    if mode == 'euclidean':
+        nn = NearestNeighbors(n_neighbors=k + 1, algorithm='auto').fit(data)
+        dists, indices = nn.kneighbors(data)
+        # indices includes self at position 0
+        neighbors = indices[:, 1:k + 1]
+    elif mode == 'mst':
+        if distance_calculator is None:
+            distance_calculator = DistanceCalculator(data, k=k)
+        # build full MST-distance matrix (n x n)
+        dist_mat = distance_calculator.get_distances_to_multiple(np.arange(n_samples)).T
+        # self-distance is zero; exclude it
+        neighbors = np.argpartition(dist_mat, k + 1, axis=1)[:, :k + 1]
+        # remove self from each row
+        cleaned_neighbors = np.zeros((n_samples, k), dtype=int)
+        for i in range(n_samples):
+            row = neighbors[i]
+            # ensure we drop self
+            row_no_self = row[row != i]
+            if len(row_no_self) >= k:
+                cleaned_neighbors[i] = row_no_self[:k]
+            else:
+                # rare: not enough distinct neighbors (small n); pad with remaining
+                padded = np.pad(row_no_self, (0, k - len(row_no_self)), 'wrap')
+                cleaned_neighbors[i] = padded[:k]
+        neighbors = cleaned_neighbors
+    else:
+        raise ValueError("mode must be 'euclidean' or 'mst'")
+
+    # Count different-label neighbors
+    diff_counts = np.sum(labels[neighbors] != labels[:, np.newaxis], axis=1)
+    diff_fractions = diff_counts / float(k)
+
+    # Summary stats
+    same_fractions = 1.0 - diff_fractions
+
+    unique_labels = np.unique(labels)
+    label_purity = {}
+    cluster_sizes = {}
+    for ul in unique_labels:
+        mask = labels == ul
+        size = np.sum(mask)
+        cluster_sizes[ul] = int(size)
+        if np.sum(mask) > 0:
+            # value = np.exp(np.mean(np.log(same_fractions[mask] + 1e-10)))
+            # value = np.mean(same_fractions[mask])
+
+            vals = np.sort(same_fractions[mask])  # ascending: worst -> best
+            # weights: give largest weight to worst (first) and smallest to best (last)
+            # no hyperparameter: integer ranks reversed
+            weights = np.arange(size, 0, -1)  # e.g., [n, n-1, ..., 1]
+            value = float(np.dot(vals, weights) / float(weights.sum()))
+            label_purity[ul] = np.clip(value, 0.0, 1.0)
+        else:
+            label_purity[ul] = np.nan
+
+    total = 0.0
+    min_purity = np.inf
+    for ul, pur in label_purity.items():
+        total += pur * cluster_sizes[ul]
+        min_purity = min(min_purity, pur)
+    global_purity = float(total / float(len(labels)))
+
+    return min_purity
+
 def mst_separation_ratio(data, labels, k=5):
     """
     Optimized version of mst_idea: ratio of max intra-cluster to min inter-cluster distance.
@@ -314,36 +401,49 @@ def mst_separation_ratio(data, labels, k=5):
 
     # For within-cluster distances, build separate MSTs for each cluster
     max_intra_dist = 0.0
-
+    max_intra_dists = []
     for label in unique_labels:
         cluster_data = data[labels == label]
         if len(cluster_data) > 1:
-            cluster_mst = DistanceCalculator(cluster_data, k=min(k, len(cluster_data) - 1))
-            cluster_centroid_id = centroid_id_from_data_fast(cluster_data)
+            cluster_mst = DistanceCalculator(cluster_data, k=k)
+            cluster_centroid_id = _get_centroid_id_from_data_fast(cluster_data)
 
             # Maximum distance from centroid to any point in cluster
             distances = cluster_mst.get_distances_to_point(cluster_centroid_id)
             max_intra_dist = max(max_intra_dist, np.max(distances))
+            max_intra_dists.append(np.max(distances))
 
     # For inter-cluster distances, use full MST
     mst = DistanceCalculator(data, k=k)
-    centroid_ids = np.array([
-        centroid_id_from_data_fast(data[labels == label],
-                                   indices=np.where(labels == label)[0])
-        for label in unique_labels
-    ])
+
+    # Find centroids
+    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
 
     # Find minimum inter-cluster distance
-    min_inter_dist = np.inf
+    min_inter_dists = []
     for i in range(n_clusters):
-        for j in range(i + 1, n_clusters):
-            dist = mst.get_distance(centroid_ids[i], centroid_ids[j])
-            min_inter_dist = min(min_inter_dist, dist)
+        min_inter_dist = np.inf
+        for j in range(n_clusters):
+            if i != j:
+                dist = mst.get_distance(centroid_ids[i], centroid_ids[j])
+                min_inter_dist = min(min_inter_dist, dist)
+        min_inter_dists.append(min_inter_dist)
 
-    if min_inter_dist == 0 or min_inter_dist == np.inf:
-        return np.inf
+    purity = compute_purity(data, labels, k)
+    # print(min_inter_dist, max_intra_dist, purity)
 
-    return max_intra_dist / min_inter_dist
+    # return min_inter_dist / max_intra_dist * purity
+
+    max_intra_dists = np.array(max_intra_dists)
+    min_inter_dists = np.array(min_inter_dists)
+
+    # print(min_inter_dists, max_intra_dists, purity)
+
+    return np.sum(min_inter_dists / max_intra_dists) * purity
+
+
+
+
 
 
 
@@ -381,4 +481,6 @@ def compare_performance():
 
 
 if __name__ == "__main__":
-    compare_performance()
+    pass
+
+    # compare_performance()
