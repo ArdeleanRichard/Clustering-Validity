@@ -1,3 +1,6 @@
+# Arbor / Arboris / Edger?
+# Find normalization?
+
 import numpy as np
 from collections import defaultdict, deque
 import heapq
@@ -303,7 +306,7 @@ def mst_calinski_harabasz_score(data, labels, k=5):
 
 
 
-def compute_purity(data, labels, k=5, mode='euclidean', distance_calculator=None):
+def compute_purity(data, labels, k=5, mode='euclidean'):
     """
     Compute per-point purity: how many of the k nearest neighbors differ in label.
 
@@ -313,9 +316,8 @@ def compute_purity(data, labels, k=5, mode='euclidean', distance_calculator=None
     labels : 1d array-like, shape (n_samples,)
     k : int
         Number of neighbors to consider (neighbors excluded self).
-    mode : {'euclidean', 'mst'}
+    mode : {'euclidean'}
         'euclidean' uses Euclidean k-NN (fast via sklearn where available).
-        'mst' uses MST-based distances (slower: computes MST-distance to all points).
     distance_calculator : DistanceCalculator or None
         If mode == 'mst' you can pass a pre-built DistanceCalculator to avoid rebuilding.
     """
@@ -332,26 +334,6 @@ def compute_purity(data, labels, k=5, mode='euclidean', distance_calculator=None
         dists, indices = nn.kneighbors(data)
         # indices includes self at position 0
         neighbors = indices[:, 1:k + 1]
-    elif mode == 'mst':
-        if distance_calculator is None:
-            distance_calculator = DistanceCalculator(data, k=k)
-        # build full MST-distance matrix (n x n)
-        dist_mat = distance_calculator.get_distances_to_multiple(np.arange(n_samples)).T
-        # self-distance is zero; exclude it
-        neighbors = np.argpartition(dist_mat, k + 1, axis=1)[:, :k + 1]
-        # remove self from each row
-        cleaned_neighbors = np.zeros((n_samples, k), dtype=int)
-        for i in range(n_samples):
-            row = neighbors[i]
-            # ensure we drop self
-            row_no_self = row[row != i]
-            if len(row_no_self) >= k:
-                cleaned_neighbors[i] = row_no_self[:k]
-            else:
-                # rare: not enough distinct neighbors (small n); pad with remaining
-                padded = np.pad(row_no_self, (0, k - len(row_no_self)), 'wrap')
-                cleaned_neighbors[i] = padded[:k]
-        neighbors = cleaned_neighbors
     else:
         raise ValueError("mode must be 'euclidean' or 'mst'")
 
@@ -440,11 +422,6 @@ def mst_separation_ratio(data, labels, k=5):
     # print(min_inter_dists, max_intra_dists, purity)
 
     return np.sum(min_inter_dists / max_intra_dists) * purity
-
-
-
-
-
 
 
 def compare_performance():

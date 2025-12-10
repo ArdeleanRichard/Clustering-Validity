@@ -76,26 +76,24 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
 
 
 
-def run_scores_set1(plot=False):
-    # each element is a set of datasets
-    sets = [
-        # create_set1(n_samples=1000),
-        # create_set_g(dims=2),
-        create_set_a(),
-        # create_set_s(),
-        # create_set_graves(),
-        # create_set_sipu(),
-        # create_set_wut(),
-    ]
-    for set in sets:
-        run_score_set(set, plot=plot)
+def run_scores(plot=False):
+    ### Each element in the list is a set of datasets
+    # sets = [
+    #     create_set1(n_samples=1000),
+    #     # create_set_g(dims=2),
+    #     # create_set_a(),
+    #     # create_set_s(),
+    #     # create_set_graves(),
+    #     # create_set_sipu(),
+    #     # create_set_wut(),
+    # ]
+    # for set in sets:
+    #     run_score_set(set, plot=plot)
 
-    # datasets = create_set_uci()
-    # run_score_set(datasets, list_labelsets=["rl"], plot=False)
-
-
+    datasets = create_set_uci()
+    run_score_set(datasets, list_labelsets=["rl"], plot=False)
 
 
 
 if __name__ == '__main__':
-    run_scores_set1(plot=True)
+    run_scores(plot=True)
