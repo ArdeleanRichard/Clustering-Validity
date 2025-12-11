@@ -3,7 +3,7 @@ import numpy as np
 
 random_state = 42
 np.random.seed(random_state)
-
+scale = (-1, 1)
 
 LABEL_COLOR_MAP = {
     -1: 'gray',

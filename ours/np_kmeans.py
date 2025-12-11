@@ -29,7 +29,6 @@ class KMeansClustering:
             centroids = self.calculate_new_centroids(clusters, X)
 
 
-
             error = self.calculate_error(clusters, centroids, X)
             if error > prev_error:
                 break

@@ -220,3 +220,16 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("Results DataFrame:")
     print(results)
+
+    # Analyze with Silhouette score
+    results = analyze_score(
+        cvi_str="ad_silhouette",
+        X=X,
+        true_labels=y_true,
+        k_range=(2, 10),
+        dataset_name="data4"
+    )
+
+    print("\n" + "=" * 50)
+    print("Results DataFrame:")
+    print(results)

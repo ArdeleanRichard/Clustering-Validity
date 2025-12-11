@@ -144,7 +144,6 @@ class ED_KMeansClustering:
 
 
 if __name__ == "__main__":
-    np.random.seed(10)
     # num_clusters = 3
     # X, y = make_blobs(n_samples=1000, n_features=2, centers=num_clusters)
     num_clusters = 2
