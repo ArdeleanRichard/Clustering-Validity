@@ -5,12 +5,11 @@ import heapq
 
 from sklearn.neighbors import NearestNeighbors
 
-# Arbor / Arboris / Edger?
 # Find normalization?
 class ArborisDistanceCalculator:
     """
-    MST-based distance computation
     Arboris distance = distance of the tree
+    MST-based distance computation
     """
 
     def __init__(self, data, k=5):
@@ -166,7 +165,6 @@ class ArborisDistanceCalculator:
 
 
 def _get_centroid_id_from_data_fast(data, indices=None):
-    """Optimized centroid finding - vectorization."""
     if len(data) == 1:
         return indices[0] if indices is not None else 0
 

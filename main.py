@@ -7,7 +7,7 @@ from sklearn.utils import shuffle
 from constants import LABEL_COLOR_MAP, FOLDER_RESULTS, FOLDER_FIGS_DATA, scale
 from load_datasets import create_set1, create_set_g, create_set_a, create_set_s, create_set_graves, create_set_sipu, create_set_uci, create_set_wut
 from load_labelsets import diagonal_line, vertical_line, assign_labels_by_given_line, horizontal_line
-from load_indices import choose_index, create_indices_table, create_indices_table_with_arrows
+from load_CVIs import choose_index, create_indices_table, create_indices_table_with_arrows
 
 
 def remove_dups(X, gt):

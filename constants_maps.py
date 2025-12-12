@@ -12,9 +12,9 @@ from metrics.cs_index import cs_index
 from metrics.cvi_set.cop import cop
 from metrics.cvi_set.gSym import gSym
 from metrics.i_index import i_index
-from ours.ed_scores import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
+from ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 
-from ours.ad_scores import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, mst_separation_ratio
+from ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, mst_separation_ratio
 
 from ours.measures import imbalance_ratio, overlap_ratio
 

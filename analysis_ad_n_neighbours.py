@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
-from constants import LABEL_COLOR_MAP
+from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_AD
 from constants_maps import MAP_INTERNAL_METRICS
 from load_datasets import create_data1
 
@@ -50,7 +50,7 @@ def plot_n_neighbours_analysis(
 
     plt.tight_layout()
 
-    plt.savefig(f"./figs/analysis/ad_n_neighbours/{cvi_name_full}.png")
+    plt.savefig(FOLDER_FIGS_ANALYSIS_AD+f"{cvi_name_full}.png")
     plt.close()
 
 
@@ -171,7 +171,7 @@ def plot_n_neighbours_analysis_all(
     plt.tight_layout(pad=2.0)
 
     # save with higher DPI so text and markers are crisp
-    plt.savefig(f"./figs/analysis/ad_n_neighbours/{cvi_name_full}.png", dpi=150, bbox_inches='tight')
+    plt.savefig(FOLDER_FIGS_ANALYSIS_AD + f"{cvi_name_full}.png", dpi=150, bbox_inches='tight')
     plt.close(fig)
 
 

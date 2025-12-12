@@ -1,0 +1,9 @@
+algorithm,aggregation,compound,jain,pathbased,spiral,unbalance
+K-Means,0.735,0.583,0.577,0.461,-0.006,1.0
+DBSCAN,0.987,0.949,1.0,0.92,1.0,1.0
+HDBSCAN,0.827,0.883,0.976,0.682,1.0,1.0
+MeanShift,0.868,0.77,0.367,0.574,0.113,1.0
+AgglomerativeClustering,0.929,0.796,0.976,0.485,1.0,0.995
+SpectralClustering,0.539,0.807,0.733,0.657,1.0,0.61
+ED-K-Means,0.652,0.567,1.0,0.449,0.353,0.886
+AD-K-Means,0.827,0.831,0.899,0.58,1.0,1.0

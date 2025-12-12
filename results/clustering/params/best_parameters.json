@@ -1,0 +1,254 @@
+{
+  "compound": {
+    "DBSCAN": {
+      "params": {
+        "eps": 0.1,
+        "min_samples": 3
+      },
+      "score": 0.9485129049082743
+    },
+    "HDBSCAN": {
+      "params": {
+        "min_cluster_size": 3,
+        "min_samples": 1,
+        "cluster_selection_epsilon": 0
+      },
+      "score": 0.882774964800139
+    },
+    "MeanShift": {
+      "params": {
+        "quantile": 0.2,
+        "n_samples": 15,
+        "bandwidth": 0.37927054856976766,
+        "bin_seeding": true
+      },
+      "score": 0.7704868178770715
+    },
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 5,
+        "linkage": "average"
+      },
+      "score": 0.7961897421642671
+    },
+    "SpectralClustering": {
+      "params": {
+        "n_clusters": 4,
+        "affinity": "nearest_neighbors",
+        "n_neighbors": 5,
+        "assign_labels": "kmeans"
+      },
+      "score": 0.8072773593496926
+    }
+  },
+  "aggregation": {
+    "DBSCAN": {
+      "params": {
+        "eps": 0.15,
+        "min_samples": 20
+      },
+      "score": 0.987174822183603
+    },
+    "HDBSCAN": {
+      "params": {
+        "min_cluster_size": 3,
+        "min_samples": 10,
+        "cluster_selection_epsilon": 0
+      },
+      "score": 0.8266938072768673
+    },
+    "MeanShift": {
+      "params": {
+        "quantile": 0.15,
+        "n_samples": 20,
+        "bandwidth": 0.291638207371654,
+        "bin_seeding": false
+      },
+      "score": 0.8677394624352229
+    },
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 5,
+        "linkage": "average"
+      },
+      "score": 0.9290231840637739
+    },
+    "SpectralClustering": {
+      "params": {
+        "n_clusters": 5,
+        "affinity": "nearest_neighbors",
+        "n_neighbors": 5,
+        "assign_labels": "discretize"
+      },
+      "score": 0.8418261255639993
+    }
+  },
+  "jain": {
+    "DBSCAN": {
+      "params": {
+        "eps": 0.15,
+        "min_samples": 15
+      },
+      "score": 1.0
+    },
+    "HDBSCAN": {
+      "params": {
+        "min_cluster_size": 10,
+        "min_samples": 1,
+        "cluster_selection_epsilon": 0.15
+      },
+      "score": 0.9760456408388555
+    },
+    "MeanShift": {
+      "params": {
+        "quantile": 0.25,
+        "n_samples": 20,
+        "bandwidth": 0.4283488402876744,
+        "bin_seeding": true
+      },
+      "score": 0.36652293824045973
+    },
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 4,
+        "linkage": "single"
+      },
+      "score": 0.9758050137292894
+    },
+    "SpectralClustering": {
+      "params": {
+        "n_clusters": 2,
+        "affinity": "nearest_neighbors",
+        "n_neighbors": 5,
+        "assign_labels": "kmeans"
+      },
+      "score": 1.0
+    }
+  },
+  "spiral": {
+    "DBSCAN": {
+      "params": {
+        "eps": 0.1,
+        "min_samples": 3
+      },
+      "score": 1.0
+    },
+    "HDBSCAN": {
+      "params": {
+        "min_cluster_size": 3,
+        "min_samples": 1,
+        "cluster_selection_epsilon": 0
+      },
+      "score": 1.0
+    },
+    "MeanShift": {
+      "params": {
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 0.3608962327535481,
+        "bin_seeding": true
+      },
+      "score": 0.11257250940511869
+    },
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 3,
+        "linkage": "single"
+      },
+      "score": 1.0
+    },
+    "SpectralClustering": {
+      "params": {
+        "n_clusters": 3,
+        "affinity": "nearest_neighbors",
+        "n_neighbors": 3,
+        "assign_labels": "kmeans"
+      },
+      "score": 1.0
+    }
+  },
+  "pathbased": {
+    "DBSCAN": {
+      "params": {
+        "eps": 0.15,
+        "min_samples": 10
+      },
+      "score": 0.9195181248088738
+    },
+    "HDBSCAN": {
+      "params": {
+        "min_cluster_size": 15,
+        "min_samples": 1,
+        "cluster_selection_epsilon": 0.1
+      },
+      "score": 0.6815478637598318
+    },
+    "MeanShift": {
+      "params": {
+        "quantile": 0.15,
+        "n_samples": 20,
+        "bandwidth": 0.2856084668694225,
+        "bin_seeding": false
+      },
+      "score": 0.5743469720871489
+    },
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 3,
+        "linkage": "ward"
+      },
+      "score": 0.484740691972538
+    },
+    "SpectralClustering": {
+      "params": {
+        "n_clusters": 5,
+        "affinity": "nearest_neighbors",
+        "n_neighbors": 10,
+        "assign_labels": "discretize"
+      },
+      "score": 0.6573377577277222
+    }
+  },
+  "unbalance": {
+    "DBSCAN": {
+      "params": {
+        "eps": 0.1,
+        "min_samples": 3
+      },
+      "score": 0.9999655044530594
+    },
+    "HDBSCAN": {
+      "params": {
+        "min_cluster_size": 3,
+        "min_samples": 1,
+        "cluster_selection_epsilon": 0.075
+      },
+      "score": 1.0
+    },
+    "MeanShift": {
+      "params": {
+        "quantile": 0.75,
+        "n_samples": 3,
+        "bandwidth": 0.17472914729714326,
+        "bin_seeding": true
+      },
+      "score": 1.0
+    },
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 5,
+        "linkage": "ward"
+      },
+      "score": 0.9953634612406389
+    },
+    "SpectralClustering": {
+      "params": {
+        "n_clusters": 5,
+        "affinity": "nearest_neighbors",
+        "n_neighbors": 20,
+        "assign_labels": "kmeans"
+      },
+      "score": 0.9930521147723831
+    }
+  }
+}
