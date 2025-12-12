@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans, SpectralClustering, estimate_bandwidth, MeanShift, AgglomerativeClustering, DBSCAN
-from sklearn.cluster._hdbscan import hdbscan
+from hdbscan import HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 
@@ -30,7 +30,7 @@ def run_clustering_algorithms(X, n_clusters):
     dbs_time = time.time() - dbs_start
 
     hdb_start = time.time()
-    hdb = hdbscan.HDBSCAN(leaf_size=5).fit(X)
+    hdb = HDBSCAN(min_cluster_size=5).fit(X)
     hdb_labels = hdb.labels_
     hdb_time = time.time() - hdb_start
 
@@ -84,9 +84,9 @@ def run_kmeans_set1():
         # ("compound", create_compound()),
         # ("aggregation", create_aggregation()),
         # ("jain", create_jain()),
-        ("unbalance", create_unbalance()),
         ("spiral", create_spiral()),
         ("pathbased", create_pathbased()),
+        ("unbalance", create_unbalance()),
     ]
     for data_name, (X, gt) in datasets:
         X = MinMaxScaler(scale).fit_transform(X)

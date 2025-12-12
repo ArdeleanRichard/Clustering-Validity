@@ -21,8 +21,6 @@ for file in glob.glob(FOLDER):
         # count * occurrences
         num_errors = row.astype(str).str.contains(r"\*").sum()
 
-
-
         # initialize counters if first time seeing this metric
         metric_correct_counts.setdefault(metric, 0)
         metric_error_counts.setdefault(metric, 0)
