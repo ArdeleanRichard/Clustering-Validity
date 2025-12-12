@@ -6,7 +6,6 @@ from constants_maps import MAP_EXTERNAL_METRICS, MAP_MEASURES
 from load_datasets import load_UNBALANCE_STATS, generate_unbalance_like
 from ours.external_CVIs import balanced_external
 
-
 def analyze_external_index_vs_imbalance(cvi_str, measure_str, scales=np.linspace(1.0, 10.0, 10), save_prefix="analysis_imbalance"):
     cvi_name_acronym, cvi_name_full, cvi_function = MAP_EXTERNAL_METRICS[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
@@ -40,7 +39,8 @@ def analyze_external_index_vs_imbalance(cvi_str, measure_str, scales=np.linspace
 
         label_color = [LABEL_COLOR_MAP[i] for i in y_true]
         axes[0].scatter(X[:, 0], X[:, 1], c=label_color, s=10)
-        axes[0].set_title(f'True labels (scale={s:.2f}, {measure_name_acronym}={measure_value:.2f})')
+        # axes[0].set_title(f'True labels (scale={s:.2f}, {measure_name_acronym}={measure_value:.2f})')
+        axes[0].set_title(f'True labels ({measure_name_acronym}={measure_value:.2f})')
         label_color = [LABEL_COLOR_MAP[i] for i in y_rand]
         axes[1].scatter(X[:, 0], X[:, 1], c=label_color, s=10)
         axes[1].set_title(f'Randomized minority clusters labels\n{cvi_name_acronym}={score:.3f}, B{cvi_name_acronym}={balanced_score:.3f}')
@@ -50,7 +50,7 @@ def analyze_external_index_vs_imbalance(cvi_str, measure_str, scales=np.linspace
 
         print(f"Step {i+1}/{len(scales)} | scale={s:.2f} | {measure_name_acronym}={measure_value:.2f} | {cvi_name_acronym}={score:.3f} | B{cvi_name_acronym}={balanced_score:.3f}")
 
-    # Plot ARI vs imbalance ratio
+    # Plot CVI vs imbalance ratio
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(measure_vals, scores, 'o-', linewidth=2, label=f'{cvi_name_acronym}', color='r')
     ax.plot(measure_vals, balanced_scores, 'o-', linewidth=2, label=f'B{cvi_name_acronym}', color='g')
@@ -67,6 +67,7 @@ def analyze_external_index_vs_imbalance(cvi_str, measure_str, scales=np.linspace
 
 
 if __name__ == "__main__":
-    scales = np.linspace(1.0, 10.0, 10)
+    # scales = np.linspace(1.0, 10.0, 10)
+    scales = np.array([1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
     analyze_external_index_vs_imbalance("ari", "imbalance", scales=scales)
     analyze_external_index_vs_imbalance("ami", "imbalance", scales=scales)

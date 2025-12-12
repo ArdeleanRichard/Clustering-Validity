@@ -63,8 +63,6 @@ def assign_labels_by_given_line(points, line):
 
 def assign_labels_by_given_plane(points, plane):
     # Calculate the slope and intercept of the line (y = mx + b)
-
-
     if plane=="vertical":  # Vertical line (undefined slope)
         labels = [1 if x < 0 else 0 for x, _, _ in points]
     elif plane=="horizontal":  # Horizontal line (slope = 0)

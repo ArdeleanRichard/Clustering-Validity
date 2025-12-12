@@ -428,6 +428,7 @@ def generate_unbalance_like(UNBALANCE_STATS, MAJORITY_IDS, MINORITY_IDS, scale_m
         yi = np.full(n, cid)
         X_parts.append(Xi)
         y_parts.append(yi)
+    print(f"Minority Scale {scale_minority}: {np.unique(np.concatenate(y_parts), return_counts=True)}")
     return np.vstack(X_parts), np.concatenate(y_parts)
 
 
