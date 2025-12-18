@@ -1,6 +1,6 @@
 import numpy as np
 from load_datasets import create_unbalance
-from ours.external_CVIs import adjusted_rand_index_python, adjusted_rand_index_numpy, balanced_external
+from cvis_ours.external_CVIs import adjusted_rand_index_python, adjusted_rand_index_numpy, balanced_external
 
 
 if __name__ == "__main__":

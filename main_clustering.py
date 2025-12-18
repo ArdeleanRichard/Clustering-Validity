@@ -10,9 +10,9 @@ from sklearn.preprocessing import MinMaxScaler
 
 from load_datasets import create_data3, create_data6, create_data7, create_data4, create_data2, create_data1, create_data5, create_set1, create_compound, create_aggregation, create_jain, create_unbalance, create_spiral, create_pathbased
 from constants import LABEL_COLOR_MAP, random_state, scale, FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS
-from ours.np_kmeans import KMeansClustering
-from ours.ed_kmeans import ED_KMeansClustering
-from ours.ad_kmeans import AD_KMeansClustering
+from cvis_ours.np_kmeans import KMeansClustering
+from cvis_ours.ed_kmeans import ED_KMeansClustering
+from cvis_ours.ad_kmeans import AD_KMeansClustering
 
 def load_best_parameters_for_dataset(dataset_name):
     from pathlib import Path

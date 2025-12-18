@@ -1,13 +1,10 @@
 import numpy as np
-from collections import defaultdict, deque
-import heapq
-
 from sklearn.neighbors import NearestNeighbors
 
-from ours.ad import ArborisDistanceCalculator, _get_find_cluster_centroids_ids, _get_centroid_id_from_data_fast
+from cvis_ours.ad import ArborisDistanceCalculator, _get_find_cluster_centroids_ids, _get_centroid_id_from_data_fast
 
 
-def ad_silhouette_score(data, labels, k=5):
+def ad_silhouette_score(data, labels, n_neighbors=5):
     """Silhouette score using MST distances."""
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
@@ -17,7 +14,7 @@ def ad_silhouette_score(data, labels, k=5):
         return 0.0
 
     # Build MST
-    dist_calculator = ArborisDistanceCalculator(data, k=k)
+    dist_calculator = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
     centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
@@ -46,13 +43,13 @@ def ad_silhouette_score(data, labels, k=5):
     return np.mean(silhouette_coefficients)
 
 
-def ad_davies_bouldin_score(data, labels, k=5):
+def ad_davies_bouldin_score(data, labels, n_neighbors=5):
     """Davies-Bouldin score using MST distances."""
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
 
     # Build MST
-    dist_calculator = ArborisDistanceCalculator(data, k=k)
+    dist_calculator = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
     centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
@@ -89,14 +86,14 @@ def ad_davies_bouldin_score(data, labels, k=5):
     return db_index / n_clusters
 
 
-def ad_calinski_harabasz_score(data, labels, k=5):
+def ad_calinski_harabasz_score(data, labels, n_neighbors=5):
     """Calinski-Harabasz score using MST distances."""
     n_samples = len(data)
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
 
     # Build MST
-    dist_calculator = ArborisDistanceCalculator(data, k=k)
+    dist_calculator = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
     centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
@@ -139,8 +136,6 @@ def compute_purity(data, labels, k=5, mode='euclidean'):
         Number of neighbors to consider (neighbors excluded self).
     mode : {'euclidean'}
         'euclidean' uses Euclidean k-NN (fast via sklearn where available).
-    distance_calculator : ArborisDistanceCalculator or None
-        If mode == 'mst' you can pass a pre-built DistanceCalculator to avoid rebuilding.
     """
     data = np.asarray(data)
     labels = np.asarray(labels)
@@ -208,7 +203,7 @@ def mst_separation_ratio(data, labels, k=5):
     for label in unique_labels:
         cluster_data = data[labels == label]
         if len(cluster_data) > 1:
-            cluster_mst = ArborisDistanceCalculator(cluster_data, k=k)
+            cluster_mst = ArborisDistanceCalculator(cluster_data, n_neighbors=k)
             cluster_centroid_id = _get_centroid_id_from_data_fast(cluster_data)
 
             # Maximum distance from centroid to any point in cluster
@@ -217,7 +212,7 @@ def mst_separation_ratio(data, labels, k=5):
             max_intra_dists.append(np.max(distances))
 
     # For inter-cluster distances, use full MST
-    mst = ArborisDistanceCalculator(data, k=k)
+    mst = ArborisDistanceCalculator(data, n_neighbors=k)
 
     # Find centroids
     centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
@@ -261,19 +256,19 @@ def compare_performance():
         k = 5
         # Silhouette score
         start = time()
-        score_opt = ad_silhouette_score(X, labels, k=k)
+        score_opt = ad_silhouette_score(X, labels, n_neighbors=k)
         time_opt = time() - start
         print(f"  Optimized Silhouette: {score_opt:.4f} in {time_opt:.3f}s")
 
         # Davies-Bouldin score
         start = time()
-        score_opt = ad_davies_bouldin_score(X, labels, k=k)
+        score_opt = ad_davies_bouldin_score(X, labels, n_neighbors=k)
         time_opt = time() - start
         print(f"  Optimized Davies-Bouldin: {score_opt:.4f} in {time_opt:.3f}s")
 
         # Calinski-Harabasz score
         start = time()
-        score_opt = ad_calinski_harabasz_score(X, labels, k=k)
+        score_opt = ad_calinski_harabasz_score(X, labels, n_neighbors=k)
         time_opt = time() - start
         print(f"  Optimized Calinski-Harabasz: {score_opt:.4f} in {time_opt:.3f}s")
 

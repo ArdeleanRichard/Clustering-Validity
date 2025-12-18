@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from ours.ad import ArborisDistanceCalculator, _get_centroid_id_from_data_fast
+from cvis_ours.ad import ArborisDistanceCalculator, _get_centroid_id_from_data_fast
 from constants import LABEL_COLOR_MAP
 from load_datasets import create_data1, create_data7, create_data6
 
@@ -48,7 +48,7 @@ class AD_KMeansClustering:
             Cluster labels for each point
         """
         # Build MST for the entire dataset
-        self.dist_calculator = ArborisDistanceCalculator(X, k=self.n_neighbors)
+        self.dist_calculator = ArborisDistanceCalculator(X, n_neighbors=self.n_neighbors)
 
         # Initialize centroids
         centroid_ids = self.initialize_kmeans_pp(X)

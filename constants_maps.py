@@ -4,19 +4,19 @@ from permetrics import ClusteringMetric
 from pycvi import cvi as pycvi_cvi
 from pycvi.cluster import get_clustering
 
-from metrics.DBCV_opt import dbcv
-from metrics.VIASCKDE_opt import VIASCKDE
-from metrics.c_index import c_index
-from metrics.cdbw import CDbw
-from metrics.cs_index import cs_index
-from metrics.cvi_set.cop import cop
-from metrics.cvi_set.gSym import gSym
-from metrics.i_index import i_index
-from ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
+from cvis.DBCV_opt import dbcv
+from cvis.VIASCKDE_opt import VIASCKDE
+from cvis.c_index import c_index
+from cvis.cdbw import CDbw
+from cvis.cs_index import cs_index
+from cvis.cvi_set.cop import cop
+from cvis.cvi_set.gSym import gSym
+from cvis.i_index import i_index
+from cvis_ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 
-from ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, mst_separation_ratio
+from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, mst_separation_ratio
 
-from ours.measures import imbalance_ratio, overlap_ratio
+from cvis_ours.measures import imbalance_ratio, overlap_ratio
 
 
 MAP_METRIC_TO_FUNCTION = {

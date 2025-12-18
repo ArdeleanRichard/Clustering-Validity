@@ -1,6 +1,6 @@
 import numpy as np
 
-from ours.ed import edging_distance, centre_from_data
+from cvis_ours.ed import edging_distance, centre_from_data
 
 def ed_silhouette_score(data, labels, k=5, lookahead=10, debug=False):
     """

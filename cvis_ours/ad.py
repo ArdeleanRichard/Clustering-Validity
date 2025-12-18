@@ -12,17 +12,17 @@ class ArborisDistanceCalculator:
     MST-based distance computation
     """
 
-    def __init__(self, data, k=5):
+    def __init__(self, data, n_neighbors=5):
         """
         Initialize with data and build MST.
 
         Parameters:
         - data: ndarray, shape (n_samples, n_features)
-        - k: int, number of nearest neighbors for MST construction
+        - n_neighbors: int, number of nearest neighbors for graph construction
         """
         self.data = data
         self.n_samples = len(data)
-        self.k = k
+        self.n_neighbors = n_neighbors
 
         # Build MST
         self.mst_edges = self._build_mst()
@@ -43,7 +43,7 @@ class ArborisDistanceCalculator:
 
         # Vectorized distance computation for initial neighbors
         distances_sq = np.sum((self.data - self.data[0]) ** 2, axis=1)
-        neighbors = np.argpartition(distances_sq[1:], min(self.k, n - 2))[:min(self.k, n - 1)] + 1
+        neighbors = np.argpartition(distances_sq[1:], min(self.n_neighbors, n - 2))[:min(self.n_neighbors, n - 1)] + 1
 
         for neighbor in neighbors:
             heapq.heappush(pq, (distances_sq[neighbor], 0, neighbor))
@@ -63,7 +63,7 @@ class ArborisDistanceCalculator:
                 distances_sq = np.sum((self.data - self.data[v]) ** 2, axis=1)
                 distances_sq[visited] = np.inf
 
-                k_actual = min(self.k, np.sum(unvisited_mask))
+                k_actual = min(self.n_neighbors, np.sum(unvisited_mask))
                 if k_actual > 0:
                     neighbors = np.argpartition(distances_sq, k_actual - 1)[:k_actual]
 

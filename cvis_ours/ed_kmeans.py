@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from load_datasets import create_data2, create_data1
-from ours.ed import centre_from_data, edging_distance
+from cvis_ours.ed import centre_from_data, edging_distance
 from constants import LABEL_COLOR_MAP
 
 

@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 
 from constants import random_state, LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS
 from load_datasets import generate_clusters_analysis
-from ours.measures import imbalance_ratio, overlap_ratio
+from cvis_ours.measures import imbalance_ratio, overlap_ratio
 
 
 # -------------------- Plot helpers --------------------
