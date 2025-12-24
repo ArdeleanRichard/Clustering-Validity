@@ -41,7 +41,7 @@ def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, c
     p1, p2 = line_func(X_plot)  # Get the two points for plotting
     axes[1].plot([p1[0], p2[0]], [p1[1], p2[1]], 'k--', linewidth=2, alpha=0.8)  # general line
     axes[1].set_title(
-        f'{labelset_name} split labels ({labelset_str.upper()}) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_val:.2f}\n'
+        f'{labelset_name} midline separated labels ({labelset_str.upper()}) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_val:.2f}\n'
         f'{cvi_name_full} ({labelset_str.upper()})={cvi_fl_arr[chosen_idx]:.3f} vs {cvi_name_full} (TL)={cvi_tl_arr[chosen_idx]:.3f}',
         fontsize=11, fontweight='bold'
     )
@@ -323,11 +323,11 @@ def analyze_measure_kmeans(
 # -------------------- Main --------------------
 
 def main():
-    # print("\n" + "=" * 60)
-    # print("ANALYSIS: Imbalance vs Silhouette")
-    # print("=" * 60)
-    # analyze_measure("silhouette", "imbalance", "hl")
-    # analyze_measure("silhouette", "imbalance", "vl")
+    print("\n" + "=" * 60)
+    print("ANALYSIS: Imbalance vs Silhouette")
+    print("=" * 60)
+    analyze_measure("silhouette", "imbalance", "hl")
+    analyze_measure("silhouette", "imbalance", "vl")
 
     print("\n" + "=" * 60)
     print("ANALYSIS: Overlap vs Silhouette")
@@ -335,13 +335,13 @@ def main():
     analyze_measure("silhouette", "overlap", "hl")
     analyze_measure("silhouette", "overlap", "vl")
 
-    print("\n" + "=" * 60)
-    print("ANALYSIS (KMEANS): Overlap vs Silhouette")
-    print("=" * 60)
-    analyze_measure_kmeans("silhouette", "overlap")
-    analyze_measure("ad_silhouette", "overlap", "hl")
-    analyze_measure("ad_silhouette", "overlap", "vl")
-    analyze_measure_kmeans("ad_silhouette", "overlap")
+    # print("\n" + "=" * 60)
+    # print("ANALYSIS (KMEANS): Overlap vs Silhouette")
+    # print("=" * 60)
+    # analyze_measure_kmeans("silhouette", "overlap")
+    # analyze_measure("ad_silhouette", "overlap", "hl")
+    # analyze_measure("ad_silhouette", "overlap", "vl")
+    # analyze_measure_kmeans("ad_silhouette", "overlap")
 
 
 if __name__ == "__main__":

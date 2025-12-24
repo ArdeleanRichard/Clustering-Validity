@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import arff
 from sklearn import datasets
+from sklearn.datasets import make_blobs
 from sklearn.preprocessing import LabelEncoder
 from ucimlrepo import fetch_ucirepo
 
@@ -440,14 +441,21 @@ def generate_clusters_analysis(centers, sizes, cluster_std=1.0):
     Returns (X, labels) where X is (N, 2) and labels is length N.
     """
     centers = np.asarray(centers)
-    X_parts = []
-    labels_parts = []
-    for i, (c, n) in enumerate(zip(centers, sizes)):
-        X_i =  np.random.normal(loc=0.0, scale=cluster_std, size=(n, centers.shape[1])) + np.asarray(c)
-        X_parts.append(X_i)
-        labels_parts.append(np.full(n, i, dtype=int))
-    X = np.vstack(X_parts)
-    labels = np.concatenate(labels_parts)
+    # X_parts = []
+    # labels_parts = []
+    # for i, (c, n) in enumerate(zip(centers, sizes)):
+    #     X_i = np.random.normal(loc=0.0, scale=cluster_std, size=(n, centers.shape[1])) + np.asarray(c)
+    #     X_parts.append(X_i)
+    #     labels_parts.append(np.full(n, i, dtype=int))
+    # X = np.vstack(X_parts)
+    # labels = np.concatenate(labels_parts)
+
+    X, labels = make_blobs(n_samples=list(map(int, sizes)),
+                           centers=centers,
+                           cluster_std=cluster_std,
+                           random_state=random_state,
+                           shuffle=False)
+
     return X, labels
 
 

@@ -43,6 +43,7 @@ def analyze_cluster_overlap(
     centroid_distances = []
     small_examples = []  # store small datasets for plotting examples
 
+    print(distances)
     for d in distances:
         centers = [(0.0, 0.0), (d, 0.0), (3.0, 5.0)]
         sizes = [n_per_cluster, n_per_cluster, n_per_cluster]
@@ -84,10 +85,10 @@ def analyze_cluster_overlap(
 
     # Example scatter plots: pick far, mid, close
     fig2, axes2 = plt.subplots(1, 3, figsize=(15, 5))
-    example_indices = [0, len(distances) // 2, -1]
+    example_indices = [0, len(distances) // 2+1, -1]
     for ax, idx in zip(axes2, example_indices):
         Xs, labs, centers = small_examples[idx]
-        for k in range(3):
+        for k in range(len(np.unique(labs))):
             mask = labs == k
             ax.scatter(Xs[mask, 0], Xs[mask, 1], c=LABEL_COLOR_MAP[k], alpha=0.6, s=30, label=f"Cluster {k}")
             ax.scatter(*centers[k], c=LABEL_COLOR_MAP[k], marker='X', s=200, edgecolors='black', linewidths=2, zorder=5)
@@ -160,16 +161,16 @@ def analyze_imbalance_ratio(
 
     # --- Example scatter plots: pick start, middle, end ---
     fig2, axes2 = plt.subplots(1, 3, figsize=(15, 5))
-    example_indices = [0, len(minority_sizes) // 2, -1]
+    example_indices = [0, len(minority_sizes) // 2 + 1, -1]
+    # print(minority_sizes)
 
     for ax, idx in zip(axes2, example_indices):
         Xs, labs, ctrs = small_examples[idx]
-        for k in range(3):
+        for k in range(len(np.unique(labs))):
             mask = labs == k
             ax.scatter(Xs[mask, 0], Xs[mask, 1], c=LABEL_COLOR_MAP[k], alpha=0.6, s=30, label=f"Cluster {k}")
             # center marker
-            ax.scatter(*ctrs[k], c=LABEL_COLOR_MAP[k], marker='X', s=200,
-                       edgecolors='black', linewidths=2, zorder=5)
+            ax.scatter(*ctrs[k], c=LABEL_COLOR_MAP[k], marker='X', s=200, edgecolors='black', linewidths=2, zorder=5)
         size_val = minority_sizes[idx]
         ir_val = imbalance_ratios[idx]
         ax.set_title(f'n_minority={size_val}, IR={ir_val:.2f}', fontsize=12, fontweight='bold')
@@ -221,7 +222,7 @@ if __name__ == "__main__":
     print("ANALYSIS 1: CLUSTER OVERLAP VS CENTROID DISTANCE")
     print("=" * 60)
     centroid_dists, overlap_ratios = analyze_cluster_overlap(
-        distances=np.linspace(6, 1, 20),
+        distances=np.linspace(6, 1, 21),
         n_per_cluster=300,
         cluster_std=1.0,
         save_prefix="overlap"
@@ -241,7 +242,7 @@ if __name__ == "__main__":
     minority_sizes, imb_ratios = analyze_imbalance_ratio(
         initial_size=300,
         cluster_std=1.0,
-        cluster_2_sizes=np.linspace(300, 30, 20).astype(int),
+        cluster_2_sizes=np.linspace(300, 30, 19).astype(int),
         centers=[(0, 0), (5, 0), (2.5, 4)],
         save_prefix="imbalance",
     )

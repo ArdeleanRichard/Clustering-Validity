@@ -124,7 +124,7 @@ def ad_calinski_harabasz_score(data, labels, n_neighbors=5):
 
 
 
-def compute_purity(data, labels, k=5, mode='euclidean'):
+def compute_purity(data, labels, n_neighbors=5, mode='euclidean'):
     """
     Compute per-point purity: how many of the k nearest neighbors differ in label.
 
@@ -132,7 +132,7 @@ def compute_purity(data, labels, k=5, mode='euclidean'):
     ----------
     data : ndarray, shape (n_samples, n_features)
     labels : 1d array-like, shape (n_samples,)
-    k : int
+    n_neighbors : int
         Number of neighbors to consider (neighbors excluded self).
     mode : {'euclidean'}
         'euclidean' uses Euclidean k-NN (fast via sklearn where available).
@@ -141,21 +141,21 @@ def compute_purity(data, labels, k=5, mode='euclidean'):
     labels = np.asarray(labels)
     n_samples = len(data)
 
-    if k <= 0:
+    if n_neighbors <= 0:
         raise ValueError("k must be >= 1")
 
     # Find k nearest neighbors for each point
     if mode == 'euclidean':
-        nn = NearestNeighbors(n_neighbors=k + 1, algorithm='auto').fit(data)
+        nn = NearestNeighbors(n_neighbors=n_neighbors + 1, algorithm='auto').fit(data)
         dists, indices = nn.kneighbors(data)
         # indices includes self at position 0
-        neighbors = indices[:, 1:k + 1]
+        neighbors = indices[:, 1:n_neighbors + 1]
     else:
         raise ValueError("mode must be 'euclidean' or 'mst'")
 
     # Count different-label neighbors
     diff_counts = np.sum(labels[neighbors] != labels[:, np.newaxis], axis=1)
-    diff_fractions = diff_counts / float(k)
+    diff_fractions = diff_counts / float(n_neighbors)
 
     # Summary stats
     same_fractions = 1.0 - diff_fractions
@@ -189,7 +189,7 @@ def compute_purity(data, labels, k=5, mode='euclidean'):
 
     return min_purity
 
-def mst_separation_ratio(data, labels, k=5):
+def mst_separation_ratio(data, labels, n_neighbors=5):
     """
     Optimized version of mst_idea: ratio of max intra-cluster to min inter-cluster distance.
     Lower is better (compact clusters, well-separated).
@@ -203,7 +203,7 @@ def mst_separation_ratio(data, labels, k=5):
     for label in unique_labels:
         cluster_data = data[labels == label]
         if len(cluster_data) > 1:
-            cluster_mst = ArborisDistanceCalculator(cluster_data, n_neighbors=k)
+            cluster_mst = ArborisDistanceCalculator(cluster_data, n_neighbors=n_neighbors)
             cluster_centroid_id = _get_centroid_id_from_data_fast(cluster_data)
 
             # Maximum distance from centroid to any point in cluster
@@ -212,7 +212,7 @@ def mst_separation_ratio(data, labels, k=5):
             max_intra_dists.append(np.max(distances))
 
     # For inter-cluster distances, use full MST
-    mst = ArborisDistanceCalculator(data, n_neighbors=k)
+    mst = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
     centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
@@ -227,7 +227,7 @@ def mst_separation_ratio(data, labels, k=5):
                 min_inter_dist = min(min_inter_dist, dist)
         min_inter_dists.append(min_inter_dist)
 
-    purity = compute_purity(data, labels, k)
+    purity = compute_purity(data, labels, n_neighbors)
     # print(min_inter_dist, max_intra_dist, purity)
 
     # return min_inter_dist / max_intra_dist * purity

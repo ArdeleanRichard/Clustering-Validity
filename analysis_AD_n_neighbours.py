@@ -36,7 +36,7 @@ def plot_n_neighbours_analysis(
 
     scores = []
     for k in ks:
-        val = cvi_function(X, labels, k=k)
+        val = cvi_function(X, labels, n_neighbors=k)
 
         scores.append(float(val))
     scores = np.array(scores)
@@ -44,7 +44,7 @@ def plot_n_neighbours_analysis(
 
     ax_curve.set_xlabel("k")
     ax_curve.set_xticks(ks)
-    ax_curve.set_title(f"{cvi_name_full} vs k parameter")
+    ax_curve.set_title(rf"{cvi_name_full} vs $\it{{n\_neighbours}}$ parameter")
     ax_curve.grid(True, linestyle="--", alpha=0.4)
     ax_curve.legend(fontsize="small", loc="best")
 
@@ -103,9 +103,10 @@ def plot_n_neighbours_analysis_all(
         edgecolors='k',
         linewidths=0.8,
         alpha=0.95,
-        s=80,
+        s=50,
         rasterized=False
     )
+    axes[0, 0].set_title("D1 with ground truth labels")
     axes[0, 0].set_axisbelow(True)
     axes[0, 0].grid(True, linestyle="--", alpha=0.35, linewidth=0.8)
 
@@ -121,7 +122,7 @@ def plot_n_neighbours_analysis_all(
 
         scores = []
         for k in ks:
-            val = cvi_function(X, labels, k=k)
+            val = cvi_function(X, labels, n_neighbors=k)
             scores.append(float(val))
         scores = np.array(scores)
         MAP_CVI_TO_SCORES[cvi_str] = (cvi_name_full, scores)
@@ -144,29 +145,33 @@ def plot_n_neighbours_analysis_all(
         ax.scatter(
             x,
             y,
-            s=90,
+            s=50,
             edgecolors='k',
             linewidths=0.9,
             zorder=3
         )
-        ax.set_xlabel("k")
-        ax.set_xticks(ks)
+        ax.set_xlabel(rf"$\it{{n\_neighbours}}$")
+        # ax.set_xticks(ks)
+        step = max(1, len(ks) // 6)
+        ax.set_xticks(ks[::step])
+        ax.tick_params(axis='x', labelsize=12)
+        ax.tick_params(axis='y', labelsize=12)
         ax.set_axisbelow(True)
         ax.grid(True, linestyle="--", alpha=0.35, linewidth=0.8)
         ax.legend(frameon=False, fontsize=mpl.rcParams["legend.fontsize"], loc="best")
         ax.tick_params(axis='both', which='major', length=6)
 
     style_line_axis(axes[0, 1], ks, MAP_CVI_TO_SCORES["ad_idea"][1], MAP_CVI_TO_SCORES["ad_idea"][0])
-    axes[0, 1].set_title(f'{MAP_CVI_TO_SCORES["ad_idea"][0]} vs k parameter')
+    axes[0, 1].set_title(rf'{MAP_CVI_TO_SCORES["ad_idea"][0]} vs $\it{{n\_neighbours}}$ parameter')
 
     style_line_axis(axes[1, 0], ks, MAP_CVI_TO_SCORES["ad_silhouette"][1], MAP_CVI_TO_SCORES["ad_silhouette"][0])
-    axes[1, 0].set_title(f'{MAP_CVI_TO_SCORES["ad_silhouette"][0]} vs k parameter')
+    axes[1, 0].set_title(rf'{MAP_CVI_TO_SCORES["ad_silhouette"][0]} vs $\it{{n\_neighbours}}$ parameter')
 
     style_line_axis(axes[1, 1], ks, MAP_CVI_TO_SCORES["ad_db"][1], MAP_CVI_TO_SCORES["ad_db"][0])
-    axes[1, 1].set_title(f'{MAP_CVI_TO_SCORES["ad_db"][0]} vs k parameter')
+    axes[1, 1].set_title(rf'{MAP_CVI_TO_SCORES["ad_db"][0]} vs $\it{{n\_neighbours}}$ parameter')
 
     style_line_axis(axes[1, 2], ks, MAP_CVI_TO_SCORES["ad_ch"][1], MAP_CVI_TO_SCORES["ad_ch"][0])
-    axes[1, 2].set_title(f'{MAP_CVI_TO_SCORES["ad_ch"][0]} vs k parameter')
+    axes[1, 2].set_title(rf'{MAP_CVI_TO_SCORES["ad_ch"][0]} vs $\it{{n\_neighbours}}$ parameter')
 
     plt.tight_layout(pad=2.0)
 

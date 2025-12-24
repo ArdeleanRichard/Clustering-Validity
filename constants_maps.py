@@ -136,9 +136,9 @@ MAP_EXTERNAL_METRICS = {
 
 MAP_INTERNAL_METRICS = {
     "silhouette": ("Silhouette Score", silhouette_score),
-    "ad_silhouette": ("AD-Silhouette Score", ad_silhouette_score),
-    "ad_db": ("AD-Calinski Harabasz Score", ad_calinski_harabasz_score),
-    "ad_ch": ("AD-Davies Bouldin Score", ad_davies_bouldin_score),
+    "ad_silhouette": ("AD-S", ad_silhouette_score),
+    "ad_db": ("AD-CH", ad_calinski_harabasz_score),
+    "ad_ch": ("AD-DB", ad_davies_bouldin_score),
     "ad_idea": ("AD-Idea", mst_separation_ratio),
 }
 
