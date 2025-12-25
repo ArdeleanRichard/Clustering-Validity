@@ -14,7 +14,7 @@ from cvis.cvi_set.gSym import gSym
 from cvis.i_index import i_index
 from cvis_ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 
-from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, mst_separation_ratio
+from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, ad_idea
 
 from cvis_ours.measures import imbalance_ratio, overlap_ratio
 
@@ -86,7 +86,7 @@ MAP_METRIC_TO_FUNCTION = {
     # "MST-CH": mst_calinski_harabasz_score,
 
 
-    "idea": mst_separation_ratio,
+    "idea": ad_idea,
 
     # "MSTog-S": mst_silhouette_score_first,
     # "MSTog-DB": mst_davies_bouldin_score_first,
@@ -139,7 +139,7 @@ MAP_INTERNAL_METRICS = {
     "ad_silhouette": ("AD-S", ad_silhouette_score),
     "ad_db": ("AD-CH", ad_calinski_harabasz_score),
     "ad_ch": ("AD-DB", ad_davies_bouldin_score),
-    "ad_idea": ("AD-Idea", mst_separation_ratio),
+    "ad_idea": ("AD-Idea", ad_idea),
 }
 
 

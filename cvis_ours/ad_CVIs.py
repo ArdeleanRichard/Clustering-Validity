@@ -189,7 +189,7 @@ def compute_purity(data, labels, n_neighbors=5, mode='euclidean'):
 
     return min_purity
 
-def mst_separation_ratio(data, labels, n_neighbors=5):
+def ad_idea(data, labels, n_neighbors=5):
     """
     Optimized version of mst_idea: ratio of max intra-cluster to min inter-cluster distance.
     Lower is better (compact clusters, well-separated).
