@@ -72,7 +72,8 @@ current_path = os.getcwd()
 if os.path.abspath(current_path) == os.path.abspath(target_path):
     FOLDER_RESULTS = f"./results/"
     FOLDER_RESULTS_CLUSTERING = f"./results/clustering/"
-    FOLDER_RESULTS_CLUSTERING_PARAMS = f"./figs/clustering/params/"
+    FOLDER_RESULTS_CLUSTERING_PARAMS = f"./results/clustering/params/"
+    FOLDER_RESULTS_CLUSTERING_LABELS = f"./results/clustering/params/labels/"
     FOLDER_FIGS_DATA = f"./figs/data/"
     FOLDER_FIGS_CLUSTERING = f"./figs/clustering/"
     FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
@@ -84,6 +85,7 @@ if os.path.abspath(current_path) == os.path.abspath(target_path):
     os.makedirs(FOLDER_RESULTS, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING_PARAMS, exist_ok=True)
+    os.makedirs(FOLDER_RESULTS_CLUSTERING_LABELS, exist_ok=True)
 
     os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
     os.makedirs(FOLDER_FIGS_CLUSTERING, exist_ok=True)

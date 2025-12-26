@@ -8,12 +8,12 @@ from hdbscan import HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 from itertools import product
-from typing import Dict, List, Tuple, Any
 
 from constants import scale, FOLDER_RESULTS_CLUSTERING_PARAMS
+from utils import remove_dups, reencode
 
 
-def get_param_grids() -> Dict[str, Dict[str, List[Any]]]:
+def get_param_grids():
     """Define parameter grids for each clustering algorithm"""
     param_grids = {
         'DBSCAN': {
@@ -28,15 +28,14 @@ def get_param_grids() -> Dict[str, Dict[str, List[Any]]]:
         'MeanShift': {
             'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
             'n_samples': [3, 5, 10, 15, 20],
-            # 'bandwidth': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
             'bin_seeding': [True, False]
         },
         'AgglomerativeClustering': {
-            'n_clusters': None,  # Will be set based on dataset
+            'n_clusters': None,
             'linkage': ['ward', 'complete', 'average', 'single']
         },
         'SpectralClustering': {
-            'n_clusters': None,  # Will be set based on dataset
+            'n_clusters': None,
             'affinity': ['nearest_neighbors', 'rbf'],
             'n_neighbors': [3, 5, 10, 15, 20],
             'assign_labels': ['kmeans', 'discretize']
@@ -45,15 +44,13 @@ def get_param_grids() -> Dict[str, Dict[str, List[Any]]]:
     return param_grids
 
 
-def evaluate_clustering(labels, true_labels=None) -> Dict[str, float]:
+def evaluate_clustering(labels, true_labels=None):
     """Evaluate clustering quality using multiple metrics"""
     metrics = {}
 
-    # Filter out noise points (label -1)
     valid_mask = labels != -1
     n_clusters = len(set(labels[valid_mask])) if valid_mask.any() else 0
 
-    # External metrics (if true labels provided)
     if true_labels is not None:
         metrics['ari'] = adjusted_rand_score(true_labels, labels)
         metrics['ami'] = adjusted_mutual_info_score(true_labels, labels)
@@ -64,293 +61,248 @@ def evaluate_clustering(labels, true_labels=None) -> Dict[str, float]:
     return metrics
 
 
-def grid_search_dbscan(X, true_labels=None, param_grid=None) -> Tuple[Dict, pd.DataFrame]:
-    """Grid search for DBSCAN"""
+def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_range=None):
+    """Unified grid search function for all clustering algorithms"""
+
     if param_grid is None:
-        param_grid = get_param_grids()['DBSCAN']
+        param_grid = get_param_grids()[algo_name]
 
     results = []
+    all_labels = []
     best_score = -1
     best_params = None
     best_labels = None
 
-    for eps, min_samples in product(param_grid['eps'], param_grid['min_samples']):
-        start_time = time.time()
+    # Generate parameter combinations based on algorithm
+    if algo_name == 'DBSCAN':
+        param_combos = [(eps, min_samples)
+                        for eps in param_grid['eps']
+                        for min_samples in param_grid['min_samples']]
 
-        try:
-            clusterer = DBSCAN(eps=eps, min_samples=min_samples)
-            labels = clusterer.fit_predict(X)
-            fit_time = time.time() - start_time
+        for eps, min_samples in param_combos:
+            start_time = time.time()
+            try:
+                clusterer = DBSCAN(eps=eps, min_samples=min_samples)
+                labels = clusterer.fit_predict(X)
+                fit_time = time.time() - start_time
 
-            metrics = evaluate_clustering(labels, true_labels)
+                metrics = evaluate_clustering(labels, true_labels)
+                result = {'eps': eps, 'min_samples': min_samples, 'time': fit_time, **metrics}
+                results.append(result)
+                all_labels.append(labels)
 
-            result = {
-                'eps': eps,
-                'min_samples': min_samples,
-                'time': fit_time,
-                **metrics
-            }
-            results.append(result)
+                score = metrics['ari']
+                if score > best_score:
+                    best_score = score
+                    best_params = {'eps': eps, 'min_samples': min_samples}
+                    best_labels = labels
+            except Exception as e:
+                print(f"{algo_name} failed with eps={eps}, min_samples={min_samples}: {e}")
 
-            score = metrics['ari']
-            if score > best_score:
-                best_score = score
-                best_params = {'eps': eps, 'min_samples': min_samples}
-                best_labels = labels
-        except Exception as e:
-            print(f"DBSCAN failed with eps={eps}, min_samples={min_samples}: {e}")
+    elif algo_name == 'HDBSCAN':
+        param_combos = [(mcs, ms, cse)
+                        for mcs in param_grid['min_cluster_size']
+                        for ms in param_grid['min_samples']
+                        for cse in param_grid['cluster_selection_epsilon']]
 
-    results_df = pd.DataFrame(results)
-    return {'params': best_params, 'labels': best_labels, 'score': best_score}, results_df
+        for min_cluster_size, min_samples, cluster_selection_epsilon in param_combos:
+            start_time = time.time()
+            try:
+                clusterer = HDBSCAN(
+                    min_cluster_size=min_cluster_size,
+                    min_samples=min_samples,
+                    cluster_selection_epsilon=cluster_selection_epsilon
+                )
+                labels = clusterer.fit_predict(X)
+                fit_time = time.time() - start_time
 
-
-def grid_search_hdbscan(X, true_labels=None, param_grid=None) -> Tuple[Dict, pd.DataFrame]:
-    """Grid search for HDBSCAN"""
-    if param_grid is None:
-        param_grid = get_param_grids()['HDBSCAN']
-
-    results = []
-    best_score = -1
-    best_params = None
-    best_labels = None
-
-    for min_cluster_size, min_samples, cluster_selection_epsilon in product(
-            param_grid['min_cluster_size'],
-            param_grid['min_samples'],
-            param_grid['cluster_selection_epsilon']
-    ):
-        start_time = time.time()
-
-        try:
-            clusterer = HDBSCAN(
-                min_cluster_size=min_cluster_size,
-                min_samples=min_samples,
-                cluster_selection_epsilon=cluster_selection_epsilon
-            )
-            labels = clusterer.fit_predict(X)
-            fit_time = time.time() - start_time
-
-            metrics = evaluate_clustering(labels, true_labels)
-
-            result = {
-                'min_cluster_size': min_cluster_size,
-                'min_samples': min_samples,
-                'cluster_selection_epsilon': cluster_selection_epsilon,
-                'time': fit_time,
-                **metrics
-            }
-            results.append(result)
-
-            score = metrics['ari']
-            if score > best_score:
-                best_score = score
-                best_params = {
+                metrics = evaluate_clustering(labels, true_labels)
+                result = {
                     'min_cluster_size': min_cluster_size,
                     'min_samples': min_samples,
-                    'cluster_selection_epsilon': cluster_selection_epsilon
+                    'cluster_selection_epsilon': cluster_selection_epsilon,
+                    'time': fit_time,
+                    **metrics
                 }
-                best_labels = labels
-        except Exception as e:
-            print(f"HDBSCAN failed: {e}")
+                results.append(result)
+                all_labels.append(labels)
 
-    results_df = pd.DataFrame(results)
-    return {'params': best_params, 'labels': best_labels, 'score': best_score}, results_df
+                score = metrics['ari']
+                if score > best_score:
+                    best_score = score
+                    best_params = {
+                        'min_cluster_size': min_cluster_size,
+                        'min_samples': min_samples,
+                        'cluster_selection_epsilon': cluster_selection_epsilon
+                    }
+                    best_labels = labels
+            except Exception as e:
+                print(f"{algo_name} failed: {e}")
 
+    elif algo_name == 'MeanShift':
+        param_combos = [(q, ns, bs)
+                        for q in param_grid['quantile']
+                        for ns in param_grid['n_samples']
+                        for bs in param_grid['bin_seeding']]
 
-def grid_search_meanshift(X, true_labels=None, param_grid=None) -> Tuple[Dict, pd.DataFrame]:
-    """Grid search for MeanShift"""
-    if param_grid is None:
-        param_grid = get_param_grids()['MeanShift']
+        for quantile, n_samples, bin_seeding in param_combos:
+            start_time = time.time()
 
-    results = []
-    best_score = -1
-    best_params = None
-    best_labels = None
+            bandwidth = estimate_bandwidth(X, quantile=quantile, n_samples=n_samples)
+            if bandwidth < 1e-2:
+                continue
 
-    # for bandwidth, bin_seeding in product(param_grid['bandwidth'], param_grid['bin_seeding']):
-    for quantile, n_samples, bin_seeding in product(param_grid['quantile'], param_grid['n_samples'], param_grid['bin_seeding']):
-        start_time = time.time()
+            try:
+                clusterer = MeanShift(bandwidth=bandwidth, bin_seeding=bin_seeding)
+                labels = clusterer.fit_predict(X)
+                fit_time = time.time() - start_time
 
-        bandwidth = estimate_bandwidth(X, quantile=quantile, n_samples=n_samples)
+                metrics = evaluate_clustering(labels, true_labels)
+                result = {
+                    'quantile': quantile,
+                    'n_samples': n_samples,
+                    'bandwidth': bandwidth,
+                    'bin_seeding': bin_seeding,
+                    'time': fit_time,
+                    **metrics
+                }
+                results.append(result)
+                all_labels.append(labels)
 
-        if bandwidth < 1e-2:
-            continue
+                score = metrics['ari']
+                if score > best_score:
+                    best_score = score
+                    best_params = {
+                        'quantile': quantile,
+                        'n_samples': n_samples,
+                        'bandwidth': bandwidth,
+                        'bin_seeding': bin_seeding
+                    }
+                    best_labels = labels
+            except Exception as e:
+                print(f"{algo_name} failed with bandwidth={bandwidth}: {e}")
 
-        try:
-            clusterer = MeanShift(bandwidth=bandwidth, bin_seeding=bin_seeding)
-            labels = clusterer.fit_predict(X)
-            fit_time = time.time() - start_time
+    elif algo_name == 'AgglomerativeClustering':
+        if n_clusters_range is None:
+            n_clusters_range = range(2, 11)
 
-            metrics = evaluate_clustering(labels, true_labels)
+        param_combos = [(nc, link)
+                        for nc in n_clusters_range
+                        for link in param_grid['linkage']]
 
-            result = {
-                'bandwidth': bandwidth,
-                'bin_seeding': bin_seeding,
-                'time': fit_time,
-                **metrics
-            }
-            results.append(result)
+        for n_clusters, linkage in param_combos:
+            start_time = time.time()
+            try:
+                clusterer = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
+                labels = clusterer.fit_predict(X)
+                fit_time = time.time() - start_time
 
-            score = metrics['ari']
-            if score > best_score:
-                best_score = score
-                best_params = {'quantile': quantile, 'n_samples': n_samples, 'bandwidth': bandwidth, 'bin_seeding': bin_seeding}
-                best_labels = labels
-        except Exception as e:
-            print(f"MeanShift failed with bandwidth={bandwidth}: {e}")
+                metrics = evaluate_clustering(labels, true_labels)
+                result = {
+                    'n_clusters': n_clusters,
+                    'linkage': linkage,
+                    'time': fit_time,
+                    **metrics
+                }
+                results.append(result)
+                all_labels.append(labels)
 
-    results_df = pd.DataFrame(results)
-    return {'params': best_params, 'labels': best_labels, 'score': best_score}, results_df
+                score = metrics['ari']
+                if score > best_score:
+                    best_score = score
+                    best_params = {'n_clusters': n_clusters, 'linkage': linkage}
+                    best_labels = labels
+            except Exception as e:
+                print(f"{algo_name} failed: {e}")
 
+    elif algo_name == 'SpectralClustering':
+        if n_clusters_range is None:
+            n_clusters_range = range(2, 11)
 
-def grid_search_agglomerative(X, n_clusters_range, true_labels=None, param_grid=None) -> Tuple[Dict, pd.DataFrame]:
-    """Grid search for Agglomerative Clustering"""
-    if param_grid is None:
-        param_grid = get_param_grids()['AgglomerativeClustering']
+        param_combos = [(nc, aff, nn, al)
+                        for nc in n_clusters_range
+                        for aff in param_grid['affinity']
+                        for nn in param_grid['n_neighbors']
+                        for al in param_grid['assign_labels']]
 
-    results = []
-    best_score = -1
-    best_params = None
-    best_labels = None
+        for n_clusters, affinity, n_neighbors, assign_labels in param_combos:
+            start_time = time.time()
+            try:
+                if affinity == 'rbf':
+                    clusterer = SpectralClustering(
+                        n_clusters=n_clusters,
+                        affinity=affinity,
+                        assign_labels=assign_labels,
+                        random_state=0
+                    )
+                else:
+                    clusterer = SpectralClustering(
+                        n_clusters=n_clusters,
+                        affinity=affinity,
+                        n_neighbors=n_neighbors,
+                        assign_labels=assign_labels,
+                        random_state=0
+                    )
+                labels = clusterer.fit_predict(X)
+                fit_time = time.time() - start_time
 
-    for n_clusters, linkage in product(n_clusters_range, param_grid['linkage']):
-        start_time = time.time()
-
-        try:
-            clusterer = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
-            labels = clusterer.fit_predict(X)
-            fit_time = time.time() - start_time
-
-            metrics = evaluate_clustering(labels, true_labels)
-
-            result = {
-                'n_clusters': n_clusters,
-                'linkage': linkage,
-                'time': fit_time,
-                **metrics
-            }
-            results.append(result)
-
-            score = metrics['ari']
-            if score > best_score:
-                best_score = score
-                best_params = {'n_clusters': n_clusters, 'linkage': linkage}
-                best_labels = labels
-        except Exception as e:
-            print(f"Agglomerative failed with n_clusters={n_clusters}, linkage={linkage}: {e}")
-
-    results_df = pd.DataFrame(results)
-    return {'params': best_params, 'labels': best_labels, 'score': best_score}, results_df
-
-
-def grid_search_spectral(X, n_clusters_range, true_labels=None, param_grid=None) -> Tuple[Dict, pd.DataFrame]:
-    """Grid search for Spectral Clustering"""
-    if param_grid is None:
-        param_grid = get_param_grids()['SpectralClustering']
-
-    results = []
-    best_score = -1
-    best_params = None
-    best_labels = None
-
-    for n_clusters, affinity, n_neighbors, assign_labels in product(
-            n_clusters_range,
-            param_grid['affinity'],
-            param_grid['n_neighbors'],
-            param_grid['assign_labels']
-    ):
-        start_time = time.time()
-
-        try:
-            if affinity == 'rbf':
-                clusterer = SpectralClustering(
-                    n_clusters=n_clusters,
-                    affinity=affinity,
-                    assign_labels=assign_labels,
-                    random_state=0
-                )
-            else:
-                clusterer = SpectralClustering(
-                    n_clusters=n_clusters,
-                    affinity=affinity,
-                    n_neighbors=n_neighbors,
-                    assign_labels=assign_labels,
-                    random_state=0
-                )
-            labels = clusterer.fit_predict(X)
-            fit_time = time.time() - start_time
-
-            metrics = evaluate_clustering(labels, true_labels)
-
-            result = {
-                'n_clusters': n_clusters,
-                'affinity': affinity,
-                'n_neighbors': n_neighbors if affinity != 'rbf' else None,
-                'assign_labels': assign_labels,
-                'time': fit_time,
-                **metrics
-            }
-            results.append(result)
-
-            score = metrics['ari']
-            if score > best_score:
-                best_score = score
-                best_params = {
+                metrics = evaluate_clustering(labels, true_labels)
+                result = {
                     'n_clusters': n_clusters,
                     'affinity': affinity,
                     'n_neighbors': n_neighbors if affinity != 'rbf' else None,
-                    'assign_labels': assign_labels
+                    'assign_labels': assign_labels,
+                    'time': fit_time,
+                    **metrics
                 }
-                best_labels = labels
-        except Exception as e:
-            print(f"Spectral failed: {e}")
+                results.append(result)
+                all_labels.append(labels)
+
+                score = metrics['ari']
+                if score > best_score:
+                    best_score = score
+                    best_params = {
+                        'n_clusters': n_clusters,
+                        'affinity': affinity,
+                        'n_neighbors': n_neighbors if affinity != 'rbf' else None,
+                        'assign_labels': assign_labels
+                    }
+                    best_labels = labels
+            except Exception as e:
+                print(f"{algo_name} failed: {e}")
 
     results_df = pd.DataFrame(results)
-    return {'params': best_params, 'labels': best_labels, 'score': best_score}, results_df
+    return {'params': best_params, 'labels': best_labels, 'score': best_score, 'all_labels': all_labels}, results_df
 
 
 def run_comprehensive_grid_search(X, true_labels=None, n_clusters_range=None):
     """Run grid search for all algorithms"""
 
-    if n_clusters_range is None:
+    # If n_clusters_range not provided, infer from true labels
+    if n_clusters_range is None and true_labels is not None:
+        n_unique = len(np.unique(true_labels))
+        n_clusters_range = range(max(2, n_unique - 2), n_unique + 3)
+        print(f"Using inferred n_clusters_range: {list(n_clusters_range)}")
+    elif n_clusters_range is None:
         n_clusters_range = range(2, 11)
 
+    algorithms = ['DBSCAN', 'HDBSCAN', 'MeanShift', 'AgglomerativeClustering', 'SpectralClustering']
     all_results = {}
 
-    # DBSCAN
-    print("\n[1/5] Running DBSCAN grid search...")
-    dbscan_best, dbscan_results = grid_search_dbscan(X, true_labels)
-    all_results['DBSCAN'] = {'best': dbscan_best, 'results': dbscan_results}
-    print(f"  Best params: {dbscan_best['params']}")
-    print(f"  Best score: {dbscan_best['score']:.4f}")
+    for i, algo_name in enumerate(algorithms, 1):
+        print(f"\n[{i}/{len(algorithms)}] Running {algo_name} grid search...")
 
-    # HDBSCAN
-    print("\n[2/5] Running HDBSCAN grid search...")
-    hdbscan_best, hdbscan_results = grid_search_hdbscan(X, true_labels)
-    all_results['HDBSCAN'] = {'best': hdbscan_best, 'results': hdbscan_results}
-    print(f"  Best params: {hdbscan_best['params']}")
-    print(f"  Best score: {hdbscan_best['score']:.4f}")
+        best, results_df = grid_search(
+            algo_name,
+            X,
+            true_labels=true_labels,
+            n_clusters_range=n_clusters_range
+        )
 
-    # MeanShift
-    print("\n[3/5] Running MeanShift grid search...")
-    meanshift_best, meanshift_results = grid_search_meanshift(X, true_labels)
-    all_results['MeanShift'] = {'best': meanshift_best, 'results': meanshift_results}
-    print(f"  Best params: {meanshift_best['params']}")
-    print(f"  Best score: {meanshift_best['score']:.4f}")
+        all_results[algo_name] = {'best': best, 'results': results_df}
 
-    # Agglomerative
-    print("\n[4/5] Running Agglomerative Clustering grid search...")
-    agglom_best, agglom_results = grid_search_agglomerative(X, n_clusters_range, true_labels)
-    all_results['AgglomerativeClustering'] = {'best': agglom_best, 'results': agglom_results}
-    print(f"  Best params: {agglom_best['params']}")
-    print(f"  Best score: {agglom_best['score']:.4f}")
-
-    # Spectral
-    print("\n[5/5] Running Spectral Clustering grid search...")
-    spectral_best, spectral_results = grid_search_spectral(X, n_clusters_range, true_labels)
-    all_results['SpectralClustering'] = {'best': spectral_best, 'results': spectral_results}
-    print(f"  Best params: {spectral_best['params']}")
-    print(f"  Best score: {spectral_best['score']:.4f}")
+        print(f"  Best params: {best['params']}")
+        print(f"  Best score: {best['score']:.4f}")
 
     print("\n" + "=" * 80)
     print("Grid Search Complete!")
@@ -365,11 +317,12 @@ def compare_best_results(all_results):
 
     for algo_name, results in all_results.items():
         best = results['best']
+        labels = best['labels']
         summary.append({
             'Algorithm': algo_name,
             'Best Score': best['score'],
-            'N Clusters': len(set(best['labels'])) - (1 if -1 in best['labels'] else 0),
-            'N Noise': (best['labels'] == -1).sum(),
+            'N Clusters': len(set(labels)) - (1 if -1 in labels else 0),
+            'N Noise': (labels == -1).sum(),
             'Parameters': str(best['params'])
         })
 
@@ -378,22 +331,23 @@ def compare_best_results(all_results):
 
 
 def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CLUSTERING_PARAMS):
-    """
-    Save the best parameters for each algorithm to a JSON file organized by dataset.
+    """Save best parameters and labels for each algorithm"""
 
-    Args:
-        all_results: Dictionary containing grid search results for all algorithms
-        dataset_name: Name of the dataset
-        output_dir: Directory to save the parameter files
-    """
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
 
+    labels_path = output_path / 'labels'
+    labels_path.mkdir(exist_ok=True)
+
+    all_labels_path = output_path / 'all_labels'
+    all_labels_path.mkdir(exist_ok=True)
 
     best_params = {}
+
     for algo_name, results in all_results.items():
-        # Convert numpy types to native Python types for JSON serialization
         params = results['best']['params'].copy()
+
+        # Convert numpy types to native Python types
         for key, value in params.items():
             if isinstance(value, (np.integer, np.floating)):
                 params[key] = value.item()
@@ -405,29 +359,44 @@ def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CL
             'score': float(results['best']['score'])
         }
 
-    # Load existing parameters file if it exists
-    json_file = output_path / f'best_parameters.json'
+        # Save best labels
+        labels = results['best']['labels']
+        if labels is not None:
+            label_filename = labels_path / f'labels_{dataset_name}_{algo_name}.npy'
+            np.save(str(label_filename), labels)
+            print(f"  Saved {label_filename.name}")
+
+        # Save all labels from all parameter combinations
+        all_labels_list = results['best']['all_labels']
+        if all_labels_list:
+            for idx, labels in enumerate(all_labels_list, start=1):
+                all_label_filename = all_labels_path / f'labels_{dataset_name}_{algo_name}_params{idx}.npy'
+                np.save(str(all_label_filename), labels)
+            print(f"  Saved {len(all_labels_list)} parameter combinations for {algo_name}")
+
+    # Load existing parameters or create new dict
+    json_file = output_path / 'best_parameters.json'
     if json_file.exists():
-        f = open(json_file, 'r')
-        all_datasets_params = json.load(f)
-        f.close()
+        with open(json_file, 'r') as f:
+            all_datasets_params = json.load(f)
     else:
         all_datasets_params = {}
 
-    # Update with new dataset parameters
     all_datasets_params[dataset_name] = best_params
 
-    # Save back to file
-    f = open(json_file, 'w')
-    json.dump(all_datasets_params, f, indent=2)
-    f.close()
+    with open(json_file, 'w') as f:
+        json.dump(all_datasets_params, f, indent=2)
 
     print(f"\n✓ Best parameters saved to {json_file}")
-
+    print(f"✓ Best labels saved to {labels_path}/")
+    print(f"✓ All parameter labels saved to {all_labels_path}/")
 
 
 if __name__ == '__main__':
-    from load_datasets import create_compound, create_aggregation, create_jain, create_unbalance, create_spiral, create_pathbased
+    from load_datasets import create_compound, create_aggregation, create_jain, create_unbalance, create_spiral, \
+    create_pathbased, create_data1, create_data2, create_data3, create_data4, create_data5, create_data6, \
+    create_data7, \
+    create_parabolic, create_ring, create_zigzag, create_trajectories, create_x, create_set_s, create_set_a, create_d31
     import warnings
 
     warnings.filterwarnings(
@@ -435,36 +404,44 @@ if __name__ == '__main__':
         message="Graph is not fully connected, spectral embedding may not work as expected."
     )
 
+    n_samples = 1000
     datasets = [
-        ("compound",        create_compound()),
-        ("aggregation",     create_aggregation()),
-        ("jain",            create_jain()),
-        ("spiral",          create_spiral()),
-        ("pathbased",       create_pathbased()),
-        ("unbalance",       create_unbalance()),
+        ("data1", create_data1(n_samples)),
+        ("data2", create_data2(n_samples)),
+        ("data3", create_data3(n_samples)),
+        ("data4", create_data4(n_samples)),
+        ("data5", create_data5(n_samples)),
+        ("data6", create_data6(n_samples)),
+        ("data7", create_data7(n_samples)),
+        ("aggregation", create_aggregation()),
+        ("compound", create_compound()),
+        ("d31", create_d31()),
+        ("jain", create_jain()),
+        ("pathbased", create_pathbased()),
+        ("spiral", create_spiral()),
+        ("unbalance", create_unbalance()),
     ]
+    datasets.extend([("parabolic", create_parabolic())])
+    datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
+    datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
+    datasets.extend([("trajectories", create_trajectories())])
+    datasets.extend([(f"x{i}", create_x(i)) for i in [1, 2, 3]])
+    datasets.extend(create_set_s())
+    datasets.extend(create_set_a())
 
-    # Run grid search and save parameters for each dataset
     for data_name, (X, gt) in datasets:
         print(f"\n{'=' * 80}")
         print(f"Processing dataset: {data_name}")
         print(f"{'=' * 80}")
 
         X = MinMaxScaler(scale).fit_transform(X)
+        X, gt = remove_dups(X, gt)
+        gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(
-            X,
-            true_labels=gt,
-            n_clusters_range=range(2, 6)
-        )
+        results = run_comprehensive_grid_search(X, true_labels=gt)
 
-        # Save best parameters for this dataset
         save_best_parameters(results, data_name)
 
         summary = compare_best_results(results)
         print("\n### Summary of Best Results ###")
         print(summary.to_string(index=False))
-
-        # Access detailed results for each algorithm
-        # print("\n### Top 5 DBSCAN configurations ###")
-        # print(results['DBSCAN']['results'].nlargest(5, 'ari')[['eps', 'min_samples', 'ari', 'n_clusters']])
