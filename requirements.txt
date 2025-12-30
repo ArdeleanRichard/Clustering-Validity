@@ -5,6 +5,8 @@ scipy~=1.7.3
 pandas
 mpmath
 tabulate
+scikit-posthocs
+seaborn
 
 ucimlrepo
 

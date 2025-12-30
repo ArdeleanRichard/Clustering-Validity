@@ -3,67 +3,14 @@ from scipy.stats import pearsonr
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import MinMaxScaler
 
-from constants import scale, FOLDER_RESULTS_CLUSTERING_LABELS
+from constants import scale, FOLDER_RESULTS_CLUSTERING_LABELS, FOLDER_RESULTS_CORRELATION
 from constants_maps import METRICS
+from cvis_ours.external_CVIs import balanced_external
 from load_CVIs import choose_index
 from utils import reencode, remove_dups
 
 
-def compute_ari_cvi_correlations(datasets, metrics, labels_path=FOLDER_RESULTS_CLUSTERING_LABELS):
-    """
-    Compute Pearson correlation between ARI and internal CVIs across datasets.
-
-    Parameters:
-    -----------
-    datasets : list of tuples
-        List of (dataset_name, (data, ground_truth_labels))
-    metrics : list
-        List of CVI metric names
-    labels_path : str
-        Path to directory containing clustering labels
-
-    Returns:
-    --------
-    dict : Dictionary with metric names as keys and (correlation, p_value) as values
-    """
-
-    # Storage for ARI and CVI values across all datasets
-    ari_values = []
-    cvi_values = {metric: [] for metric in metrics}
-
-    # Iterate through each dataset
-    for dataset_name, (X, gt) in datasets:
-        X = MinMaxScaler(scale).fit_transform(X)
-        X, gt = remove_dups(X, gt)
-        gt = reencode(gt)
-
-        # Load clustering labels
-        labels_file = f"{labels_path}labels_{dataset_name}_DBSCAN.npy"
-
-        try:
-            clustering_labels = np.load(labels_file)
-            clustering_labels = reencode(clustering_labels) # SOME METRIC GIVE OTHERWISE NaN due to -1 noise
-        except FileNotFoundError:
-            print(f"Warning: Labels file not found for {dataset_name}, skipping...")
-            continue
-
-        # Compute ARI
-        ari = adjusted_rand_score(gt, clustering_labels)
-        ari_values.append(ari)
-
-        # Compute each CVI
-        for metric in metrics:
-            try:
-                # unique_labels = np.unique(clustering_labels, return_counts=True)
-                cvi_value = choose_index(metric=metric, data=X, labels=clustering_labels)
-                cvi_values[metric].append(cvi_value)
-                # print(cvi_value, list(zip(unique_labels[0], unique_labels[1])))
-            except Exception as e:
-                print(f"Warning: Failed to compute {metric} for {dataset_name}: {e}")
-                cvi_values[metric].append(np.nan)
-
-        print(f"Processed {dataset_name}: ARI = {ari:.4f}")
-
+def compute_correlations(metrics, ari_values, cvi_values):
     # Compute Pearson correlations
     correlations = {}
 
@@ -86,9 +33,104 @@ def compute_ari_cvi_correlations(datasets, metrics, labels_path=FOLDER_RESULTS_C
         corr, p_value = pearsonr(ari_valid, cvi_valid)
         correlations[metric] = (corr, p_value)
 
+    return correlations
+
+def compute_ari_cvi_correlations(datasets, metrics, clusterer, labels_path=FOLDER_RESULTS_CLUSTERING_LABELS):
+    """
+    Compute Pearson correlation between ARI and internal CVIs across datasets.
+
+    Parameters:
+    -----------
+    datasets : list of tuples
+        List of (dataset_name, (data, ground_truth_labels))
+    metrics : list
+        List of CVI metric names
+    labels_path : str
+        Path to directory containing clustering labels
+
+    Returns:
+    --------
+    dict : Dictionary with metric names as keys and (correlation, p_value) as values
+    """
+
+    ari_values = []
+    ari_nn_values = []
+    bari_values = []
+    bari_nn_values = []
+
+    cvi_values = {metric: [] for metric in metrics}
+    cvi_nn_values = {metric: [] for metric in metrics}
+
+    # Iterate through each dataset
+    for dataset_name, (X, labels_gt) in datasets:
+        X = MinMaxScaler(scale).fit_transform(X)
+        X, labels_gt = remove_dups(X, labels_gt)
+
+        # Load clustering labels
+        labels_file = f"{labels_path}labels_{dataset_name}_{clusterer}.npy"
+
+        try:
+            labels_clustering = np.load(labels_file)
+        except FileNotFoundError:
+            print(f"Warning: Labels file not found for {dataset_name}, skipping...")
+            continue
+
+        labels_clustering_re = reencode(labels_clustering) # SOME METRIC GIVE OTHERWISE NaN due to -1 noise
+        # print(np.unique(labels_clustering, return_counts=True))
+        # print(np.unique(labels_clustering_re, return_counts=True))
+        labels_gt_re = reencode(labels_gt)
+
+        X_nn = X[labels_clustering!=-1]
+        labels_gt_nn = labels_gt[labels_clustering!=-1]
+        labels_clustering_nn = labels_clustering[labels_clustering!=-1]
+
+        # Compute ARI
+        ari_values.append(adjusted_rand_score(labels_gt_re, labels_clustering_re))
+        ari_nn_values.append(adjusted_rand_score(labels_gt_nn, labels_clustering_nn))
+
+        bari_values.append(balanced_external(adjusted_rand_score, labels_gt_re, labels_clustering_re, method='macro'))
+        bari_nn_values.append(balanced_external(adjusted_rand_score, labels_gt_nn, labels_clustering_nn, method='macro'))
+
+        # Compute each CVI
+        for metric in metrics:
+            try:
+                cvi_values[metric].append(choose_index(metric=metric, data=X, labels=labels_clustering))
+                cvi_nn_values[metric].append(choose_index(metric=metric, data=X_nn, labels=labels_clustering_nn))
+
+            except Exception as e:
+                print(f"Warning: Failed to compute {metric} for {dataset_name}: {e}")
+                cvi_values[metric].append(np.nan)
+                cvi_nn_values[metric].append(np.nan)
+
+        print(f"Processed {dataset_name}: noise {np.count_nonzero(labels_clustering==-1)}/{len(labels_clustering)}")
+
+    correlations_ari = compute_correlations(metrics, ari_values, cvi_values)
+    correlations_ari_nn = compute_correlations(metrics, ari_nn_values, cvi_nn_values)
+    correlations_bari = compute_correlations(metrics, bari_values, cvi_values)
+    correlations_bari_nn = compute_correlations(metrics, bari_nn_values, cvi_nn_values)
+
+    save_csv(correlations_ari,      file_name=f"correlations_cvi_to_ari_{clusterer}")
+    save_csv(correlations_ari_nn,   file_name=f"correlations_cvi_to_ari_nn_{clusterer}")
+    save_csv(correlations_bari,     file_name=f"correlations_cvi_to_bari_{clusterer}")
+    save_csv(correlations_bari_nn,  file_name=f"correlations_cvi_to_bari_nn_{clusterer}")
 
 
-    return correlations, ari_values, cvi_values
+def save_csv(correlations, file_name="correlations_cvi_to_ari"):
+    import pandas as pd
+
+    results_df = pd.DataFrame([
+        {'Metric': metric, 'Correlation': corr, 'P-value': p_val}
+        for metric, (corr, p_val) in correlations.items()
+    ])
+
+    # results_df['Abs_Correlation'] = results_df['Correlation'].abs()
+    # results_df = results_df.sort_values('Abs_Correlation', ascending=False)
+    # results_df = results_df.drop('Abs_Correlation', axis=1)
+
+    # Save to CSV
+    output_path = FOLDER_RESULTS_CORRELATION + f"{file_name}.csv"
+    results_df.to_csv(output_path, index=False)
+    print(f"\nResults saved to: {output_path}")
 
 
 # Usage example:
@@ -105,7 +147,7 @@ if __name__ == "__main__":
 
     n_samples = 1000
     datasets = [
-        ("data1", create_data1(n_samples)),
+        # ("data1", create_data1(n_samples)),
         ("data2", create_data2(n_samples)),
         ("data3", create_data3(n_samples)),
         ("data4", create_data4(n_samples)),
@@ -128,31 +170,8 @@ if __name__ == "__main__":
     datasets.extend(create_set_s())
     datasets.extend(create_set_a())
 
-
     # Compute correlations
-    correlations, ari_vals, cvi_vals = compute_ari_cvi_correlations(datasets, METRICS)
+    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="DBSCAN")
+    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="SpectralClustering")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="HDBSCAN")
 
-    # Create DataFrame and save to CSV
-    import pandas as pd
-
-    results_df = pd.DataFrame([
-        {'Metric': metric, 'Correlation': corr, 'P-value': p_val}
-        for metric, (corr, p_val) in correlations.items()
-    ])
-
-    # Sort by absolute correlation
-    # results_df['Abs_Correlation'] = results_df['Correlation'].abs()
-    # results_df = results_df.sort_values('Abs_Correlation', ascending=False)
-    # results_df = results_df.drop('Abs_Correlation', axis=1)
-
-    # Save to CSV
-    output_path = "./results/correlations_cvi_to_ari.csv"
-    results_df.to_csv(output_path, index=False)
-    print(f"\nResults saved to: {output_path}")
-
-    # Print results
-    print("\n" + "=" * 60)
-    print("Pearson Correlation between ARI and Internal CVIs")
-    print("=" * 60)
-    print(results_df.to_string(index=False))
-    print("=" * 60)

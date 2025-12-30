@@ -1,13 +1,10 @@
-import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.colors import ListedColormap
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.utils import shuffle
 
-from constants import LABEL_COLOR_MAP, FOLDER_RESULTS, FOLDER_FIGS_DATA, scale
+from constants import FOLDER_FIGS_DATA, scale, FOLDER_RESULTS_CVIS
+from constants_maps import MAP_LABELSET_TO_NAME
 from load_datasets import create_set1, create_set_g, create_set_a, create_set_s, create_set_graves, create_set_sipu, create_set_uci, create_set_wut
-from load_labelsets import diagonal_line, vertical_line, assign_labels_by_given_line, horizontal_line
-from load_CVIs import choose_index, create_indices_table, create_indices_table_with_arrows
+from load_CVIs import create_indices_table_with_arrows
 from utils import remove_dups, reencode, load_labelsets, choose_colors
 
 
@@ -23,19 +20,12 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
         label_sets = load_labelsets(X, gt, scale, label_sets, list_labelsets=list_labelsets)
 
         # Create and print metric table
-        create_indices_table_with_arrows(X, label_sets=label_sets, save=f"{FOLDER_RESULTS}/metrics_{name_data}.csv", prnt=True)
+        create_indices_table_with_arrows(X, label_sets=label_sets, save=f"{FOLDER_RESULTS_CVIS}/metrics_{name_data}.csv", prnt=True)
 
         if plot:
             for name_labelset, labels in label_sets.items():
                 label_color = choose_colors(labels)
-                MAP_LABELSET_TO_NAME = {
-                    "gt": "Ground Truth labels",
-                    "rl": "Random labels",
-                    "dfl": "First Diagonal separated labels",
-                    "dsl": "Second Diagonal separated labels",
-                    "vl": "Vertical midline separated labels",
-                    "hl": "Horizontal midline separated labels",
-                }
+
                 plt.title(MAP_LABELSET_TO_NAME[name_labelset], fontsize=18)
                 plt.xticks(fontsize=12)
                 plt.yticks(fontsize=14)
@@ -49,19 +39,15 @@ def run_score_set(datasets, list_labelsets=["dfl", "dsl", "vl", "hl", "rl"], plo
 def run_scores(plot=False):
     ## Each element in the list is a set of datasets
     sets = [
-        # create_set1(n_samples=1000),
-        # create_set_g(dims=2),
-        # create_set_a(),
-        # create_set_s(),
+        create_set1(n_samples=1000),
+        create_set_a(),
+        create_set_s(),
         create_set_graves(),
-        # create_set_sipu(),
-        # create_set_wut(),
+        create_set_sipu(),
+        create_set_wut(),
     ]
     for set in sets:
         run_score_set(set, plot=plot)
-
-    # datasets = create_set_uci()
-    # run_score_set(datasets, list_labelsets=["rl"], plot=False)
 
 
 

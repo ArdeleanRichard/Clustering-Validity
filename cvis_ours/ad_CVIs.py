@@ -210,7 +210,8 @@ def ad_idea(data, labels, n_neighbors=5):
             distances = cluster_mst.get_distances_to_point(cluster_centroid_id)
             max_intra_dist = max(max_intra_dist, np.max(distances))
             max_intra_dists.append(np.max(distances))
-
+        elif len(cluster_data) == 1:
+            max_intra_dists.append(np.inf) # clusters of size 1 give 0
     # For inter-cluster distances, use full MST
     mst = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 

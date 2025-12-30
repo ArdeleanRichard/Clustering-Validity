@@ -9,7 +9,7 @@ from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 from itertools import product
 
-from constants import scale, FOLDER_RESULTS_CLUSTERING_PARAMS
+from constants import scale, FOLDER_RESULTS_CLUSTERING_PARAMS, random_state
 from utils import remove_dups, reencode
 
 
@@ -18,12 +18,12 @@ def get_param_grids():
     param_grids = {
         'DBSCAN': {
             'eps': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25],
-            'min_samples': [3, 5, 10, 15, 20]
+            'min_samples': [3, 5, 10, 15, 20, 30, 50, 100]
         },
         'HDBSCAN': {
-            'min_cluster_size': [3, 5, 10, 15, 20, 30],
-            'min_samples': [1, 3, 5, 10],
-            'cluster_selection_epsilon': [0, 0, 0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25]
+            'min_cluster_size': [2, 3, 5, 10, 15, 20, 30, 50, 100],
+            'min_samples': [1, 3, 5, 10, 20],
+            'cluster_selection_epsilon': [0, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25]
         },
         'MeanShift': {
             'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
@@ -39,7 +39,11 @@ def get_param_grids():
             'affinity': ['nearest_neighbors', 'rbf'],
             'n_neighbors': [3, 5, 10, 15, 20],
             'assign_labels': ['kmeans', 'discretize']
+        },
+        'KMeans': {
+            'n_clusters': None,
         }
+
     }
     return param_grids
 
@@ -91,7 +95,15 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 results.append(result)
                 all_labels.append(labels)
 
-                score = metrics['ari']
+                unique_labels = np.unique(labels)
+                if len(unique_labels) > 2:
+                    score = metrics['ari']
+                else:
+                    score = 0
+
+                if np.count_nonzero(labels==-1) > len(X) * 0.4:
+                    score = 0
+
                 if score > best_score:
                     best_score = score
                     best_params = {'eps': eps, 'min_samples': min_samples}
@@ -127,7 +139,15 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 results.append(result)
                 all_labels.append(labels)
 
-                score = metrics['ari']
+                unique_labels = np.unique(labels)
+                if len(unique_labels) > 2:
+                    score = metrics['ari']
+                else:
+                    score = 0
+
+                if np.count_nonzero(labels==-1) > len(X) * 0.4:
+                    score = 0
+
                 if score > best_score:
                     best_score = score
                     best_params = {
@@ -271,11 +291,43 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
             except Exception as e:
                 print(f"{algo_name} failed: {e}")
 
+    elif algo_name == 'KMeans':
+        if n_clusters_range is None:
+            n_clusters_range = range(2, 11)
+
+        param_combos = [nc for nc in n_clusters_range]
+
+        for n_clusters in param_combos:
+            start_time = time.time()
+            try:
+                clusterer = KMeans(n_clusters=n_clusters, random_state=random_state)
+                labels = clusterer.fit_predict(X)
+                fit_time = time.time() - start_time
+
+                metrics = evaluate_clustering(labels, true_labels)
+                result = {
+                    'n_clusters': n_clusters,
+                    'time': fit_time,
+                    **metrics
+                }
+                results.append(result)
+                all_labels.append(labels)
+
+                score = metrics['ari']
+                if score > best_score:
+                    best_score = score
+                    best_params = {
+                        'n_clusters': n_clusters,
+                    }
+                    best_labels = labels
+            except Exception as e:
+                print(f"{algo_name} failed: {e}")
+
     results_df = pd.DataFrame(results)
     return {'params': best_params, 'labels': best_labels, 'score': best_score, 'all_labels': all_labels}, results_df
 
 
-def run_comprehensive_grid_search(X, true_labels=None, n_clusters_range=None):
+def run_comprehensive_grid_search(X, true_labels=None, n_clusters_range=None, algorithms=None):
     """Run grid search for all algorithms"""
 
     # If n_clusters_range not provided, infer from true labels
@@ -286,9 +338,10 @@ def run_comprehensive_grid_search(X, true_labels=None, n_clusters_range=None):
     elif n_clusters_range is None:
         n_clusters_range = range(2, 11)
 
-    algorithms = ['DBSCAN', 'HDBSCAN', 'MeanShift', 'AgglomerativeClustering', 'SpectralClustering']
-    all_results = {}
+    if algorithms is None:
+        algorithms = ['DBSCAN', 'HDBSCAN', 'MeanShift', 'AgglomerativeClustering', 'SpectralClustering', 'KMeans']
 
+    all_results = {}
     for i, algo_name in enumerate(algorithms, 1):
         print(f"\n[{i}/{len(algorithms)}] Running {algo_name} grid search...")
 
@@ -303,10 +356,7 @@ def run_comprehensive_grid_search(X, true_labels=None, n_clusters_range=None):
 
         print(f"  Best params: {best['params']}")
         print(f"  Best score: {best['score']:.4f}")
-
-    print("\n" + "=" * 80)
-    print("Grid Search Complete!")
-    print("=" * 80)
+        print()
 
     return all_results
 
@@ -364,7 +414,7 @@ def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CL
         if labels is not None:
             label_filename = labels_path / f'labels_{dataset_name}_{algo_name}.npy'
             np.save(str(label_filename), labels)
-            print(f"  Saved {label_filename.name}")
+            print(f"Saved {label_filename.name}")
 
         # Save all labels from all parameter combinations
         all_labels_list = results['best']['all_labels']
@@ -372,7 +422,7 @@ def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CL
             for idx, labels in enumerate(all_labels_list, start=1):
                 all_label_filename = all_labels_path / f'labels_{dataset_name}_{algo_name}_params{idx}.npy'
                 np.save(str(all_label_filename), labels)
-            print(f"  Saved {len(all_labels_list)} parameter combinations for {algo_name}")
+            print(f"Saved {len(all_labels_list)} parameter combinations for {algo_name}")
 
     # Load existing parameters or create new dict
     json_file = output_path / 'best_parameters.json'
@@ -387,16 +437,20 @@ def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CL
     with open(json_file, 'w') as f:
         json.dump(all_datasets_params, f, indent=2)
 
-    print(f"\n✓ Best parameters saved to {json_file}")
-    print(f"✓ Best labels saved to {labels_path}/")
-    print(f"✓ All parameter labels saved to {all_labels_path}/")
+    print(f"Saved all parameter labels to {all_labels_path}/")
+    print(f"Saved best parameters to {json_file}")
+    print(f"Saved best labels to {labels_path}/")
 
 
-if __name__ == '__main__':
-    from load_datasets import create_compound, create_aggregation, create_jain, create_unbalance, create_spiral, \
-    create_pathbased, create_data1, create_data2, create_data3, create_data4, create_data5, create_data6, \
-    create_data7, \
-    create_parabolic, create_ring, create_zigzag, create_trajectories, create_x, create_set_s, create_set_a, create_d31
+
+
+def main_synthetic_data():
+    from load_datasets import (create_compound, create_aggregation, create_jain, create_unbalance, create_spiral,
+                               create_pathbased,
+                               create_data1, create_data2, create_data3, create_data4, create_data5, create_data6,
+                               create_data7, \
+                               create_parabolic, create_ring, create_zigzag, create_trajectories, create_x,
+                               create_set_s, create_set_a, create_d31)
     import warnings
 
     warnings.filterwarnings(
@@ -438,10 +492,43 @@ if __name__ == '__main__':
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt)
+        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['KMeans'])  # , algorithms=['DBSCAN', 'HDBSCAN'])
 
         save_best_parameters(results, data_name)
 
         summary = compare_best_results(results)
-        print("\n### Summary of Best Results ###")
         print(summary.to_string(index=False))
+
+
+
+
+def main_real_data():
+    from load_datasets import create_real_datasets
+    import warnings
+
+    warnings.filterwarnings(
+        "ignore",
+        message="Graph is not fully connected, spectral embedding may not work as expected."
+    )
+
+    datasets = create_real_datasets()
+
+    for data_name, (X, gt) in datasets:
+        print(f"\n{'=' * 80}")
+        print(f"Processing dataset: {data_name}")
+        print(f"{'=' * 80}")
+
+        X = MinMaxScaler(scale).fit_transform(X)
+        X, gt = remove_dups(X, gt)
+        gt = reencode(gt)
+
+        results = run_comprehensive_grid_search(X, true_labels=gt)  # , algorithms=['DBSCAN', 'HDBSCAN'])
+
+        save_best_parameters(results, data_name)
+
+        summary = compare_best_results(results)
+        print(summary.to_string(index=False))
+
+if __name__ == '__main__':
+    main_synthetic_data()
+    # main_real_data()

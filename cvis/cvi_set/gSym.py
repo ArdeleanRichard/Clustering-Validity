@@ -126,6 +126,9 @@ class gSym:
 
         # Compute all point symmetry distances using batch processing
         for k in self.unique_labels:
+            if np.count_nonzero(self.labels == k) == 1:
+                continue
+
             cluster_k = self.clusters[k]
             centroid_k = self.centroids[k]
 

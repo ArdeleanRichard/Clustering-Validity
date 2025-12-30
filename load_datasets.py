@@ -131,14 +131,12 @@ def create_glass():
     fetched_data = fetch_ucirepo(id=42)
     return read_uci(fetched_data)
 
-
 def create_yeast():
     # data, meta = arff.loadarff('./data/yeast.arff')
     # return transform_arff_data(data)
 
     fetched_data = fetch_ucirepo(id=110)
     return read_uci(fetched_data)
-
 
 def create_statlog():
     fetched_data = fetch_ucirepo(id=147)
@@ -148,10 +146,20 @@ def create_wdbc():
     fetched_data = fetch_ucirepo(id=17)
     return read_uci(fetched_data)
 
-
 def create_wine():
     fetched_data = fetch_ucirepo(id=109)
     return read_uci(fetched_data)
+
+
+def create_real_datasets():
+    datasets = []
+    datasets.append(("ecoli", create_ecoli()))
+    datasets.append(("glass", create_glass()))
+    datasets.append(("wine", create_wine()))
+    datasets.append(("wdbc", create_wdbc()))
+    datasets.append(("yeast", create_yeast()))
+    datasets.append(("statlog", create_statlog()))
+    return datasets
 
 
 
@@ -160,11 +168,6 @@ def create_unbalance():
     temp_data = data.to_numpy()
     data = (temp_data[:, :-1], temp_data[:, -1])
     return data
-
-
-
-
-
 
 def create_2d4c():
     data, meta = arff.loadarff('./data/2d-4c-no4.arff')

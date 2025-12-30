@@ -3,7 +3,7 @@ import glob
 from constants import FOLDER_RESULTS
 
 if __name__ == "__main__":
-    FOLDER = FOLDER_RESULTS + "saved/*.csv"
+    FOLDER = FOLDER_RESULTS + "/*.csv"
 
     metric_correct_counts = {}  # +1 if entire row has ZERO *
     metric_error_counts = {}  # +1 for each * in any cell of that row

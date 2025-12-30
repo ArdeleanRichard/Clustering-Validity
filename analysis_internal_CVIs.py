@@ -243,7 +243,7 @@ def plot_analysis_kmeans(cvi_str, measure_str, measure_arr, cvi_km2_arr, cvi_km3
     save_fig(fig, save_filename)
 
 
-def analyze_measure_kmeans(
+def     analyze_measure_kmeans(
         cvi_str,
         measure_str,
         save_filename="analysis",
@@ -335,13 +335,13 @@ def main():
     analyze_measure("silhouette", "overlap", "hl")
     analyze_measure("silhouette", "overlap", "vl")
 
-    # print("\n" + "=" * 60)
-    # print("ANALYSIS (KMEANS): Overlap vs Silhouette")
-    # print("=" * 60)
-    # analyze_measure_kmeans("silhouette", "overlap")
-    # analyze_measure("ad_silhouette", "overlap", "hl")
-    # analyze_measure("ad_silhouette", "overlap", "vl")
-    # analyze_measure_kmeans("ad_silhouette", "overlap")
+    print("\n" + "=" * 60)
+    print("ANALYSIS (KMEANS): Overlap vs Silhouette")
+    print("=" * 60)
+    analyze_measure_kmeans("silhouette", "overlap")
+    analyze_measure("ad_silhouette", "overlap", "hl")
+    analyze_measure("ad_silhouette", "overlap", "vl")
+    analyze_measure_kmeans("ad_silhouette", "overlap")
 
 
 if __name__ == "__main__":
