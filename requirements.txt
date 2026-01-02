@@ -8,8 +8,6 @@ tabulate
 scikit-posthocs
 seaborn
 
-ucimlrepo
-
 cvi
 permetrics==2.0.0
 pycvi-lib

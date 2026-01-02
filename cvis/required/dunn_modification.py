@@ -33,10 +33,11 @@ def calculate_dunn_index(X=None, y_pred=None, use_modified=True, force_finite=Tr
                     dmin = min(dmin, np.min(dkk))
 
     # Calculate dmax
+    # Calculate dmax
     dmax = 0.0
     for kdx in range(n_clusters):
         points = X[y_pred == kdx]
-        if len(points) > 0:
+        if len(points) >= 2:
             dk = np.max(pdist(points, metric="euclidean"))
             dmax = max(dmax, dk)
     return dmin / dmax

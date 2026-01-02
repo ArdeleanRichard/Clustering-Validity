@@ -1,9 +1,10 @@
 import pandas as pd
 import glob
-from constants import FOLDER_RESULTS
+from constants import FOLDER_RESULTS_CVIS
 
-if __name__ == "__main__":
-    FOLDER = FOLDER_RESULTS + "/*.csv"
+
+def main_summarize():
+    FOLDER = FOLDER_RESULTS_CVIS + "/*.csv"
 
     metric_correct_counts = {}  # +1 if entire row has ZERO *
     metric_error_counts = {}  # +1 for each * in any cell of that row
@@ -29,7 +30,7 @@ if __name__ == "__main__":
                 # whole row correct
                 metric_correct_counts[metric] += 1
             else:
-                if metric == "DBCV (↑)" or metric == "idea (↑)" or metric == "CDbw (↑)":
+                if metric == "DBCV (↑)" or metric == "AD-idea (↑)" or metric == "CDbw (↑)":
                     print(metric, file)
 
             # accumulate total * count
@@ -40,8 +41,11 @@ if __name__ == "__main__":
         f"Errors (out of {5 * len(glob.glob(FOLDER))})": pd.Series(metric_error_counts)
     })
 
-    summary.to_csv("./results/summary/summary.csv")
+    summary.to_csv(FOLDER_RESULTS_CVIS + "/saved/.summary.csv")
     print(summary)
+
+if __name__ == "__main__":
+    main_summarize()
 
 
 

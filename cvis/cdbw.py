@@ -305,11 +305,9 @@ def closest_rep(X, n_clusters, rep_in_cl, n_rep, metric, distvec):
                 t1 += [n_rep[i]]
                 t2 += [n_rep[j]]
                 for k in range(n_rep[i]):
-                    s1.append(np.unravel_index(min_index_r[(i, j)][k],
-                                               (n_rep[i], n_rep[j])))
+                    s1.append(np.unravel_index(min_index_r[(i, j)][k],(n_rep[i], n_rep[j])))
                 for n in range(n_rep[j]):
-                    s2.append(np.unravel_index(min_index_c[(i, j)][n],
-                                               (n_rep[j], n_rep[i])))
+                    s2.append(np.unravel_index(min_index_c[(i, j)][n],(n_rep[j], n_rep[i])))
                     s2_t = [(x[1], x[0]) for x in s2]
     p = 0
     for m in range(len(t1)):

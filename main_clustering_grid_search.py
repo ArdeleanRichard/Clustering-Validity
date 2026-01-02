@@ -445,43 +445,9 @@ def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CL
 
 
 def main_synthetic_data():
-    from load_datasets import (create_compound, create_aggregation, create_jain, create_unbalance, create_spiral,
-                               create_pathbased,
-                               create_data1, create_data2, create_data3, create_data4, create_data5, create_data6,
-                               create_data7, \
-                               create_parabolic, create_ring, create_zigzag, create_trajectories, create_x,
-                               create_set_s, create_set_a, create_d31)
-    import warnings
+    from load_datasets import create_synthetic_datasets
 
-    warnings.filterwarnings(
-        "ignore",
-        message="Graph is not fully connected, spectral embedding may not work as expected."
-    )
-
-    n_samples = 1000
-    datasets = [
-        ("data1", create_data1(n_samples)),
-        ("data2", create_data2(n_samples)),
-        ("data3", create_data3(n_samples)),
-        ("data4", create_data4(n_samples)),
-        ("data5", create_data5(n_samples)),
-        ("data6", create_data6(n_samples)),
-        ("data7", create_data7(n_samples)),
-        ("aggregation", create_aggregation()),
-        ("compound", create_compound()),
-        ("d31", create_d31()),
-        ("jain", create_jain()),
-        ("pathbased", create_pathbased()),
-        ("spiral", create_spiral()),
-        ("unbalance", create_unbalance()),
-    ]
-    datasets.extend([("parabolic", create_parabolic())])
-    datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
-    datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
-    datasets.extend([("trajectories", create_trajectories())])
-    datasets.extend([(f"x{i}", create_x(i)) for i in [1, 2, 3]])
-    datasets.extend(create_set_s())
-    datasets.extend(create_set_a())
+    datasets = create_synthetic_datasets()
 
     for data_name, (X, gt) in datasets:
         print(f"\n{'=' * 80}")
@@ -492,7 +458,7 @@ def main_synthetic_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['KMeans'])  # , algorithms=['DBSCAN', 'HDBSCAN'])
+        results = run_comprehensive_grid_search(X, true_labels=gt) #, algorithms=['KMeans'])  # , algorithms=['DBSCAN', 'HDBSCAN'])
 
         save_best_parameters(results, data_name)
 
@@ -504,12 +470,6 @@ def main_synthetic_data():
 
 def main_real_data():
     from load_datasets import create_real_datasets
-    import warnings
-
-    warnings.filterwarnings(
-        "ignore",
-        message="Graph is not fully connected, spectral embedding may not work as expected."
-    )
 
     datasets = create_real_datasets()
 
@@ -530,5 +490,12 @@ def main_real_data():
         print(summary.to_string(index=False))
 
 if __name__ == '__main__':
+    import warnings
+
+    warnings.filterwarnings(
+        "ignore",
+        message="Graph is not fully connected, spectral embedding may not work as expected."
+    )
+
     main_synthetic_data()
     # main_real_data()
