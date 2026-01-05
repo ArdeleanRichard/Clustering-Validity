@@ -31,7 +31,9 @@ def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, c
                  ha='center', fontsize=10, bbox=dict(facecolor='white', alpha=0.6))
     axes[0].set_xlabel(f'{measure_name_full} ({measure_name_acronym})', fontsize=12, fontweight='bold')
     axes[0].set_ylabel(f'{cvi_name_full}', fontsize=12, fontweight='bold')
-    axes[0].set_title(f'{cvi_name_full} vs {measure_name_full}', fontsize=14, fontweight='bold')
+    axes[0].set_title(f'{cvi_name_full} vs {measure_name_full}'
+                      f'\n shown example: {val_name}={val:.2f}, {measure_name_acronym}={measure_val:.2f}',
+                      fontsize=14, fontweight='bold')
     axes[0].grid(alpha=0.3)
     axes[0].legend()
 
@@ -41,8 +43,8 @@ def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, c
     p1, p2 = line_func(X_plot)  # Get the two points for plotting
     axes[1].plot([p1[0], p2[0]], [p1[1], p2[1]], 'k--', linewidth=2, alpha=0.8)  # general line
     axes[1].set_title(
-        f'{labelset_name} midline separated labels ({labelset_str.upper()}) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_val:.2f}\n'
-        f'{cvi_name_full} ({labelset_str.upper()})={cvi_fl_arr[chosen_idx]:.3f} vs {cvi_name_full} (TL)={cvi_tl_arr[chosen_idx]:.3f}',
+        f'{labelset_name} midline separated labels ({labelset_str.upper()})'
+        f'\n{cvi_name_full} ({labelset_str.upper()})={cvi_fl_arr[chosen_idx]:.3f}',
         fontsize=11, fontweight='bold'
     )
     axes[1].set_xlabel('X')
@@ -52,7 +54,8 @@ def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, c
     # Right: True labels
     label_colors_t = [LABEL_COLOR_MAP[i] for i in true_labels]
     axes[2].scatter(X_plot[:, 0], X_plot[:, 1], c=label_colors_t, s=25, alpha=0.7)
-    axes[2].set_title(f'True labels (TL) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_arr[chosen_idx]:.2f}', fontsize=11, fontweight='bold')
+    axes[2].set_title(f'True labels (TL)'
+                      f'\n{cvi_name_full} (TL)={cvi_tl_arr[chosen_idx]:.3f}', fontsize=11, fontweight='bold')
     axes[2].set_xlabel('X')
     axes[2].set_ylabel('Y')
     axes[2].grid(alpha=0.3)
@@ -214,7 +217,10 @@ def plot_analysis_kmeans(cvi_str, measure_str, measure_arr, cvi_km2_arr, cvi_km3
                  ha='center', fontsize=10, bbox=dict(facecolor='white', alpha=0.6))
     axes[0].set_xlabel(f'{measure_name_full} ({measure_name_acronym})', fontsize=12, fontweight='bold')
     axes[0].set_ylabel(f'{cvi_name_full}', fontsize=12, fontweight='bold')
-    axes[0].set_title(f'{cvi_name_full} vs {measure_name_full}', fontsize=14, fontweight='bold')
+    axes[0].set_title(
+        f'{cvi_name_full} vs {measure_name_full}'
+        f'\nshown example: {val_name}={val:.2f}, {measure_name_acronym}={measure_val:.2f}', fontsize=14, fontweight='bold'
+    )
     axes[0].grid(alpha=0.3)
     axes[0].legend()
 
@@ -223,8 +229,8 @@ def plot_analysis_kmeans(cvi_str, measure_str, measure_arr, cvi_km2_arr, cvi_km3
     axes[1].scatter(X_plot[:, 0], X_plot[:, 1], c=labelset_false_colors, s=25, alpha=0.7)
 
     axes[1].set_title(
-        f'K-Means (2 clusters) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_val:.2f}\n'
-        f'{cvi_name_full} (K=2)={cvi_km2_arr[chosen_idx]:.3f} vs {cvi_name_full} (K=3)={cvi_km3_arr[chosen_idx]:.3f}',
+        f'K-Means (2 clusters)'
+        f'\n{cvi_name_full} (K=2)={cvi_km2_arr[chosen_idx]:.3f}',
         fontsize=11, fontweight='bold'
     )
     axes[1].set_xlabel('X')
@@ -234,7 +240,11 @@ def plot_analysis_kmeans(cvi_str, measure_str, measure_arr, cvi_km2_arr, cvi_km3
     # Right: True labels
     label_colors_t = [LABEL_COLOR_MAP[i] for i in true_labels]
     axes[2].scatter(X_plot[:, 0], X_plot[:, 1], c=label_colors_t, s=25, alpha=0.7)
-    axes[2].set_title(f'K-Means (3 clusters) \n{val_name}={val:.2f}, {measure_name_acronym}={measure_arr[chosen_idx]:.2f}', fontsize=11, fontweight='bold')
+    axes[2].set_title(
+        f'K-Means (3 clusters)'
+        f'\n{cvi_name_full} (K=3)={cvi_km3_arr[chosen_idx]:.3f}',
+        fontsize=11, fontweight='bold'
+    )
     axes[2].set_xlabel('X')
     axes[2].set_ylabel('Y')
     axes[2].grid(alpha=0.3)
@@ -243,7 +253,7 @@ def plot_analysis_kmeans(cvi_str, measure_str, measure_arr, cvi_km2_arr, cvi_km3
     save_fig(fig, save_filename)
 
 
-def     analyze_measure_kmeans(
+def analyze_measure_kmeans(
         cvi_str,
         measure_str,
         save_filename="analysis",

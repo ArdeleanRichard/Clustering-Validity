@@ -135,12 +135,25 @@ def main_synth_data():
     datasets = create_synthetic_datasets()
 
     # Compute correlations
-    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="DBSCAN")
-    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="SpectralClustering")
-    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="HDBSCAN")
-    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="AgglomerativeClustering")
-    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="MeanShift")
     compute_ari_cvi_correlations(datasets, METRICS, clusterer="KMeans")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="MeanShift")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="DBSCAN")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="HDBSCAN")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="AgglomerativeClustering")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="SpectralClustering")
+
+def main_real_data():
+    from load_datasets import create_real_datasets
+
+    datasets = create_real_datasets()
+
+    # Compute correlations
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="KMeans")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="MeanShift")
+    # compute_ari_cvi_correlations(datasets, METRICS, clusterer="DBSCAN")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="HDBSCAN")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="AgglomerativeClustering")
+    compute_ari_cvi_correlations(datasets, METRICS, clusterer="SpectralClustering")
 
 
 
@@ -152,6 +165,7 @@ if __name__ == "__main__":
         message="Graph is not fully connected, spectral embedding may not work as expected."
     )
 
-    main_synth_data()
+    # main_synth_data()
+    main_real_data()
 
 

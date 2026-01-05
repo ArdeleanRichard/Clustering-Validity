@@ -17,13 +17,13 @@ def get_param_grids():
     """Define parameter grids for each clustering algorithm"""
     param_grids = {
         'DBSCAN': {
-            'eps': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25],
-            'min_samples': [3, 5, 10, 15, 20, 30, 50, 100]
+            'eps': [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75],
+            'min_samples': [3, 5, 10, 15, 20, 30, 50, 100, 200]
         },
         'HDBSCAN': {
             'min_cluster_size': [2, 3, 5, 10, 15, 20, 30, 50, 100],
             'min_samples': [1, 3, 5, 10, 20],
-            'cluster_selection_epsilon': [0, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25]
+            'cluster_selection_epsilon': [0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25]
         },
         'MeanShift': {
             'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
@@ -53,12 +53,12 @@ def evaluate_clustering(labels, true_labels=None):
     metrics = {}
 
     valid_mask = labels != -1
-    n_clusters = len(set(labels[valid_mask])) if valid_mask.any() else 0
 
     if true_labels is not None:
         metrics['ari'] = adjusted_rand_score(true_labels, labels)
         metrics['ami'] = adjusted_mutual_info_score(true_labels, labels)
 
+    n_clusters = len(set(labels[valid_mask])) if valid_mask.any() else 0
     metrics['n_clusters'] = n_clusters
     metrics['n_noise'] = (labels == -1).sum()
 
@@ -99,12 +99,12 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 if len(unique_labels) > 2:
                     score = metrics['ari']
                 else:
-                    score = 0
+                    score = -1
 
                 if np.count_nonzero(labels==-1) > len(X) * 0.4:
-                    score = 0
+                    score = -1
 
-                if score > best_score:
+                if score >= best_score:
                     best_score = score
                     best_params = {'eps': eps, 'min_samples': min_samples}
                     best_labels = labels
@@ -143,10 +143,10 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 if len(unique_labels) > 2:
                     score = metrics['ari']
                 else:
-                    score = 0
+                    score = -1
 
                 if np.count_nonzero(labels==-1) > len(X) * 0.4:
-                    score = 0
+                    score = -1
 
                 if score > best_score:
                     best_score = score
@@ -482,7 +482,7 @@ def main_real_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt)  # , algorithms=['DBSCAN', 'HDBSCAN'])
+        results = run_comprehensive_grid_search(X, true_labels=gt) #, algorithms=['DBSCAN', 'HDBSCAN'])
 
         save_best_parameters(results, data_name)
 
@@ -497,5 +497,5 @@ if __name__ == '__main__':
         message="Graph is not fully connected, spectral embedding may not work as expected."
     )
 
-    main_synthetic_data()
-    # main_real_data()
+    # main_synthetic_data()
+    main_real_data()

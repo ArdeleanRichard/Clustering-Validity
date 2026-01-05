@@ -246,8 +246,14 @@ def create_wine():
 def create_yeast():
     return read_data_and_labels(f"./data/uci/yeast.data", f"./data/uci/yeast.labels0")
 
+def create_ccbr():
+    return read_data_and_labels(f"./data/uci/ccbr.data", f"./data/uci/ccbr.labels0")
 
+def create_wholesale():
+    return read_data_and_labels(f"./data/uci/wholesale.data", f"./data/uci/wholesale.labels0")
 
+def create_seeds():
+    return read_data_and_labels(f"./data/uci/seeds.data", f"./data/uci/seeds.labels0")
 
 
 
@@ -317,7 +323,7 @@ def create_r15():
     return read_data_and_labels(f"./data/sipu/r15.data", f"./data/sipu/r15.labels0")
 
 def create_flame():
-    return read_data_and_labels(f"./data/sipu/flame.data", f"./data/sipu/flame.labels0")
+    return read_data_and_labels(f"./data/sipu/flame.data", f"./data/sipu/flame.labels1")
 
 
 
@@ -342,14 +348,17 @@ def create_lsun():
 
 def create_real_datasets():
     datasets = []
-    # datasets.append(("ecoli", create_ecoli()))
-    # datasets.append(("glass", create_glass()))
+    datasets.append(("ecoli", create_ecoli()))
+    datasets.append(("glass", create_glass()))
     datasets.append(("ionosphere", create_ionosphere()))
     datasets.append(("sonar", create_sonar()))
-    # datasets.append(("statlog", create_statlog()))
-    # datasets.append(("wdbc", create_wdbc()))
-    # datasets.append(("wine", create_wine()))
-    # datasets.append(("yeast", create_yeast()))
+    datasets.append(("statlog", create_statlog()))
+    datasets.append(("wdbc", create_wdbc()))
+    datasets.append(("wine", create_wine()))
+    datasets.append(("yeast", create_yeast()))
+    # datasets.append(("ccbr", create_ccbr()))
+    # datasets.append(("wholesale", create_wholesale()))
+    # datasets.append(("seeds", create_seeds()))
     return datasets
 
 
@@ -359,39 +368,39 @@ def create_synthetic_datasets():
     datasets = []
 
     # graves
-    datasets.append(("fuzzyx", create_fuzzyx()))
-    datasets.append(("line", create_line()))
-    datasets.append(("dense", create_dense()))
+    # datasets.append(("fuzzyx", create_fuzzyx()))
+    # datasets.append(("line", create_line()))
+    # datasets.append(("dense", create_dense()))
     datasets.append(("parabolic", create_parabolic()))
     datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
     datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
 
-    # wut
-    datasets.extend([(f"mk{i}", create_mk(i)) for i in [1, 2]])  ### [1,2,3,4] ### >2 n_dims
-    datasets.append((f"smile", create_smile()))
+    # # wut
+    # datasets.extend([(f"mk{i}", create_mk(i)) for i in [1, 2]])  ### [1,2,3,4] ### >2 n_dims
+    # datasets.append((f"smile", create_smile()))
     datasets.extend([(f"x{i}", create_x(i)) for i in [1, 2, 3]])
-    ### datasets.extend([("trajectories", create_trajectories())]) ### high n_samples
+    # ### datasets.extend([("trajectories", create_trajectories())]) ### high n_samples
 
-    # sipu
+    # # sipu
     datasets.append(("aggregation", create_aggregation()))
     datasets.append(("compound", create_compound()))
     datasets.append(("jain", create_jain()))
     datasets.append(("pathbased", create_pathbased()))
     datasets.append(("spiral", create_spiral()))
-    datasets.append(("r15", create_r15()))
-    datasets.append(("flame", create_flame()))
-    ### datasets.append(("d31", create_d31())) ### high n_samples
-    ### datasets.append(("unbalance", create_unbalance())) ### high n_samples
-    ### datasets.extend([(f"s{i}", create_s(i)) for i in [1,2,3,4]]) ### high n_samples
-    ### datasets.extend([(f"a{i}", create_a(i)) for i in [1, 2, 3]]) ### high n_samples
-
-    # fcps
-    datasets.append(("lsun", create_lsun()))
-    datasets.append(("target", create_target()))
-    datasets.append(("twodiamonds", create_twodiamonds()))
-    datasets.append(("wingnut", create_wingnut()))
-    ### datasets.append(("hepta", create_hepta())) ### >2 n_dims
-    ### datasets.append(("tetra", create_tetra())) ### >2 n_dims
+    # datasets.append(("r15", create_r15()))
+    # datasets.append(("flame", create_flame()))
+    # ### datasets.append(("d31", create_d31())) ### high n_samples
+    # ### datasets.append(("unbalance", create_unbalance())) ### high n_samples
+    # ### datasets.extend([(f"s{i}", create_s(i)) for i in [1,2,3,4]]) ### high n_samples
+    # ### datasets.extend([(f"a{i}", create_a(i)) for i in [1, 2, 3]]) ### high n_samples
+    #
+    # # fcps
+    # datasets.append(("lsun", create_lsun()))
+    # datasets.append(("target", create_target()))
+    # datasets.append(("twodiamonds", create_twodiamonds()))
+    # datasets.append(("wingnut", create_wingnut()))
+    # ### datasets.append(("hepta", create_hepta())) ### >2 n_dims
+    # ### datasets.append(("tetra", create_tetra())) ### >2 n_dims
 
     return datasets
 

@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.stats import pearsonr
-from sklearn.metrics import adjusted_rand_score
+from scipy.stats import pearsonr, spearmanr
+from sklearn.metrics import adjusted_rand_score, matthews_corrcoef
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from pathlib import Path
@@ -13,6 +13,25 @@ from cvis_ours.external_CVIs import balanced_external
 from load_CVIs import choose_index
 from load_datasets import create_synthetic_datasets
 from utils import reencode, remove_dups
+
+
+def concordance_correlation_coefficient(y_true, y_pred):
+    cor = np.corrcoef(y_true, y_pred)[0][1]
+    # Means
+    mean_true = np.mean(y_true)
+    mean_pred = np.mean(y_pred)
+    # Population variances
+    var_true = np.var(y_true)
+    var_pred = np.var(y_pred)
+    # Population standard deviations
+    sd_true = np.std(y_true)
+    sd_pred = np.std(y_pred)
+    # Calculate CCC
+    numerator = 2 * cor * sd_true * sd_pred
+    denominator = var_true + var_pred + (mean_true - mean_pred)**2
+
+    return numerator / denominator
+
 
 
 def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder, file_prefix):
@@ -171,9 +190,12 @@ def compute_single_correlation(metric, external_vals, cvi_vals, dataset_name):
     cvi_valid = np.array(cvi_vals)[valid_indices]
 
     # Compute Pearson correlation
-    corr, p_value = pearsonr(external_valid, cvi_valid)
+    # corr, p_value = pearsonr(external_valid, cvi_valid)
+    # corr, p_value = spearmanr(external_valid, cvi_valid)
+    # print(f"  {metric}: correlation={corr:.3f}, p-value={p_value:.4f}")
 
-    print(f"  {metric}: correlation={corr:.3f}, p-value={p_value:.4f}")
+    corr = concordance_correlation_coefficient(external_valid, cvi_valid)
+    print(f"  {metric}: correlation={corr:.3f}")
 
     return corr
 
@@ -191,7 +213,7 @@ def main_real_data():
 
     datasets = create_real_datasets()
 
-    prefix = "realdata"
+    prefix = "realdata2"
     # Compute correlations per dataset
     correlation_matrices = compute_ari_cvi_correlations_per_dataset(
         datasets=datasets,

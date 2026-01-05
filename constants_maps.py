@@ -44,7 +44,7 @@ MAP_METRIC_TO_FUNCTION = {
 
     "C": lambda X, labels: c_index(X=X, labels=labels),
 
-    "CDbw": lambda X, labels: CDbw(X=X, labels=labels),
+    # "CDbw": lambda X, labels: CDbw(X=X, labels=labels),
     "VIASCKDE": lambda X, labels: VIASCKDE(X=X, labels=labels),
 
     "COP": lambda X, labels: cop(data=X, labels=labels),
@@ -146,10 +146,10 @@ MAP_LABELSET = {
 }
 
 MAP_LABELSET_TO_NAME = {
-    "gt": "Ground Truth labels",
-    "rl": "Random labels",
-    "dfl": "First Diagonal separated labels",
-    "dsl": "Second Diagonal separated labels",
-    "vl": "Vertical midline separated labels",
-    "hl": "Horizontal midline separated labels",
+    "gt": "Ground Truth labels (TL)",
+    "rl": "Random labels (RL)",
+    "dfl": "First Diagonal separated labels (FDL)",
+    "dsl": "Second Diagonal separated labels (SDL)",
+    "vl": "Vertical midline separated labels (VL)",
+    "hl": "Horizontal midline separated labels (HL)",
 }

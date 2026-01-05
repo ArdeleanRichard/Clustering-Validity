@@ -194,8 +194,18 @@ def ad_idea(data, labels, n_neighbors=5):
     Optimized version of mst_idea: ratio of max intra-cluster to min inter-cluster distance.
     Lower is better (compact clusters, well-separated).
     """
+    if -1 in labels:
+        data = data[labels!=-1]
+        labels = labels[labels!=-1]
+        silence_percentage = (len(labels) - np.count_nonzero(labels == -1)) / len(labels)
+    else:
+        silence_percentage = 1
+
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
+
+    if len(unique_labels) == 1:
+        return 0.0
 
     # For within-cluster distances, build separate MSTs for each cluster
     max_intra_dist = 0.0
@@ -238,7 +248,8 @@ def ad_idea(data, labels, n_neighbors=5):
 
     # print(min_inter_dists, max_intra_dists, purity)
 
-    return np.sum(min_inter_dists / max_intra_dists) # * purity
+    # return np.sum(min_inter_dists / max_intra_dists) # * purity
+    return np.sum(min_inter_dists / max_intra_dists) * silence_percentage
 
 
 def compare_performance():

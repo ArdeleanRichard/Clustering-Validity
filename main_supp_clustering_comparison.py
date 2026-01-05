@@ -8,7 +8,8 @@ from hdbscan import HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 
-from constants import LABEL_COLOR_MAP, random_state, scale, FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS
+from constants import LABEL_COLOR_MAP, random_state, scale, FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS, \
+    FOLDER_RESULTS_CLUSTERING
 from cvis_ours.np_kmeans import KMeansClustering
 from cvis_ours.ed_kmeans import ED_KMeansClustering
 from cvis_ours.ad_kmeans import AD_KMeansClustering
@@ -123,7 +124,6 @@ def main_comparison_clustering_algorithms():
         ("r15", create_r15()),
         ("x1", create_x(1)),
         ("dense", create_dense()),
-        ("fuzzyx", create_fuzzyx()),
     ]
     for data_name, (X, gt) in datasets:
         X = MinMaxScaler(scale).fit_transform(X)
@@ -152,9 +152,9 @@ def main_comparison_clustering_algorithms():
             plt.close()
 
         # save the dataframe and its transpose
-        csv_path = FOLDER_FIGS_CLUSTERING + f"{data_name}.csv"
+        csv_path = FOLDER_RESULTS_CLUSTERING + f"{data_name}.csv"
         df.to_csv(csv_path, float_format="%.3f")
-        csv_transpose_path = FOLDER_FIGS_CLUSTERING + f"{data_name}_transpose.csv"
+        csv_transpose_path = FOLDER_RESULTS_CLUSTERING + f"{data_name}_transpose.csv"
         df.T.to_csv(csv_transpose_path, float_format="%.3f")
 
 
@@ -165,13 +165,12 @@ def create_paper_tables_from_results():
     import pandas as pd
 
     paths = [
-        "./results/clustering/aggregation.csv",
-        "./results/clustering/compound.csv",
-        "./results/clustering/dense.csv",
-        "./results/clustering/fuzzyx.csv",
-        "./results/clustering/r15.csv",
-        "./results/clustering/spiral.csv",
-        "./results/clustering/x1.csv",
+        FOLDER_RESULTS_CLUSTERING + "aggregation.csv",
+        FOLDER_RESULTS_CLUSTERING + "compound.csv",
+        FOLDER_RESULTS_CLUSTERING + "dense.csv",
+        FOLDER_RESULTS_CLUSTERING + "r15.csv",
+        FOLDER_RESULTS_CLUSTERING + "spiral.csv",
+        FOLDER_RESULTS_CLUSTERING + "x1.csv",
     ]
     per_column = {}
     base_index = None
