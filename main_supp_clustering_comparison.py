@@ -8,11 +8,11 @@ from hdbscan import HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 
-from load_datasets import create_set1, create_compound, create_aggregation, create_jain, create_unbalance, create_spiral, create_pathbased
 from constants import LABEL_COLOR_MAP, random_state, scale, FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS
 from cvis_ours.np_kmeans import KMeansClustering
 from cvis_ours.ed_kmeans import ED_KMeansClustering
 from cvis_ours.ad_kmeans import AD_KMeansClustering
+
 
 def load_best_parameters_for_dataset(dataset_name):
     from pathlib import Path
@@ -112,18 +112,18 @@ def run_clustering_algorithms(dataset_name, X, n_clusters):
     return MAP_CLUSTERING_TO_LABELS
 
 
-
 def main_comparison_clustering_algorithms():
-    n_samples = 1000
-    datasets = create_set1(n_samples)
+    from load_datasets import create_compound, create_aggregation, \
+        create_spiral, create_r15, create_x, create_fuzzyx, create_dense
 
     datasets = [
         ("compound", create_compound()),
         ("aggregation", create_aggregation()),
-        ("jain", create_jain()),
         ("spiral", create_spiral()),
-        ("pathbased", create_pathbased()),
-        ("unbalance", create_unbalance()),
+        ("r15", create_r15()),
+        ("x1", create_x(1)),
+        ("dense", create_dense()),
+        ("fuzzyx", create_fuzzyx()),
     ]
     for data_name, (X, gt) in datasets:
         X = MinMaxScaler(scale).fit_transform(X)
@@ -167,10 +167,11 @@ def create_paper_tables_from_results():
     paths = [
         "./results/clustering/aggregation.csv",
         "./results/clustering/compound.csv",
-        "./results/clustering/jain.csv",
-        "./results/clustering/pathbased.csv",
+        "./results/clustering/dense.csv",
+        "./results/clustering/fuzzyx.csv",
+        "./results/clustering/r15.csv",
         "./results/clustering/spiral.csv",
-        "./results/clustering/unbalance.csv",
+        "./results/clustering/x1.csv",
     ]
     per_column = {}
     base_index = None
@@ -203,5 +204,5 @@ def create_paper_tables_from_results():
 
 if __name__ == '__main__':
     pass
-    main_comparison_clustering_algorithms()
-    # create_paper_tables_from_results()
+    # main_comparison_clustering_algorithms()
+    create_paper_tables_from_results()
