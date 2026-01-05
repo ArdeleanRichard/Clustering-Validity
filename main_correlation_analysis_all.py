@@ -1,17 +1,16 @@
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
-from sklearn.metrics import adjusted_rand_score, matthews_corrcoef
+from sklearn.cluster import DBSCAN
+from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from pathlib import Path
 import glob
 
-from constants import scale, FOLDER_RESULTS_CLUSTERING_LABELS, FOLDER_RESULTS_CORRELATION, \
-    FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS
-from constants_maps import METRICS
+from constants import scale, FOLDER_RESULTS_CORRELATION, FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS
+from constants_maps import METRICS, MAP_LOWER_IS_BETTER
 from cvis_ours.external_CVIs import balanced_external
 from load_CVIs import choose_index
-from load_datasets import create_synthetic_datasets
 from utils import reencode, remove_dups
 
 
@@ -58,7 +57,6 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder, f
     --------
     dict : Dictionary containing 4 DataFrames (ari, ari_nn, bari, bari_nn)
     """
-
     results_ari = {}
     results_ari_nn = {}
     results_bari = {}
@@ -95,6 +93,9 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder, f
 
         # Process each clustering algorithm result
         for label_file in label_files:
+            # 'DBSCAN', 'HDBSCAN', 'MeanShift', 'AgglomerativeClustering', 'SpectralClustering', 'KMeans'
+            if clusteralgo not in label_file:
+                continue
             clusterer_name = Path(label_file).stem.replace(f"labels_{dataset_name}_", "")
 
             try:
@@ -191,11 +192,11 @@ def compute_single_correlation(metric, external_vals, cvi_vals, dataset_name):
 
     # Compute Pearson correlation
     # corr, p_value = pearsonr(external_valid, cvi_valid)
-    # corr, p_value = spearmanr(external_valid, cvi_valid)
-    # print(f"  {metric}: correlation={corr:.3f}, p-value={p_value:.4f}")
+    corr, p_value = spearmanr(external_valid, cvi_valid)
+    print(f"  {metric}: correlation={corr:.3f}, p-value={p_value:.4f}")
 
-    corr = concordance_correlation_coefficient(external_valid, cvi_valid)
-    print(f"  {metric}: correlation={corr:.3f}")
+    # corr = concordance_correlation_coefficient(external_valid, cvi_valid)
+    # print(f"  {metric}: correlation={corr:.3f}")
 
     return corr
 
@@ -213,7 +214,7 @@ def main_real_data():
 
     datasets = create_real_datasets()
 
-    prefix = "realdata2"
+    prefix = "realdata"
     # Compute correlations per dataset
     correlation_matrices = compute_ari_cvi_correlations_per_dataset(
         datasets=datasets,
@@ -223,10 +224,10 @@ def main_real_data():
     )
 
     # Save results
-    save_correlation_matrix(correlation_matrices['ari'],        file_name=f"{prefix}_correlations_cvi_to_ari")
-    save_correlation_matrix(correlation_matrices['ari_nn'],     file_name=f"{prefix}_correlations_cvi_to_ari_nn")
-    save_correlation_matrix(correlation_matrices['bari'],       file_name=f"{prefix}_correlations_cvi_to_bari")
-    save_correlation_matrix(correlation_matrices['bari_nn'],    file_name=f"{prefix}_correlations_cvi_to_bari_nn")
+    save_correlation_matrix(correlation_matrices['ari'],        file_name=f"{prefix}_correlations_{clusteralgo}_cvi_to_ari")
+    save_correlation_matrix(correlation_matrices['ari_nn'],     file_name=f"{prefix}_correlations_{clusteralgo}_cvi_to_ari_nn")
+    save_correlation_matrix(correlation_matrices['bari'],       file_name=f"{prefix}_correlations_{clusteralgo}_cvi_to_bari")
+    save_correlation_matrix(correlation_matrices['bari_nn'],    file_name=f"{prefix}_correlations_{clusteralgo}_cvi_to_bari_nn")
 
 
 def main_synth_data():
@@ -258,6 +259,9 @@ if __name__ == "__main__":
         message="Graph is not fully connected, spectral embedding may not work as expected."
     )
 
+    # 'DBSCAN', 'HDBSCAN', 'MeanShift', 'AgglomerativeClustering', 'SpectralClustering', 'KMeans'
+    clusteralgo = "DBSCAN"
     main_real_data()
+
     # main_synth_data()
 

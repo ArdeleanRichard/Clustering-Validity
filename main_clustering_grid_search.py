@@ -7,7 +7,6 @@ from sklearn.cluster import KMeans, SpectralClustering, estimate_bandwidth, Mean
 from hdbscan import HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
-from itertools import product
 
 from constants import scale, FOLDER_RESULTS_CLUSTERING_PARAMS, random_state
 from utils import remove_dups, reencode
@@ -17,13 +16,13 @@ def get_param_grids():
     """Define parameter grids for each clustering algorithm"""
     param_grids = {
         'DBSCAN': {
-            'eps': [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75],
-            'min_samples': [3, 5, 10, 15, 20, 30, 50, 100, 200]
+            'eps': [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3],
+            'min_samples': [3, 5, 10, 15, 20, 30]
         },
         'HDBSCAN': {
-            'min_cluster_size': [2, 3, 5, 10, 15, 20, 30, 50, 100],
-            'min_samples': [1, 3, 5, 10, 20],
-            'cluster_selection_epsilon': [0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25]
+            'min_cluster_size': [5, 10, 20],
+            'min_samples': [3, 10, 20],
+            'cluster_selection_epsilon': [0.01, 0.05, 0.1, 0.2, 0.3]
         },
         'MeanShift': {
             'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
@@ -148,7 +147,7 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 if np.count_nonzero(labels==-1) > len(X) * 0.4:
                     score = -1
 
-                if score > best_score:
+                if score >= best_score:
                     best_score = score
                     best_params = {
                         'min_cluster_size': min_cluster_size,
@@ -458,7 +457,7 @@ def main_synthetic_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt) #, algorithms=['KMeans'])  # , algorithms=['DBSCAN', 'HDBSCAN'])
+        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['DBSCAN', 'HDBSCAN'])
 
         save_best_parameters(results, data_name)
 
@@ -497,5 +496,5 @@ if __name__ == '__main__':
         message="Graph is not fully connected, spectral embedding may not work as expected."
     )
 
-    # main_synthetic_data()
-    main_real_data()
+    main_synthetic_data()
+    # main_real_data()

@@ -165,7 +165,7 @@ if __name__ == "__main__":
         message="Graph is not fully connected, spectral embedding may not work as expected."
     )
 
-    # main_synth_data()
-    main_real_data()
+    main_synth_data()
+    # main_real_data()
 
 

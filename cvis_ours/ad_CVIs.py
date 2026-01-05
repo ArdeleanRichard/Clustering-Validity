@@ -219,7 +219,7 @@ def ad_idea(data, labels, n_neighbors=5):
             # Maximum distance from centroid to any point in cluster
             distances = cluster_mst.get_distances_to_point(cluster_centroid_id)
             max_intra_dist = max(max_intra_dist, np.max(distances))
-            max_intra_dists.append(np.max(distances))
+            max_intra_dists.append(np.mean(distances))
         elif len(cluster_data) == 1:
             max_intra_dists.append(np.inf) # clusters of size 1 give 0
     # For inter-cluster distances, use full MST
@@ -252,13 +252,10 @@ def ad_idea(data, labels, n_neighbors=5):
     return np.sum(min_inter_dists / max_intra_dists) * silence_percentage
 
 
-def compare_performance():
+def main_compare_performance():
     from time import time
     from load_datasets import create_data4
     from sklearn.preprocessing import MinMaxScaler
-
-    print("Performance Comparison")
-    print("=" * 60)
 
     for n in [500, 1000, 2000]:
         print(f"\nDataset size: {n} samples")
@@ -268,24 +265,24 @@ def compare_performance():
         k = 5
         # Silhouette score
         start = time()
-        score_opt = ad_silhouette_score(X, labels, n_neighbors=k)
-        time_opt = time() - start
-        print(f"  Optimized Silhouette: {score_opt:.4f} in {time_opt:.3f}s")
+        score = ad_silhouette_score(X, labels, n_neighbors=k)
+        timee = time() - start
+        print(f"  AD Silhouette: {score:.4f} in {timee:.3f}s")
 
         # Davies-Bouldin score
         start = time()
-        score_opt = ad_davies_bouldin_score(X, labels, n_neighbors=k)
-        time_opt = time() - start
-        print(f"  Optimized Davies-Bouldin: {score_opt:.4f} in {time_opt:.3f}s")
+        score = ad_davies_bouldin_score(X, labels, n_neighbors=k)
+        timee = time() - start
+        print(f"  AD Davies-Bouldin: {score:.4f} in {timee:.3f}s")
 
         # Calinski-Harabasz score
         start = time()
-        score_opt = ad_calinski_harabasz_score(X, labels, n_neighbors=k)
-        time_opt = time() - start
-        print(f"  Optimized Calinski-Harabasz: {score_opt:.4f} in {time_opt:.3f}s")
+        score = ad_calinski_harabasz_score(X, labels, n_neighbors=k)
+        timee = time() - start
+        print(f"  AD Calinski-Harabasz: {score:.4f} in {timee:.3f}s")
 
 
 if __name__ == "__main__":
     pass
 
-    # compare_performance()
+    # main_compare_performance()

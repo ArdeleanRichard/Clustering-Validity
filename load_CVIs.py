@@ -136,20 +136,29 @@ def create_indices_table_with_arrows(X, label_sets=None, metrics=METRICS, decima
         #          for col in table.columns])
         #     print(f"{metric}{arrow}\t{values}s") # last values on row is time
         rows = []
-        for metric in table.index:
-            arrow = " (↓)" if is_index_reversed(metric) else " (↑)"
+        for i, metric in enumerate(table.index):
+            lower_better = is_index_reversed(metric)
+            arrow = " (↓)" if lower_better else " (↑)"
             row = [metric + arrow]
-            for i, col in enumerate(table.columns):
-                v = table.loc[metric, col]
+            gt_val = table.iloc[i, 0]
+            for j, col in enumerate(table.columns):
+                val = table.loc[metric, col]
 
-                if pd.notna(v):
-                    cell = f"{v:.{decimals}f}"
+                if pd.notna(val):
+                    cell = f"{val:.{decimals}f}"
                 else:
                     cell = "nan"
+
+                if j > 0 and j < len(table.columns)-1:
+                    if (lower_better and val < gt_val) or (not lower_better and val > gt_val):
+                        cell += "*"
+
                 # Append "s" to the last column (time)
-                if i == len(table.columns) - 1:
+                if j == len(table.columns) - 1:
                     cell += "s"
+
                 row.append(cell)
+
             rows.append(row)
         headers = ["metric"] + list(table.columns)
         print(tabulate(rows, headers=headers, tablefmt="plain", stralign="right", numalign="right"))
