@@ -204,7 +204,7 @@ def ad_idea(data, labels, n_neighbors=5):
     unique_labels = np.unique(labels)
     n_clusters = len(unique_labels)
 
-    if len(unique_labels) == 1:
+    if n_clusters <= 1:
         return 0.0
 
     # For within-cluster distances, build separate MSTs for each cluster
@@ -238,7 +238,7 @@ def ad_idea(data, labels, n_neighbors=5):
                 min_inter_dist = min(min_inter_dist, dist)
         min_inter_dists.append(min_inter_dist)
 
-    purity = compute_purity(data, labels, n_neighbors)
+    # purity = compute_purity(data, labels, n_neighbors)
     # print(min_inter_dist, max_intra_dist, purity)
 
     # return min_inter_dist / max_intra_dist * purity

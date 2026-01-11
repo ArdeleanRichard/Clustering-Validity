@@ -7,7 +7,7 @@ from scipy.stats import wilcoxon
 
 from constants_maps import MAP_LOWER_IS_BETTER
 
-# Load the CSV file
+
 csv_path = "./results/correlation/saved/realdata_correlations_cvi_to_ari.csv"
 df = pd.read_csv(csv_path, index_col=0)
 
@@ -82,7 +82,7 @@ n_cvis = len(df_complete)
 ranks_per_dataset = df_complete.T.rank(axis=1, ascending=False)
 mean_ranks = ranks_per_dataset.mean(axis=0).sort_values()
 
-print(f"\n{'TOP 15 CVIs BY MEAN RANK':-^100}")
+print(f"\n{'CVIs BY MEAN RANK':-^100}")
 print(f"{'Rank':<6} {'CVI':<15} {'Mean Rank':<12} {'Std Rank':<12} {'Best Count':<12} {'Worst Count'}")
 print("-" * 100)
 
@@ -90,14 +90,7 @@ rank_std = ranks_per_dataset.std(axis=0)
 best_count = (ranks_per_dataset == 1).sum(axis=0)
 worst_count = (ranks_per_dataset == n_cvis).sum(axis=0)
 
-for i, (cvi, mean_rank) in enumerate(mean_ranks.head(15).items(), 1):
-    print(f"{i:<6} {cvi:<15} {mean_rank:<12.2f} {rank_std[cvi]:<12.2f} {best_count[cvi]:<12} {worst_count[cvi]}")
-
-print(f"\n{'BOTTOM 15 CVIs BY MEAN RANK':-^100}")
-print(f"{'Rank':<6} {'CVI':<15} {'Mean Rank':<12} {'Std Rank':<12} {'Best Count':<12} {'Worst Count'}")
-print("-" * 100)
-
-for i, (cvi, mean_rank) in enumerate(mean_ranks.tail(15).items(), start=len(mean_ranks) - 14):
+for i, (cvi, mean_rank) in enumerate(mean_ranks.items(), 1):
     print(f"{i:<6} {cvi:<15} {mean_rank:<12.2f} {rank_std[cvi]:<12.2f} {best_count[cvi]:<12} {worst_count[cvi]}")
 
 # ==================================================================================
@@ -179,21 +172,14 @@ min_corr = df_complete.min(axis=1)
 max_corr = df_complete.max(axis=1)
 range_corr = max_corr - min_corr
 
-print(f"\n{'TOP 15 CVIs BY MEAN CORRELATION':-^100}")
+print(f"\n{'CVIs BY MEAN CORRELATION':-^100}")
 print(f"{'Rank':<6} {'CVI':<15} {'Mean':<10} {'Median':<10} {'Min':<10} {'Max':<10} {'Range'}")
 print("-" * 100)
 
-for i, cvi in enumerate(mean_corr.head(15).index, 1):
+for i, cvi in enumerate(mean_corr.index, 1):
     print(f"{i:<6} {cvi:<15} {mean_corr[cvi]:<10.3f} {median_corr[cvi]:<10.3f} "
           f"{min_corr[cvi]:<10.3f} {max_corr[cvi]:<10.3f} {range_corr[cvi]:.3f}")
 
-print(f"\n{'BOTTOM 15 CVIs BY MEAN CORRELATION':-^100}")
-print(f"{'Rank':<6} {'CVI':<15} {'Mean':<10} {'Median':<10} {'Min':<10} {'Max':<10} {'Range'}")
-print("-" * 100)
-
-for i, cvi in enumerate(mean_corr.tail(15).index, start=len(mean_corr) - 14):
-    print(f"{i:<6} {cvi:<15} {mean_corr[cvi]:<10.3f} {median_corr[cvi]:<10.3f} "
-          f"{min_corr[cvi]:<10.3f} {max_corr[cvi]:<10.3f} {range_corr[cvi]:.3f}")
 
 # ==================================================================================
 # PART 5: ROBUSTNESS ANALYSIS

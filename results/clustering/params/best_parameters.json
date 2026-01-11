@@ -143,13 +143,14 @@
       },
       "score": 0.9485129049082743
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 5,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.2,
+        "n_samples": 15,
+        "bandwidth": 0.37927054856976766,
+        "bin_seeding": true
       },
-      "score": 0.8508822996130404
+      "score": 0.7704868178770715
     }
   },
   "aggregation": {
@@ -160,13 +161,14 @@
       },
       "score": 0.987174822183603
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.15,
+        "n_samples": 20,
+        "bandwidth": 0.291638207371654,
+        "bin_seeding": false
       },
-      "score": 0.8266938072768673
+      "score": 0.8677394624352229
     }
   },
   "jain": {
@@ -177,13 +179,14 @@
       },
       "score": 0.9758050137292894
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.25,
+        "n_samples": 20,
+        "bandwidth": 0.4283488402876744,
+        "bin_seeding": true
       },
-      "score": 0.96494437567039
+      "score": 0.36652293824045973
     }
   },
   "spiral": {
@@ -194,13 +197,14 @@
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.2
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 0.3608962327535481,
+        "bin_seeding": true
       },
-      "score": 1.0
+      "score": 0.11257250940511869
     }
   },
   "pathbased": {
@@ -211,13 +215,14 @@
       },
       "score": 0.9192527765291705
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 5,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.2,
+        "n_samples": 15,
+        "bandwidth": 0.27891861666376105,
+        "bin_seeding": true
       },
-      "score": 0.5860672836673471
+      "score": 0.5757499238627668
     }
   },
   "parabolic": {
@@ -228,13 +233,14 @@
       },
       "score": 0.9310695169225818
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.5,
+        "n_samples": 10,
+        "bandwidth": 0.7204830811483565,
+        "bin_seeding": true
       },
-      "score": 0.8319538303911282
+      "score": 0.5955792829117513
     }
   },
   "ring": {
@@ -245,13 +251,14 @@
       },
       "score": 0.7495826388941061
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.3,
+        "n_samples": 15,
+        "bandwidth": 0.5769310746289241,
+        "bin_seeding": true
       },
-      "score": 0.8122768556216724
+      "score": 0.5865953489899499
     }
   },
   "ring_noisy": {
@@ -262,13 +269,14 @@
       },
       "score": 0.9980016651584731
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 20,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.25,
+        "n_samples": 20,
+        "bandwidth": 0.2702412055774329,
+        "bin_seeding": true
       },
-      "score": 0.9576270392964984
+      "score": 0.5864741095810302
     }
   },
   "ring_outliers": {
@@ -279,13 +287,14 @@
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 10,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.5,
+        "n_samples": 15,
+        "bandwidth": 0.5117707552617792,
+        "bin_seeding": false
       },
-      "score": 1.0
+      "score": 0.5939485081353034
     }
   },
   "zigzag": {
@@ -296,13 +305,14 @@
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.5,
+        "n_samples": 5,
+        "bandwidth": 0.44455007651674483,
+        "bin_seeding": false
       },
-      "score": 1.0
+      "score": 0.352723253895366
     }
   },
   "zigzag_noisy": {
@@ -313,13 +323,14 @@
       },
       "score": 0.8022404104678884
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.2,
+        "n_samples": 20,
+        "bandwidth": 0.3499850812692934,
+        "bin_seeding": true
       },
-      "score": 0.44998388227197994
+      "score": 0.31271502336853124
     }
   },
   "zigzag_outliers": {
@@ -330,28 +341,30 @@
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.2
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 0.37762508322202976,
+        "bin_seeding": true
       },
-      "score": 1.0
+      "score": 0.438965794935677
     }
   },
   "x1": {
     "DBSCAN": {
       "params": {
         "eps": 0.3,
-        "min_samples": 15
+        "min_samples": 10
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.25,
+        "n_samples": 20,
+        "bandwidth": 0.2695078809349898,
+        "bin_seeding": true
       },
       "score": 1.0
     }
@@ -364,13 +377,14 @@
       },
       "score": 0.7482286481556275
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.15,
+        "n_samples": 20,
+        "bandwidth": 0.2477154027672866,
+        "bin_seeding": true
       },
-      "score": 0.6834983370072794
+      "score": 0.574578826763135
     }
   },
   "x3": {
@@ -381,30 +395,32 @@
       },
       "score": 0.5789051359959048
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 10,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.15,
+        "n_samples": 20,
+        "bandwidth": 0.27714692441206634,
+        "bin_seeding": true
       },
-      "score": 0.5878327210563268
+      "score": 0.6743917706293483
     }
   },
   "fuzzyx": {
     "DBSCAN": {
       "params": {
-        "eps": 0.1,
-        "min_samples": 30
+        "eps": 0.05,
+        "min_samples": 5
       },
-      "score": 0.26648314725573075
+      "score": 0.21089679966139496
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 20,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 0.3431398116560555,
+        "bin_seeding": true
       },
-      "score": 0.16927762652544875
+      "score": 0.692420025334506
     }
   },
   "twodiamonds": {
@@ -415,13 +431,14 @@
       },
       "score": 0.9875280241301126
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.25,
+        "n_samples": 20,
+        "bandwidth": 0.4957898848705927,
+        "bin_seeding": true
       },
-      "score": 0.8233782418182567
+      "score": 1.0
     }
   },
   "wingnut": {
@@ -432,13 +449,14 @@
       },
       "score": 0.6541599233438758
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.3,
+        "n_samples": 15,
+        "bandwidth": 0.5548271463559336,
+        "bin_seeding": false
       },
-      "score": 0.9803921430750848
+      "score": 0.39620592258936
     }
   },
   "line": {
@@ -449,13 +467,14 @@
       },
       "score": 0.854792006016217
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 20,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.3,
+        "n_samples": 20,
+        "bandwidth": 0.3858209869672732,
+        "bin_seeding": false
       },
-      "score": -1.0
+      "score": 0.22529874354104878
     }
   },
   "dense": {
@@ -466,13 +485,14 @@
       },
       "score": 0.9128415641466952
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.5,
+        "n_samples": 10,
+        "bandwidth": 0.6762135984246246,
+        "bin_seeding": true
       },
-      "score": 0.8826532958268003
+      "score": 0.7910627683863763
     }
   },
   "mk1": {
@@ -483,13 +503,14 @@
       },
       "score": 0.9647263035803977
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 0.27262159341691755,
+        "bin_seeding": true
       },
-      "score": 0.9311153820301339
+      "score": 0.980050858866224
     }
   },
   "mk2": {
@@ -500,47 +521,50 @@
       },
       "score": 0.7682102642775764
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.1
+        "quantile": 0.2,
+        "n_samples": 20,
+        "bandwidth": 0.4504797041773597,
+        "bin_seeding": true
       },
-      "score": 0.2752613330136892
+      "score": 0.007727922520675718
     }
   },
   "smile": {
     "DBSCAN": {
       "params": {
-        "eps": 0.25,
-        "min_samples": 15
+        "eps": 0.2,
+        "min_samples": 5
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.25,
+        "n_samples": 20,
+        "bandwidth": 0.5111008354700309,
+        "bin_seeding": false
       },
-      "score": 1.0
+      "score": 0.9131908237747653
     }
   },
   "r15": {
     "DBSCAN": {
       "params": {
-        "eps": 0.1,
-        "min_samples": 30
+        "eps": 0.075,
+        "min_samples": 20
       },
-      "score": 0.9874581680394269
+      "score": 0.9519913799205435
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.01
+        "quantile": 0.15,
+        "n_samples": 15,
+        "bandwidth": 0.20762835239199898,
+        "bin_seeding": false
       },
-      "score": 0.9713683214683893
+      "score": 0.6855537318347045
     }
   },
   "flame": {
@@ -551,13 +575,14 @@
       },
       "score": 0.8938788785974664
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.5,
+        "n_samples": 10,
+        "bandwidth": 0.6388166565204758,
+        "bin_seeding": true
       },
-      "score": 0.77614337455277
+      "score": 0.47516223720098355
     }
   },
   "lsun": {
@@ -568,13 +593,14 @@
       },
       "score": 0.9973471459135563
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.2
+        "quantile": 0.5,
+        "n_samples": 5,
+        "bandwidth": 0.36648722304928233,
+        "bin_seeding": true
       },
-      "score": 1.0
+      "score": 0.6587231991089574
     }
   },
   "target": {
@@ -585,13 +611,14 @@
       },
       "score": 1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 20,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.5,
+        "n_samples": 10,
+        "bandwidth": 0.3631186907861698,
+        "bin_seeding": true
       },
-      "score": 0.999634881516244
+      "score": 0.6424165988164254
     }
   },
   "ecoli": {
@@ -602,47 +629,50 @@
       },
       "score": 0.42709700196841294
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.15,
+        "n_samples": 15,
+        "bandwidth": 0.5273413196457268,
+        "bin_seeding": true
       },
-      "score": 0.404345296336849
+      "score": 0.7495492743183383
     }
   },
   "glass": {
     "DBSCAN": {
       "params": {
-        "eps": 0.3,
-        "min_samples": 3
+        "eps": 0.5,
+        "min_samples": 5
       },
-      "score": 0.20550287405613316
+      "score": 0.24101295549894827
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.3,
+        "n_samples": 20,
+        "bandwidth": 0.7551697070766619,
+        "bin_seeding": false
       },
-      "score": 0.25031370844751816
+      "score": 0.2856581320006185
     }
   },
   "yeast": {
     "DBSCAN": {
       "params": {
-        "eps": 0.25,
-        "min_samples": 15
+        "eps": 0.2,
+        "min_samples": 5
       },
-      "score": 0.053813033265014465
+      "score": 0.04788922964130442
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 10,
-        "min_samples": 10,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.1,
+        "n_samples": 20,
+        "bandwidth": 0.4618474225169337,
+        "bin_seeding": false
       },
-      "score": 0.011358385033861426
+      "score": 0.11292383936605024
     }
   },
   "statlog": {
@@ -653,81 +683,86 @@
       },
       "score": 0.4382629065307243
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 10,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 0.7892130079128027,
+        "bin_seeding": true
       },
-      "score": 0.46909847099028384
+      "score": 0.5408901994156112
     }
   },
   "wdbc": {
     "DBSCAN": {
       "params": {
-        "eps": 0.3,
-        "min_samples": 30
+        "eps": 0.5,
+        "min_samples": 50
       },
       "score": -1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 20,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.2,
+        "n_samples": 15,
+        "bandwidth": 1.141040545847866,
+        "bin_seeding": false
       },
-      "score": -1.0
+      "score": 0.5671606558135989
     }
   },
   "wine": {
     "DBSCAN": {
       "params": {
-        "eps": 0.3,
-        "min_samples": 30
+        "eps": 0.5,
+        "min_samples": 50
       },
       "score": -1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.15,
+        "n_samples": 15,
+        "bandwidth": 1.1300132146211652,
+        "bin_seeding": true
       },
-      "score": 0.3639265483751201
+      "score": 0.8511681500407958
     }
   },
   "ionosphere": {
     "DBSCAN": {
       "params": {
-        "eps": 0.3,
-        "min_samples": 30
+        "eps": 0.5,
+        "min_samples": 50
       },
       "score": -1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 20,
-        "min_samples": 20,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.2,
+        "n_samples": 10,
+        "bandwidth": 2.444149540734075,
+        "bin_seeding": false
       },
-      "score": -1.0
+      "score": 0.34220377660351886
     }
   },
   "sonar": {
     "DBSCAN": {
       "params": {
-        "eps": 0.3,
-        "min_samples": 30
+        "eps": 0.5,
+        "min_samples": 50
       },
       "score": -1.0
     },
-    "HDBSCAN": {
+    "MeanShift": {
       "params": {
-        "min_cluster_size": 5,
-        "min_samples": 3,
-        "cluster_selection_epsilon": 0.3
+        "quantile": 0.15,
+        "n_samples": 15,
+        "bandwidth": 2.7661613758478194,
+        "bin_seeding": false
       },
-      "score": -0.005155268857487022
+      "score": 0.0027470418802693717
     }
   },
   "ccbr": {

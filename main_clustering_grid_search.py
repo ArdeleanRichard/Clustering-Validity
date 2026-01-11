@@ -15,33 +15,68 @@ from utils import remove_dups, reencode
 def get_param_grids():
     """Define parameter grids for each clustering algorithm"""
     param_grids = {
+        # 'DBSCAN': {
+        #     'eps': [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75],
+        #     'min_samples': [3, 5, 10, 15, 20, 30, 50, 100, 200]
+        # },
+        # 'HDBSCAN': {
+        #     'min_cluster_size': [2, 3, 5, 10, 15, 20, 30, 50, 100],
+        #     'min_samples': [1, 3, 5, 10, 20],
+        #     'cluster_selection_epsilon': [0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25]
+        # },
+        # 'MeanShift': {
+        #     'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
+        #     'n_samples': [3, 5, 10, 15, 20],
+        #     'bin_seeding': [True, False]
+        # },
+        # 'AgglomerativeClustering': {
+        #     'n_clusters': None,
+        #     'linkage': ['ward', 'complete', 'average', 'single']
+        # },
+        # 'SpectralClustering': {
+        #     'n_clusters': None,
+        #     'affinity': ['nearest_neighbors', 'rbf'],
+        #     'n_neighbors': [3, 5, 10, 15, 20],
+        #     'assign_labels': ['kmeans', 'discretize'],
+        # },
+        # 'KMeans': {
+        #     'n_clusters': None,
+        #     'max_iter': [100, 300, 500],
+        #     'tol': [1e-3, 1e-4, 1e-5],
+        #     'algorithm': ["full", "elkan"],  # for newer sklearn versions change 'full' to 'lloyd'
+        # },
+
         'DBSCAN': {
-            'eps': [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3],
-            'min_samples': [3, 5, 10, 15, 20, 30]
+            'eps': [0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
+            'min_samples': [3, 5, 10, 20, 50],
         },
         'HDBSCAN': {
             'min_cluster_size': [5, 10, 20],
-            'min_samples': [3, 10, 20],
-            'cluster_selection_epsilon': [0.01, 0.05, 0.1, 0.2, 0.3]
+            'min_samples': [5, 10, 20],
+            'cluster_selection_epsilon': [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         },
         'MeanShift': {
-            'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
-            'n_samples': [3, 5, 10, 15, 20],
+            'quantile': [0.001, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
+            'n_samples': [2, 3, 5, 10, 15, 20],
             'bin_seeding': [True, False]
         },
         'AgglomerativeClustering': {
             'n_clusters': None,
-            'linkage': ['ward', 'complete', 'average', 'single']
+            'metric': ['euclidean', 'l1', 'l2', 'manhattan', 'cosine'],
+            'linkage': ['ward', 'complete', 'average', 'single'],
         },
         'SpectralClustering': {
             'n_clusters': None,
             'affinity': ['nearest_neighbors', 'rbf'],
-            'n_neighbors': [3, 5, 10, 15, 20],
-            'assign_labels': ['kmeans', 'discretize']
+            'n_neighbors': [5, 10, 20],
+            'assign_labels': ['kmeans', 'discretize'],
         },
         'KMeans': {
             'n_clusters': None,
-        }
+            'max_iter': [100, 300, 500],
+            'tol': [1e-3, 1e-4, 1e-5],
+            'algorithm': ["full", "elkan"], # for newer sklearn versions change 'full' to 'lloyd'
+        },
 
     }
     return param_grids
@@ -69,6 +104,9 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
 
     if param_grid is None:
         param_grid = get_param_grids()[algo_name]
+
+    if n_clusters_range is None:
+        n_clusters_range = range(2, 11)
 
     results = []
     all_labels = []
@@ -202,17 +240,15 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 print(f"{algo_name} failed with bandwidth={bandwidth}: {e}")
 
     elif algo_name == 'AgglomerativeClustering':
-        if n_clusters_range is None:
-            n_clusters_range = range(2, 11)
-
-        param_combos = [(nc, link)
+        param_combos = [(nc, m, link)
                         for nc in n_clusters_range
+                        for m in param_grid['metric']
                         for link in param_grid['linkage']]
 
-        for n_clusters, linkage in param_combos:
+        for n_clusters, metric, linkage in param_combos:
             start_time = time.time()
             try:
-                clusterer = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
+                clusterer = AgglomerativeClustering(n_clusters=n_clusters, metric=metric, linkage=linkage)
                 labels = clusterer.fit_predict(X)
                 fit_time = time.time() - start_time
 
@@ -229,15 +265,12 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 score = metrics['ari']
                 if score > best_score:
                     best_score = score
-                    best_params = {'n_clusters': n_clusters, 'linkage': linkage}
+                    best_params = {'n_clusters': n_clusters, 'metric': metric, 'linkage': linkage}
                     best_labels = labels
             except Exception as e:
                 print(f"{algo_name} failed: {e}")
 
     elif algo_name == 'SpectralClustering':
-        if n_clusters_range is None:
-            n_clusters_range = range(2, 11)
-
         param_combos = [(nc, aff, nn, al)
                         for nc in n_clusters_range
                         for aff in param_grid['affinity']
@@ -291,15 +324,16 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                 print(f"{algo_name} failed: {e}")
 
     elif algo_name == 'KMeans':
-        if n_clusters_range is None:
-            n_clusters_range = range(2, 11)
+        param_combos = [(nc, mi, tol, algo)
+                        for nc in n_clusters_range
+                        for mi in param_grid['max_iter']
+                        for tol in param_grid['tol']
+                        for algo in param_grid['algorithm']]
 
-        param_combos = [nc for nc in n_clusters_range]
-
-        for n_clusters in param_combos:
+        for (n_clusters, max_iter, tol, algorithm) in param_combos:
             start_time = time.time()
             try:
-                clusterer = KMeans(n_clusters=n_clusters, random_state=random_state)
+                clusterer = KMeans(n_clusters=n_clusters, max_iter=max_iter, tol=tol, algorithm=algorithm, random_state=random_state)
                 labels = clusterer.fit_predict(X)
                 fit_time = time.time() - start_time
 
@@ -317,6 +351,9 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                     best_score = score
                     best_params = {
                         'n_clusters': n_clusters,
+                        'max_iter': max_iter,
+                        'tol': tol,
+                        'algorithm': algorithm,
                     }
                     best_labels = labels
             except Exception as e:
@@ -457,7 +494,7 @@ def main_synthetic_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['DBSCAN', 'HDBSCAN'])
+        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['DBSCAN', 'MeanShift'])
 
         save_best_parameters(results, data_name)
 
@@ -481,7 +518,7 @@ def main_real_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt) #, algorithms=['DBSCAN', 'HDBSCAN'])
+        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['DBSCAN', 'MeanShift'])
 
         save_best_parameters(results, data_name)
 
@@ -497,4 +534,4 @@ if __name__ == '__main__':
     )
 
     main_synthetic_data()
-    # main_real_data()
+    main_real_data()

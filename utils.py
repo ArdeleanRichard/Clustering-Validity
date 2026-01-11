@@ -43,3 +43,26 @@ def choose_colors(labels):
     label_color = [LABEL_COLOR_MAP[i] for i in labels]
 
     return label_color
+
+
+
+def get_label_files(pattern, dataset_name):
+    import glob
+    import os
+    candidates = glob.glob(pattern)
+
+    label_files = []
+    for path in candidates:
+        name = os.path.basename(path)
+        if not name.startswith("labels_") or not name.endswith(".npy"):
+            continue
+        core = name[len("labels_"):-4]  # strip "labels_" prefix and ".npy" suffix
+        try:
+            dataset_part, algo_part, params_part = core.rsplit("_", 2)
+        except ValueError:
+            # filename doesn't follow expected template, skip or handle
+            continue
+        if dataset_part == dataset_name:
+            label_files.append(path)
+
+    return label_files

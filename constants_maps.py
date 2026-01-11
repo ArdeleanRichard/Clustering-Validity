@@ -20,7 +20,7 @@ from cvis_ours.measures import imbalance_ratio, overlap_ratio
 
 
 MAP_METRIC_TO_FUNCTION = {
-    # CVI metrics
+    # # CVI metrics
     "cSIL": lambda data, labels: cvi.cSIL().get_cvi(data, labels),
     "GD43": lambda data, labels: cvi.GD43().get_cvi(data, labels),
     "GD53": lambda data, labels: cvi.GD53().get_cvi(data, labels),
@@ -44,7 +44,7 @@ MAP_METRIC_TO_FUNCTION = {
 
     "C": lambda X, labels: c_index(X=X, labels=labels),
 
-    # "CDbw": lambda X, labels: CDbw(X=X, labels=labels),
+    "CDbw": lambda X, labels: CDbw(X=X, labels=labels),
     "VIASCKDE": lambda X, labels: VIASCKDE(X=X, labels=labels),
 
     "COP": lambda X, labels: cop(data=X, labels=labels),
@@ -52,22 +52,22 @@ MAP_METRIC_TO_FUNCTION = {
     "CS": lambda X, labels: cs_index(X=X, labels=labels),
 
 
-    # PyCVI metrics
+    # # PyCVI metrics
     "SF": lambda data, labels: pycvi_cvi.ScoreFunction()(data, get_clustering(labels)),
     "SD": lambda data, labels: pycvi_cvi.SD()(data, get_clustering(labels)),
     "SDbw": lambda data, labels: pycvi_cvi.SDbw()(data, get_clustering(labels)),
     "XB*": lambda data, labels: pycvi_cvi.XBStar()(data, get_clustering(labels)),
-
-    # sklearn metrics
+    #
+    # # sklearn metrics
     "S": silhouette_score,
     "DB": davies_bouldin_score,
     "CH": calinski_harabasz_score,
 
-    #### our metrics
-    # # # "ED-S": ed_silhouette_score,
-    # # # "ED-DB": ed_davies_bouldin_score,
-    # # # "ED-CH": ed_calinski_harabasz_score,
-
+    # #### our metrics
+    # # # # "ED-S": ed_silhouette_score,
+    # # # # "ED-DB": ed_davies_bouldin_score,
+    # # # # "ED-CH": ed_calinski_harabasz_score,
+    #
     "AD-S": ad_silhouette_score,
     "AD-DB": ad_davies_bouldin_score,
     "AD-CH": ad_calinski_harabasz_score,
