@@ -1,0 +1,4 @@
+,correct,correct,correct,correct,correct,correct,correct,correct,errors,errors,errors,errors,errors,errors,errors,errors
+dataset,ecoli,glass,ionosphere,sonar,statlog,wdbc,wine,yeast,ecoli,glass,ionosphere,sonar,statlog,wdbc,wine,yeast
+metric,,,,,,,,,,,,,,,,
+AD-idea,0,0,1,2,1,2,1,1,144,227,48,51,162,87,78,142

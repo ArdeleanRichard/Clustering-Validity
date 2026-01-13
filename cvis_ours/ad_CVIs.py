@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 
 from cvis_ours.ad import ArborisDistanceCalculator, _get_find_cluster_centroids_ids, _get_centroid_id_from_data_fast
 
@@ -124,104 +123,43 @@ def ad_calinski_harabasz_score(data, labels, n_neighbors=5):
 
 
 
-def compute_purity(data, labels, n_neighbors=5, mode='euclidean'):
-    """
-    Compute per-point purity: how many of the k nearest neighbors differ in label.
-
-    Parameters
-    ----------
-    data : ndarray, shape (n_samples, n_features)
-    labels : 1d array-like, shape (n_samples,)
-    n_neighbors : int
-        Number of neighbors to consider (neighbors excluded self).
-    mode : {'euclidean'}
-        'euclidean' uses Euclidean k-NN (fast via sklearn where available).
-    """
-    data = np.asarray(data)
-    labels = np.asarray(labels)
-    n_samples = len(data)
-
-    if n_neighbors <= 0:
-        raise ValueError("k must be >= 1")
-
-    # Find k nearest neighbors for each point
-    if mode == 'euclidean':
-        nn = NearestNeighbors(n_neighbors=n_neighbors + 1, algorithm='auto').fit(data)
-        dists, indices = nn.kneighbors(data)
-        # indices includes self at position 0
-        neighbors = indices[:, 1:n_neighbors + 1]
-    else:
-        raise ValueError("mode must be 'euclidean' or 'mst'")
-
-    # Count different-label neighbors
-    diff_counts = np.sum(labels[neighbors] != labels[:, np.newaxis], axis=1)
-    diff_fractions = diff_counts / float(n_neighbors)
-
-    # Summary stats
-    same_fractions = 1.0 - diff_fractions
-
-    unique_labels = np.unique(labels)
-    label_purity = {}
-    cluster_sizes = {}
-    for ul in unique_labels:
-        mask = labels == ul
-        size = np.sum(mask)
-        cluster_sizes[ul] = int(size)
-        if np.sum(mask) > 0:
-            # value = np.exp(np.mean(np.log(same_fractions[mask] + 1e-10)))
-            # value = np.mean(same_fractions[mask])
-
-            vals = np.sort(same_fractions[mask])  # ascending: worst -> best
-            # weights: give largest weight to worst (first) and smallest to best (last)
-            # no hyperparameter: integer ranks reversed
-            weights = np.arange(size, 0, -1)  # e.g., [n, n-1, ..., 1]
-            value = float(np.dot(vals, weights) / float(weights.sum()))
-            label_purity[ul] = np.clip(value, 0.0, 1.0)
-        else:
-            label_purity[ul] = np.nan
-
-    total = 0.0
-    min_purity = np.inf
-    for ul, pur in label_purity.items():
-        total += pur * cluster_sizes[ul]
-        min_purity = min(min_purity, pur)
-    global_purity = float(total / float(len(labels)))
-
-    return min_purity
 
 def ad_idea(data, labels, n_neighbors=5):
     """
     Optimized version of mst_idea: ratio of max intra-cluster to min inter-cluster distance.
     Lower is better (compact clusters, well-separated).
     """
+
+
     if -1 in labels:
-        data = data[labels!=-1]
-        labels = labels[labels!=-1]
+        data_nn = data[labels != -1]
+        labels_nn = labels[labels != -1]
         silence_percentage = (len(labels) - np.count_nonzero(labels == -1)) / len(labels)
     else:
+        data_nn = np.copy(data)
+        labels_nn = np.copy(labels)
         silence_percentage = 1
 
-    unique_labels = np.unique(labels)
+    unique_labels = np.unique(labels_nn)
     n_clusters = len(unique_labels)
 
     if n_clusters <= 1:
         return 0.0
 
     # For within-cluster distances, build separate MSTs for each cluster
-    max_intra_dist = 0.0
     max_intra_dists = []
     for label in unique_labels:
-        cluster_data = data[labels == label]
-        if len(cluster_data) > 1:
+        cluster_data = data_nn[labels_nn == label]
+        if len(cluster_data) > n_neighbors:
             cluster_mst = ArborisDistanceCalculator(cluster_data, n_neighbors=n_neighbors)
             cluster_centroid_id = _get_centroid_id_from_data_fast(cluster_data)
 
             # Maximum distance from centroid to any point in cluster
             distances = cluster_mst.get_distances_to_point(cluster_centroid_id)
-            max_intra_dist = max(max_intra_dist, np.max(distances))
             max_intra_dists.append(np.mean(distances))
-        elif len(cluster_data) == 1:
+        else:
             max_intra_dists.append(np.inf) # clusters of size 1 give 0
+
     # For inter-cluster distances, use full MST
     mst = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
@@ -238,18 +176,17 @@ def ad_idea(data, labels, n_neighbors=5):
                 min_inter_dist = min(min_inter_dist, dist)
         min_inter_dists.append(min_inter_dist)
 
-    # purity = compute_purity(data, labels, n_neighbors)
-    # print(min_inter_dist, max_intra_dist, purity)
 
-    # return min_inter_dist / max_intra_dist * purity
-
+    # max intra dist for each cluster
     max_intra_dists = np.array(max_intra_dists)
+    # min inter dists (to closest cluster) for each cluster
     min_inter_dists = np.array(min_inter_dists)
 
-    # print(min_inter_dists, max_intra_dists, purity)
+    mask = (max_intra_dists != np.inf) & (min_inter_dists != np.inf)
+    max_intra_dists = max_intra_dists[mask]
+    min_inter_dists = min_inter_dists[mask]
 
-    # return np.sum(min_inter_dists / max_intra_dists) # * purity
-    return np.sum(min_inter_dists / max_intra_dists) * silence_percentage
+    return np.prod(min_inter_dists / max_intra_dists) * silence_percentage
 
 
 def main_compare_performance():

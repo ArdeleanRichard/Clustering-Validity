@@ -86,12 +86,11 @@ def evaluate_clustering(labels, true_labels=None):
     """Evaluate clustering quality using multiple metrics"""
     metrics = {}
 
-    valid_mask = labels != -1
-
     if true_labels is not None:
         metrics['ari'] = adjusted_rand_score(true_labels, labels)
         metrics['ami'] = adjusted_mutual_info_score(true_labels, labels)
 
+    valid_mask = labels != -1
     n_clusters = len(set(labels[valid_mask])) if valid_mask.any() else 0
     metrics['n_clusters'] = n_clusters
     metrics['n_noise'] = (labels == -1).sum()
