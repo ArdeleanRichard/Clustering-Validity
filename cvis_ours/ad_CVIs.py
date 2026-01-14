@@ -1,6 +1,6 @@
 import numpy as np
 
-from cvis_ours.ad import ArborisDistanceCalculator, _get_find_cluster_centroids_ids, _get_centroid_id_from_data_fast
+from cvis_ours.ad import ArborisDistanceCalculator, _get_centroid_ids_from_data, _get_centroid_id_from_data
 
 
 def ad_silhouette_score(data, labels, n_neighbors=5):
@@ -16,7 +16,7 @@ def ad_silhouette_score(data, labels, n_neighbors=5):
     dist_calculator = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
-    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
+    centroid_ids = _get_centroid_ids_from_data(data, labels, unique_labels)
 
     # Get distances from all centroids to all points efficiently
     distance_matrix = dist_calculator.get_distances_to_multiple(centroid_ids).T
@@ -51,7 +51,7 @@ def ad_davies_bouldin_score(data, labels, n_neighbors=5):
     dist_calculator = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
-    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
+    centroid_ids = _get_centroid_ids_from_data(data, labels, unique_labels)
 
     # Compute inter-cluster distances (between centroids)
     cluster_distances = np.zeros((n_clusters, n_clusters))
@@ -95,10 +95,10 @@ def ad_calinski_harabasz_score(data, labels, n_neighbors=5):
     dist_calculator = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
 
     # Find centroids
-    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
+    centroid_ids = _get_centroid_ids_from_data(data, labels, unique_labels)
 
     # Find overall centroid
-    overall_centroid_id = _get_centroid_id_from_data_fast(data)
+    overall_centroid_id = _get_centroid_id_from_data(data)
 
     # Between-cluster sum of squares
     between_ss = 0.0
@@ -129,8 +129,6 @@ def ad_idea(data, labels, n_neighbors=5):
     Optimized version of mst_idea: ratio of max intra-cluster to min inter-cluster distance.
     Lower is better (compact clusters, well-separated).
     """
-
-
     if -1 in labels:
         data_nn = data[labels != -1]
         labels_nn = labels[labels != -1]
@@ -140,10 +138,15 @@ def ad_idea(data, labels, n_neighbors=5):
         labels_nn = np.copy(labels)
         silence_percentage = 1
 
-    unique_labels = np.unique(labels_nn)
+    unique_labels, unique_counts = np.unique(labels_nn, return_counts=True)
     n_clusters = len(unique_labels)
 
     if n_clusters <= 1:
+        # if there is a single cluster
+        return 0.0
+
+    if np.count_nonzero(unique_counts > 1) <= 1:
+        # if there is a no/a single cluster with more than 1 point
         return 0.0
 
     # For within-cluster distances, build separate MSTs for each cluster
@@ -152,27 +155,39 @@ def ad_idea(data, labels, n_neighbors=5):
         cluster_data = data_nn[labels_nn == label]
         if len(cluster_data) > n_neighbors:
             cluster_mst = ArborisDistanceCalculator(cluster_data, n_neighbors=n_neighbors)
-            cluster_centroid_id = _get_centroid_id_from_data_fast(cluster_data)
-
-            # Maximum distance from centroid to any point in cluster
+            cluster_centroid_id = _get_centroid_id_from_data(cluster_data)
             distances = cluster_mst.get_distances_to_point(cluster_centroid_id)
             max_intra_dists.append(np.mean(distances))
-        else:
+        elif 1 < len(cluster_data) <= n_neighbors:
+            diff = cluster_data[:, None, :] - cluster_data[None, :, :]
+            distances = np.linalg.norm(diff, axis=-1)
+            max_intra_dists.append(np.max(distances))
+        elif len(cluster_data) <= 1:
             max_intra_dists.append(np.inf) # clusters of size 1 give 0
 
     # For inter-cluster distances, use full MST
     mst = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
-
-    # Find centroids
-    centroid_ids = _get_find_cluster_centroids_ids(data, labels, unique_labels)
+    centroid_ids = _get_centroid_ids_from_data(data, labels, unique_labels)
 
     # Find minimum inter-cluster distance
+    # min_inter_dists = []
+    # for i in range(n_clusters):
+    #     min_inter_dist = np.inf
+    #     for j in range(n_clusters):
+    #         if i != j:
+    #             dist = mst.get_distance(centroid_ids[i], centroid_ids[j])
+    #             min_inter_dist = min(min_inter_dist, dist)
+    #     min_inter_dists.append(min_inter_dist)
+
     min_inter_dists = []
-    for i in range(n_clusters):
+    for i, label_i in enumerate(unique_labels):
         min_inter_dist = np.inf
-        for j in range(n_clusters):
+        for j, label_j in enumerate(unique_labels):
             if i != j:
-                dist = mst.get_distance(centroid_ids[i], centroid_ids[j])
+                distances_to_j = mst.get_distances_to_point(centroid_ids[j])
+                cluster_i_distances_to_j = distances_to_j[labels == label_i]
+
+                dist = np.mean(cluster_i_distances_to_j)
                 min_inter_dist = min(min_inter_dist, dist)
         min_inter_dists.append(min_inter_dist)
 
@@ -186,7 +201,8 @@ def ad_idea(data, labels, n_neighbors=5):
     max_intra_dists = max_intra_dists[mask]
     min_inter_dists = min_inter_dists[mask]
 
-    return np.prod(min_inter_dists / max_intra_dists) * silence_percentage
+    # return np.sum(min_inter_dists / max_intra_dists) * silence_percentage
+    return np.prod(min_inter_dists / max_intra_dists) ** silence_percentage
 
 
 def main_compare_performance():

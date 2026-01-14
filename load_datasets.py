@@ -323,7 +323,7 @@ def create_r15():
     return read_data_and_labels(f"./data/sipu/r15.data", f"./data/sipu/r15.labels0")
 
 def create_flame():
-    return read_data_and_labels(f"./data/sipu/flame.data", f"./data/sipu/flame.labels1")
+    return read_data_and_labels(f"./data/sipu/flame.data", f"./data/sipu/flame.labels0")
 
 
 

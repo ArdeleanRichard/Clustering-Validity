@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from cvis_ours.ad import ArborisDistanceCalculator, _get_centroid_id_from_data_fast
+from cvis_ours.ad import ArborisDistanceCalculator, _get_centroid_id_from_data
 from constants import LABEL_COLOR_MAP
 from load_datasets import create_data1, create_data7, create_data6
 
@@ -154,7 +154,7 @@ class AD_KMeansClustering:
 
             if len(cluster_indices) > 0:
                 # Find centroid using the fast method
-                centroid_id = _get_centroid_id_from_data_fast(
+                centroid_id = _get_centroid_id_from_data(
                     X[cluster_mask],
                     indices=cluster_indices
                 )

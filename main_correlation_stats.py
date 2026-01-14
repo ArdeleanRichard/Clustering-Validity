@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -5,19 +6,25 @@ from itertools import combinations
 
 from scipy.stats import wilcoxon
 
+from constants import FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS
 from constants_maps import MAP_LOWER_IS_BETTER
+from utils import get_label_files
+
+# csv_path = "./results/correlation/saved/realdata_correlations_cvi_to_ari.csv"
+# df = pd.read_csv(csv_path, index_col=0)
+#
+# df_processed = df.copy()
+# for cvi in df_processed.index:
+#     if cvi.lower() in MAP_LOWER_IS_BETTER:
+#         df_processed.loc[cvi] = -df_processed.loc[cvi]
 
 
-csv_path = "./results/correlation/saved/realdata_correlations_cvi_to_ari.csv"
+csv_path = "./results/correlation/.counts/synthdata_best_match_by_algorithm.csv"
 df = pd.read_csv(csv_path, index_col=0)
 
-
 df_processed = df.copy()
-for cvi in df_processed.index:
-    if cvi.lower() in MAP_LOWER_IS_BETTER:
-        df_processed.loc[cvi] = -df_processed.loc[cvi]
-
-# Convert to numeric and handle nulls
+error_cols = df_processed.columns[df_processed.columns.str.contains("error", case=False)]
+df_processed[error_cols] = df_processed[error_cols] * -1
 df_processed = df_processed.apply(pd.to_numeric, errors='coerce')
 
 # Remove rows with all null values

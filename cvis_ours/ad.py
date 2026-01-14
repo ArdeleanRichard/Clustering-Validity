@@ -164,7 +164,7 @@ class ArborisDistanceCalculator:
         return distance_matrix
 
 
-def _get_centroid_id_from_data_fast(data, indices=None):
+def _get_centroid_id_from_data(data, indices=None):
     if len(data) == 1:
         return indices[0] if indices is not None else 0
 
@@ -176,9 +176,9 @@ def _get_centroid_id_from_data_fast(data, indices=None):
 
     return indices[min_idx] if indices is not None else min_idx
 
-def _get_find_cluster_centroids_ids(data, labels, unique_labels):
+def _get_centroid_ids_from_data(data, labels, unique_labels):
     centroid_ids = np.array([
-        _get_centroid_id_from_data_fast(data[labels == label], indices=np.where(labels == label)[0])
+        _get_centroid_id_from_data(data[labels == label], indices=np.where(labels == label)[0])
         for label in unique_labels
     ])
     return centroid_ids

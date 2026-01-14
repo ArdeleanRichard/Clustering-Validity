@@ -1,4 +1,0 @@
-,correct,correct,correct,correct,correct,correct,errors,errors,errors,errors,errors,errors
-algorithm,AgglomerativeClustering,DBSCAN,HDBSCAN,KMeans,MeanShift,SpectralClustering,AgglomerativeClustering,DBSCAN,HDBSCAN,KMeans,MeanShift,SpectralClustering
-metric,,,,,,,,,,,,
-AD-idea,8,0,9,9,1,5,277,304,516,672,410,368
