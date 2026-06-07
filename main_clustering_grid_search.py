@@ -564,10 +564,10 @@ def main_real_data_new():
                                                 algorithms=[
                                                     # "KMeans",
                                                     # "DBSCAN",
-                                                    # "MeanShift",
+                                                    "MeanShift",
                                                     "HDBSCAN"
                                                     # "AgglomerativeClustering",
-                                                    # "SpectralClustering"
+                                                    "SpectralClustering"
                                                 ])
 
         save_best_parameters(results, data_name)

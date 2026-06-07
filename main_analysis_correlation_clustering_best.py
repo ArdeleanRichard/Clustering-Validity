@@ -173,11 +173,11 @@ def main_real_data_new():
 
     # Compute correlations
     compute_ari_cvi_correlations(datasets, metrics, clusterer="KMeans")
-    # compute_ari_cvi_correlations(datasets, metrics, clusterer="MeanShift")
-    # compute_ari_cvi_correlations(datasets, metrics, clusterer="DBSCAN")
-    # compute_ari_cvi_correlations(datasets, metrics, clusterer="HDBSCAN")
-    # compute_ari_cvi_correlations(datasets, metrics, clusterer="AgglomerativeClustering")
-    # compute_ari_cvi_correlations(datasets, metrics, clusterer="SpectralClustering")
+    compute_ari_cvi_correlations(datasets, metrics, clusterer="MeanShift")
+    compute_ari_cvi_correlations(datasets, metrics, clusterer="DBSCAN")
+    compute_ari_cvi_correlations(datasets, metrics, clusterer="HDBSCAN")
+    compute_ari_cvi_correlations(datasets, metrics, clusterer="AgglomerativeClustering")
+    compute_ari_cvi_correlations(datasets, metrics, clusterer="SpectralClustering")
 
 
 if __name__ == "__main__":
