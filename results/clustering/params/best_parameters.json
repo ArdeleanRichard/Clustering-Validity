@@ -815,5 +815,35 @@
       },
       "score": 0.35261369575347323
     }
+  },
+  "coil20": {
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 22,
+        "metric": "euclidean",
+        "linkage": "ward"
+      },
+      "score": 0.7145509195874074
+    }
+  },
+  "olivetti": {
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 41,
+        "metric": "euclidean",
+        "linkage": "ward"
+      },
+      "score": 0.7413969209817088
+    }
+  },
+  "yaleA": {
+    "AgglomerativeClustering": {
+      "params": {
+        "n_clusters": 17,
+        "metric": "euclidean",
+        "linkage": "ward"
+      },
+      "score": 0.4252001685630004
+    }
   }
 }

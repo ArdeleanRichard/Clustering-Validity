@@ -114,7 +114,7 @@ def plot_n_neighbours_analysis_all(
         "ad_silhouette",
         "ad_db",
         "ad_ch",
-        "ad_idea",
+        "arboris_index",
     ]
     MAP_CVI_TO_SCORES = {}
     for cvi_str in cvi_strs:
@@ -161,8 +161,8 @@ def plot_n_neighbours_analysis_all(
         ax.legend(frameon=False, fontsize=mpl.rcParams["legend.fontsize"], loc="best")
         ax.tick_params(axis='both', which='major', length=6)
 
-    style_line_axis(axes[0, 1], ks, MAP_CVI_TO_SCORES["ad_idea"][1], MAP_CVI_TO_SCORES["ad_idea"][0])
-    axes[0, 1].set_title(rf'{MAP_CVI_TO_SCORES["ad_idea"][0]} vs $\it{{n\_neighbours}}$ parameter')
+    style_line_axis(axes[0, 1], ks, MAP_CVI_TO_SCORES["arboris_index"][1], MAP_CVI_TO_SCORES["arboris_index"][0])
+    axes[0, 1].set_title(rf'{MAP_CVI_TO_SCORES["arboris_index"][0]} vs $\it{{n\_neighbours}}$ parameter')
 
     style_line_axis(axes[1, 0], ks, MAP_CVI_TO_SCORES["ad_silhouette"][1], MAP_CVI_TO_SCORES["ad_silhouette"][0])
     axes[1, 0].set_title(rf'{MAP_CVI_TO_SCORES["ad_silhouette"][0]} vs $\it{{n\_neighbours}}$ parameter')

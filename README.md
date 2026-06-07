@@ -26,6 +26,20 @@ To address these issues, the paper proposes:
 - **AD-IDEA**: a new internal CVI built on Arboris Distance.
 - **Balanced external CVIs**: per-class scoring variants designed to reduce imbalance bias.
 
+
+Project files:
+- main_arboris.py : showcasing the Arboris CVIs on a simple case
+- main_supp_clustering_comparison.py : showcasing the Arboris distance in clustering on a simple case
+- main_supp_external_CVIs.py : showcasing the balanced versions for external CVIs
+
+- main_analysis_count_labelsets.py : simple analysis counting the number of correct evaluations across datasets for the CVIs  (errors = how many handcrafted labels give higher scores than the ground truth labels)
+- main_analysis_count_clustering.py : simple analysis counting the number of correct evaluations across datasets for the CVIs (errors = how many clustering labels give higher scores than the ground truth labels)
+- main_analysis_count_clustering_stats.py : statistical analysis of best count analysis
+
+- main_clustering_grid_search.py : run a clustering grid search to find the best parametrisation for each datasets of each clustering algorithm
+- main_analysis_correlation_clustering_best.py : correlation analysis of the best clustering for each dataset
+- main_analysis_correlation_clustering_all.py : correlation analysis of the all clustering configurations for each dataset
+
 ---
 
 ## 📊 Datasets

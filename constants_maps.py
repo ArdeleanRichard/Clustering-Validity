@@ -14,7 +14,7 @@ from cvis.cvi_set.gSym import gSym
 from cvis.i_index import i_index
 from cvis_ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 
-from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, ad_idea
+from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, arboris_index
 
 from cvis_ours.measures import imbalance_ratio, overlap_ratio
 
@@ -57,7 +57,7 @@ MAP_METRIC_TO_FUNCTION = {
     "SD": lambda data, labels: pycvi_cvi.SD()(data, get_clustering(labels)),
     "SDbw": lambda data, labels: pycvi_cvi.SDbw()(data, get_clustering(labels)),
     "XB*": lambda data, labels: pycvi_cvi.XBStar()(data, get_clustering(labels)),
-    #
+
     # # sklearn metrics
     "S": silhouette_score,
     "DB": davies_bouldin_score,
@@ -67,12 +67,12 @@ MAP_METRIC_TO_FUNCTION = {
     # # # # "ED-S": ed_silhouette_score,
     # # # # "ED-DB": ed_davies_bouldin_score,
     # # # # "ED-CH": ed_calinski_harabasz_score,
-    #
+
     "AD-S": ad_silhouette_score,
     "AD-DB": ad_davies_bouldin_score,
     "AD-CH": ad_calinski_harabasz_score,
 
-    "AD-idea": ad_idea,
+    "AD-idea": arboris_index,
 }
 
 
@@ -115,7 +115,7 @@ MAP_INTERNAL_METRICS = {
     "ad_silhouette": ("AD-S", ad_silhouette_score),
     "ad_db": ("AD-CH", ad_calinski_harabasz_score),
     "ad_ch": ("AD-DB", ad_davies_bouldin_score),
-    "ad_idea": ("AD-Idea", ad_idea),
+    "arboris_index": ("AD-Idea", arboris_index),
 }
 
 

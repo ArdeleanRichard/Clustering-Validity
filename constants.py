@@ -1,5 +1,11 @@
 import os
 import numpy as np
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="Graph is not fully connected, spectral embedding may not work as expected."
+)
 
 random_state = 42
 np.random.seed(random_state)

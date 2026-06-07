@@ -195,9 +195,9 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
     results_bari = {}
     results_bari_nn = {}
 
-    for dataset_name, (X, labels_gt) in datasets:
+    for data_id, (dataset_name, (X, labels_gt)) in enumerate(datasets):
         print(f"\n{'=' * 60}")
-        print(f"Processing dataset: {dataset_name}")
+        print(f"Processing dataset: {dataset_name}: {data_id+1}/{len(datasets)}")
         print(f"{'=' * 60}")
 
         # Preprocess data
@@ -225,7 +225,8 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
         cvi_nn_values = {metric: [] for metric in metrics}
 
         # Process each clustering algorithm result
-        for label_file in label_files:
+        for label_id, label_file in enumerate(label_files):
+            print(f"\t\tLabels: {label_id + 1}/{len(label_files)}")
             clusterer_name = Path(label_file).stem.replace(f"labels_{dataset_name}_", "")
 
             try:
@@ -256,7 +257,8 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
             bari_nn_values.append(balanced_external(adjusted_rand_score, labels_gt_nn, labels_clustering_nn, method='macro'))
 
             # Compute each CVI
-            for metric in metrics:
+            for metric_id, metric in enumerate(metrics):
+                # print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)}")
                 try:
                     cvi_values[metric].append(choose_index(metric=metric, data=X, labels=labels_clustering))
                     cvi_nn_values[metric].append(choose_index(metric=metric, data=X_nn, labels=labels_clustering_nn))
@@ -329,9 +331,9 @@ def save_correlation_matrix(df, file_name="correlations_cvi_to_ari_per_dataset")
 
 
 def main_real_data_per_dataset():
-    from load_datasets import create_real_datasets
+    from load_datasets import create_real_datasets_uci
 
-    datasets = create_real_datasets()
+    datasets = create_real_datasets_uci()
 
     prefix = "realdata"
     # Compute correlations per dataset
@@ -369,13 +371,16 @@ def main_synth_data_per_dataset():
 
 
 def main_real_data_per_clusterer():
-    from load_datasets import create_real_datasets
-    datasets = create_real_datasets()
+    from load_datasets import create_real_datasets_uci
+    datasets = create_real_datasets_uci()
 
     prefix = "realdata"
+    metrics = METRICS.copy()
+    metrics.remove("CDbw") # cannot construct hull # Failed to compute CDbw: QH6214 qhull input error: not enough points to construct initial simplex
+
     correlation_matrices = compute_ari_cvi_correlations_per_clusterer(
         datasets=datasets,
-        metrics=METRICS if "CDbw" not in METRICS else [m for m in METRICS if m != "CDbw"],
+        metrics=metrics,
         labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
     )
 
@@ -407,13 +412,6 @@ def main_synth_data_per_clusterer():
 
 
 if __name__ == "__main__":
-    import warnings
-
-    warnings.filterwarnings(
-        "ignore",
-        message="Graph is not fully connected, spectral embedding may not work as expected."
-    )
-
     # main_real_data_per_dataset()
     # main_synth_data_per_dataset()
     # main_synth_data_per_clusterer()

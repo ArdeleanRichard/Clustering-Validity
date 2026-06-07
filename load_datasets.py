@@ -1,8 +1,12 @@
 import numpy as np
 from sklearn import datasets
 from sklearn.datasets import make_blobs
+from pathlib import Path
+from PIL import Image
+import re
 
 from constants import random_state
+
 
 
 def cluster_stats(X, labels):
@@ -345,9 +349,192 @@ def create_lsun():
 
 
 
+def create_coil20(data_dir="./data/real/coil-20"):
+    """
+    Load the COIL-20 dataset from a directory containing images such as:
+        obj1__0.png
+        obj1__5.png
+        ...
+        obj20__355.png
 
-def create_real_datasets():
+    Returns
+    -------
+    X : ndarray, shape (1440, n_features)
+        Flattened grayscale images.
+    y : ndarray, shape (1440,)
+        Object IDs (0-19).
+    """
+    data_dir = Path(data_dir)
+
+    X = []
+    y = []
+    for class_dir in sorted(data_dir.iterdir()):
+        if not class_dir.is_dir():
+            continue
+
+        try:
+            label = int(class_dir.name) - 1  # 0–19 labels
+        except ValueError:
+            continue
+
+        for img_path in class_dir.glob("*.png"):
+            img = Image.open(img_path).convert("L")
+            X.append(np.asarray(img, dtype=np.float32).flatten())
+            y.append(label)
+
+    X = np.asarray(X)
+    y = np.asarray(y, dtype=int)
+
+    return X, y
+
+
+def create_olivetti_faces(data_dir="./data/real/att/", image_size=None):
+    """
+    Loads the AT&T (ORL) face dataset.
+
+    Parameters
+    ----------
+    data_dir : str or Path
+        Root directory containing subject folders (s1, s2, ..., s40)
+    image_size : tuple or None
+        If set (e.g. (64, 64)), images are resized before flattening.
+
+    Returns
+    -------
+    X : ndarray (n_samples, n_features)
+    y : ndarray (n_samples,)
+    """
+    data_dir = Path(data_dir)
+
+    X, y = [], []
+
+    for class_dir in sorted(data_dir.iterdir()):
+        if not class_dir.is_dir():
+            continue
+
+        # folder name like "s1" -> label 0
+        match = re.search(r"\d+", class_dir.name)
+        if not match:
+            continue
+        label = int(match.group()) - 1
+
+        for img_path in class_dir.glob("*"):
+            try:
+                img = Image.open(img_path).convert("L")
+
+                if image_size is not None:
+                    img = img.resize(image_size)
+
+                X.append(np.asarray(img, dtype=np.float32).flatten())
+                y.append(label)
+
+            except Exception as e:
+                print(f"Skipping {img_path}: {e}")
+
+    X = np.asarray(X, dtype=np.float32)
+    y = np.asarray(y, dtype=int)
+
+    return X, y
+
+
+def create_yale_face_a(data_dir="./data/real/yale_face_a/", image_size=None, keep_expression=False):
+    """
+    Yale Face Database A loader.
+
+    Dataset:
+    - 15 subjects (subject01 ... subject15)
+    - 11 images per subject (expressions)
+    - 165 total images
+    - .gif format
+
+    Parameters
+    ----------
+    data_dir : str or Path
+    image_size : tuple or None
+        Resize images before flattening (recommended: (64,64) or (48,48))
+    keep_expression : bool
+        If True, returns expression labels too (optional research use)
+
+    Returns
+    -------
+    X : (n_samples, n_features)
+    y : (n_samples,)
+    expr : optional (n_samples,) if keep_expression=True
+    """
+    """
+        Yale Face Database A (Kaggle flat format).
+
+        File format:
+            subject01.happy
+            subject01.centerlight
+            subject02.sad
+            ...
+
+        No file extensions or nonstandard extensions expected.
+        """
+
+    data_dir = Path(data_dir)
+
+    X, y, expr = [], [], []
+
+    for img_path in sorted(data_dir.iterdir()):
+        if not img_path.is_file():
+            continue
+
+        name = img_path.name
+
+        # ---- subject label ----
+        match = re.search(r"subject(\d+)", name)
+        if not match:
+            continue
+        label = int(match.group(1)) - 1
+
+        # ---- expression label ----
+        parts = name.split(".")
+        expression = parts[1] if len(parts) > 1 else "unknown"
+
+        # ---- image loading (IMPORTANT FIX) ----
+        try:
+            # PIL can handle PGM-like raw images even without extension
+            img = Image.open(img_path).convert("L")
+
+            if image_size is not None:
+                img = img.resize(image_size)
+
+            X.append(np.asarray(img, dtype=np.float32).flatten())
+            y.append(label)
+
+            if keep_expression:
+                expr.append(expression)
+
+        except Exception as e:
+            print(f"[WARN] failed on {img_path}: {e}")
+
+    X = np.asarray(X, dtype=np.float32)
+    y = np.asarray(y, dtype=int)
+
+    if keep_expression:
+        return X, y, np.array(expr)
+
+    return X, y
+
+
+
+def create_real_datasets_new():
     datasets = []
+
+    datasets.append(("coil20", create_coil20()))
+    datasets.append(("olivetti", create_olivetti_faces()))
+    datasets.append(("yaleA", create_yale_face_a()))
+
+    return datasets
+
+
+
+def create_real_datasets_uci():
+    datasets = []
+
+    # UCI - 8 datasets
     datasets.append(("ecoli", create_ecoli()))
     datasets.append(("glass", create_glass()))
     datasets.append(("ionosphere", create_ionosphere()))
@@ -363,11 +550,10 @@ def create_real_datasets():
 
 
 
-
 def create_synthetic_datasets():
     datasets = []
 
-    # graves
+    # graves (4 datasets + 3 + 3 = 10)
     datasets.append(("fuzzyx", create_fuzzyx()))
     datasets.append(("line", create_line()))
     datasets.append(("dense", create_dense()))
@@ -375,13 +561,13 @@ def create_synthetic_datasets():
     datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
     datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
 
-    # # wut
+    # # wut (2 + 1 + 3 = 6 datasets)
     datasets.extend([(f"mk{i}", create_mk(i)) for i in [1, 2]])  ### [1,2,3,4] ### >2 n_dims
     datasets.append((f"smile", create_smile()))
     datasets.extend([(f"x{i}", create_x(i)) for i in [1, 2, 3]])
     # ### datasets.extend([("trajectories", create_trajectories())]) ### high n_samples
 
-    # # sipu
+    # # sipu (7 datasets)
     datasets.append(("aggregation", create_aggregation()))
     datasets.append(("compound", create_compound()))
     datasets.append(("jain", create_jain()))
@@ -394,7 +580,7 @@ def create_synthetic_datasets():
     # ### datasets.extend([(f"s{i}", create_s(i)) for i in [1,2,3,4]]) ### high n_samples
     # ### datasets.extend([(f"a{i}", create_a(i)) for i in [1, 2, 3]]) ### high n_samples
 
-    # # fcps
+    # # fcps (4 datasets)
     datasets.append(("lsun", create_lsun()))
     datasets.append(("target", create_target()))
     datasets.append(("twodiamonds", create_twodiamonds()))
@@ -408,4 +594,9 @@ def create_synthetic_datasets():
 
 if __name__ == '__main__':
     pass
+
+    datasets = create_real_datasets_new()
+    print(len(datasets))
+    for name, (X, y) in datasets:
+        print(name, X.shape, y.shape, len(np.unique(y)))
 

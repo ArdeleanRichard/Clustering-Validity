@@ -364,9 +364,9 @@ def save_results(results_by_dataset, results_by_algo, file_prefix):
 
 
 def main_real_data():
-    from load_datasets import create_real_datasets
+    from load_datasets import create_real_datasets_uci
 
-    datasets = create_real_datasets()
+    datasets = create_real_datasets_uci()
     prefix = "realdata"
     plot_folder = FOLDER_RESULTS_CORRELATION + f"{prefix}_error_plots/"
 
@@ -400,12 +400,5 @@ def main_synth_data():
 
 
 if __name__ == "__main__":
-    import warnings
-
-    warnings.filterwarnings(
-        "ignore",
-        message="Graph is not fully connected, spectral embedding may not work as expected."
-    )
-
-    # main_real_data()
     main_synth_data()
+    # main_real_data()

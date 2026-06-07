@@ -56,8 +56,10 @@ def get_param_grids():
             'cluster_selection_epsilon': [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         },
         'MeanShift': {
-            'quantile': [0.001, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
-            'n_samples': [2, 3, 5, 10, 15, 20],
+            # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
+            'quantile': [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+            # 'n_samples': [2, 3, 5, 10, 15, 20],
+            'n_samples': [2, 3, 5, 10, 20],
             'bin_seeding': [True, False]
         },
         'AgglomerativeClustering': {
@@ -73,9 +75,10 @@ def get_param_grids():
         },
         'KMeans': {
             'n_clusters': None,
+            'n_init': 'auto',
             'max_iter': [100, 300, 500],
             'tol': [1e-3, 1e-4, 1e-5],
-            'algorithm': ["full", "elkan"], # for newer sklearn versions change 'full' to 'lloyd'
+            'algorithm': ["lloyd", "elkan"], # for newer sklearn versions change 'full' to 'lloyd'
         },
 
     }
@@ -493,7 +496,16 @@ def main_synthetic_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['DBSCAN', 'MeanShift'])
+
+        results = run_comprehensive_grid_search(X, true_labels=gt,
+                                                algorithms=[
+                                                    "KMeans",
+                                                    "DBSCAN",
+                                                    "MeanShift",
+                                                    "HDBSCAN"
+                                                    "AgglomerativeClustering",
+                                                    "SpectralClustering"
+                                                ])
 
         save_best_parameters(results, data_name)
 
@@ -504,9 +516,9 @@ def main_synthetic_data():
 
 
 def main_real_data():
-    from load_datasets import create_real_datasets
+    from load_datasets import create_real_datasets_uci
 
-    datasets = create_real_datasets()
+    datasets = create_real_datasets_uci()
 
     for data_name, (X, gt) in datasets:
         print(f"\n{'=' * 80}")
@@ -517,7 +529,46 @@ def main_real_data():
         X, gt = remove_dups(X, gt)
         gt = reencode(gt)
 
-        results = run_comprehensive_grid_search(X, true_labels=gt, algorithms=['DBSCAN', 'MeanShift'])
+        results = run_comprehensive_grid_search(X, true_labels=gt,
+                                                algorithms=[
+                                                    "KMeans",
+                                                    "DBSCAN",
+                                                    "MeanShift",
+                                                    "HDBSCAN"
+                                                    "AgglomerativeClustering",
+                                                    "SpectralClustering"
+                                                ])
+
+        save_best_parameters(results, data_name)
+
+        summary = compare_best_results(results)
+        print(summary.to_string(index=False))
+
+
+def main_real_data_new():
+    from load_datasets import create_real_datasets_new
+
+    datasets = create_real_datasets_new()
+
+    for data_name, (X, gt) in datasets:
+        print(f"\n{'=' * 80}")
+        print(f"Processing dataset: {data_name}")
+        print(f"{'=' * 80}")
+
+        X = MinMaxScaler(scale).fit_transform(X)
+        X, gt = remove_dups(X, gt)
+        gt = reencode(gt)
+
+
+        results = run_comprehensive_grid_search(X, true_labels=gt,
+                                                algorithms=[
+                                                    # "KMeans",
+                                                    # "DBSCAN",
+                                                    # "MeanShift",
+                                                    "HDBSCAN"
+                                                    # "AgglomerativeClustering",
+                                                    # "SpectralClustering"
+                                                ])
 
         save_best_parameters(results, data_name)
 
@@ -525,12 +576,6 @@ def main_real_data():
         print(summary.to_string(index=False))
 
 if __name__ == '__main__':
-    import warnings
-
-    warnings.filterwarnings(
-        "ignore",
-        message="Graph is not fully connected, spectral embedding may not work as expected."
-    )
-
-    main_synthetic_data()
-    main_real_data()
+    # main_synthetic_data()
+    # main_real_data()
+    main_real_data_new()
