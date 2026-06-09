@@ -41,7 +41,8 @@ def compute_ari_cvi_correlations_per_clusterer(datasets, metrics, labels_folder)
             print(f"Warning: No label files found for {dataset_name} with pattern {pattern}")
             continue
 
-        for label_file in label_files:
+        for label_id, label_file in enumerate(label_files):
+            print(f"\tLabel files: {label_id+1}/{len(label_files)}")
             clusterer_name = Path(label_file).stem.replace(f"labels_{dataset_name}_", "").split("_")[0]
 
             try:
@@ -226,7 +227,7 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
 
         # Process each clustering algorithm result
         for label_id, label_file in enumerate(label_files):
-            print(f"\t\tLabels: {label_id + 1}/{len(label_files)}")
+            print(f"\t\tLabel files: {label_id + 1}/{len(label_files)}")
             clusterer_name = Path(label_file).stem.replace(f"labels_{dataset_name}_", "")
 
             try:
@@ -411,9 +412,30 @@ def main_synth_data_per_clusterer():
     save_correlation_matrix(correlation_matrices['bari_nn'],    file_name=f"{prefix}_per_clusterer_correlations_cvi_to_bari_nn")
 
 
+def main_real_data_new_per_clusterer():
+    from load_datasets import create_real_datasets_new
+    datasets = create_real_datasets_new()
+
+    prefix = "imagedata"
+    metrics = METRICS.copy()
+    metrics.remove("CDbw") # cannot construct hull # Failed to compute CDbw: QH6214 qhull input error: not enough points to construct initial simplex
+    metrics.remove("rCIP") # Failed to compute
+
+    correlation_matrices = compute_ari_cvi_correlations_per_clusterer(
+        datasets=datasets,
+        metrics=metrics,
+        labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
+    )
+
+    save_correlation_matrix(correlation_matrices['ari'],     file_name=f"{prefix}_per_clusterer_correlations_cvi_to_ari")
+    save_correlation_matrix(correlation_matrices['ari_nn'],  file_name=f"{prefix}_per_clusterer_correlations_cvi_to_ari_nn")
+    save_correlation_matrix(correlation_matrices['bari'],    file_name=f"{prefix}_per_clusterer_correlations_cvi_to_bari")
+    save_correlation_matrix(correlation_matrices['bari_nn'], file_name=f"{prefix}_per_clusterer_correlations_cvi_to_bari_nn")
+
+
 if __name__ == "__main__":
     # main_real_data_per_dataset()
     # main_synth_data_per_dataset()
     # main_synth_data_per_clusterer()
-    main_real_data_per_clusterer()
+    main_real_data_new_per_clusterer()
 

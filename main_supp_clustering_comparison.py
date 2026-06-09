@@ -3,13 +3,13 @@ import time
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.cluster import KMeans, SpectralClustering, estimate_bandwidth, MeanShift, AgglomerativeClustering, DBSCAN
-from hdbscan import HDBSCAN
+from sklearn.cluster import KMeans, SpectralClustering, estimate_bandwidth, MeanShift, AgglomerativeClustering, DBSCAN, HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 
-from constants import LABEL_COLOR_MAP, random_state, scale, FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS, \
-    FOLDER_RESULTS_CLUSTERING
+from constants import (LABEL_COLOR_MAP, random_state, scale,
+                        FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS,
+                        FOLDER_RESULTS_CLUSTERING)
 from cvis_ours.np_kmeans import KMeansClustering
 from cvis_ours.ed_kmeans import ED_KMeansClustering
 from cvis_ours.ad_kmeans import AD_KMeansClustering

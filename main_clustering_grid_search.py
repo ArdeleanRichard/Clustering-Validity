@@ -3,17 +3,17 @@ import json
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from sklearn.cluster import KMeans, SpectralClustering, estimate_bandwidth, MeanShift, AgglomerativeClustering, DBSCAN
-from hdbscan import HDBSCAN
+
+import sklearn
+print(sklearn.__version__)
+from sklearn.cluster import KMeans, SpectralClustering, estimate_bandwidth, MeanShift, AgglomerativeClustering, DBSCAN, HDBSCAN
 from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
-
 from constants import scale, FOLDER_RESULTS_CLUSTERING_PARAMS, random_state
 from utils import remove_dups, reencode
 
 
 def get_param_grids():
-    """Define parameter grids for each clustering algorithm"""
     param_grids = {
         # 'DBSCAN': {
         #     'eps': [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75],
@@ -47,20 +47,24 @@ def get_param_grids():
         # },
 
         'DBSCAN': {
-            'eps': [0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
-            'min_samples': [3, 5, 10, 20, 50],
+            'eps': [0.001, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.00],
+            'min_samples': [1, 3, 5, 10, 20, 50, 100],
         },
+
         'HDBSCAN': {
             'min_cluster_size': [5, 10, 20],
             'min_samples': [5, 10, 20],
             'cluster_selection_epsilon': [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         },
+
         'MeanShift': {
             # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
-            'quantile': [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+            # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
             # 'n_samples': [2, 3, 5, 10, 15, 20],
-            'n_samples': [2, 3, 5, 10, 20],
-            'bin_seeding': [True, False]
+            # 'bin_seeding': [True, False]
+            'quantile': [0.20, 0.25, 0.30, 0.40, 0.50],
+            'n_samples': [15, 20, 30, 50],
+            'bin_seeding': [True]
         },
         'AgglomerativeClustering': {
             'n_clusters': None,
@@ -69,8 +73,10 @@ def get_param_grids():
         },
         'SpectralClustering': {
             'n_clusters': None,
-            'affinity': ['nearest_neighbors', 'rbf'],
-            'n_neighbors': [5, 10, 20],
+            # 'affinity': ['nearest_neighbors', 'rbf'],
+            # 'n_neighbors': [5, 10, 20],
+            'affinity': ['nearest_neighbors'],
+            'n_neighbors': [3, 5, 10, 15, 20, 30, 50],
             'assign_labels': ['kmeans', 'discretize'],
         },
         'KMeans': {
@@ -82,6 +88,7 @@ def get_param_grids():
         },
 
     }
+    """Define parameter grids for each clustering algorithm"""
     return param_grids
 
 
@@ -112,7 +119,7 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
 
     results = []
     all_labels = []
-    best_score = -1
+    best_score = -1.01
     best_params = None
     best_labels = None
 
@@ -122,7 +129,8 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         for eps in param_grid['eps']
                         for min_samples in param_grid['min_samples']]
 
-        for eps, min_samples in param_combos:
+        for combo_id, (eps, min_samples) in enumerate(param_combos):
+            print(f"\tParam configs: {combo_id + 1}/{len(param_combos)}")
             start_time = time.time()
             try:
                 clusterer = DBSCAN(eps=eps, min_samples=min_samples)
@@ -156,7 +164,8 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         for ms in param_grid['min_samples']
                         for cse in param_grid['cluster_selection_epsilon']]
 
-        for min_cluster_size, min_samples, cluster_selection_epsilon in param_combos:
+        for combo_id, (min_cluster_size, min_samples, cluster_selection_epsilon) in enumerate(param_combos):
+            print(f"\tParam configs: {combo_id + 1}/{len(param_combos)}")
             start_time = time.time()
             try:
                 clusterer = HDBSCAN(
@@ -204,11 +213,14 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         for ns in param_grid['n_samples']
                         for bs in param_grid['bin_seeding']]
 
-        for quantile, n_samples, bin_seeding in param_combos:
+        for combo_id, (quantile, n_samples, bin_seeding) in enumerate(param_combos):
+            print(f"\tParam configs: {combo_id + 1}/{len(param_combos)} - {quantile}, {n_samples}, {bin_seeding}")
+
             start_time = time.time()
 
             bandwidth = estimate_bandwidth(X, quantile=quantile, n_samples=n_samples)
             if bandwidth < 1e-2:
+                print("Bandwidth too low")
                 continue
 
             try:
@@ -238,6 +250,8 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         'bin_seeding': bin_seeding
                     }
                     best_labels = labels
+
+
             except Exception as e:
                 print(f"{algo_name} failed with bandwidth={bandwidth}: {e}")
 
@@ -247,7 +261,8 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         for m in param_grid['metric']
                         for link in param_grid['linkage']]
 
-        for n_clusters, metric, linkage in param_combos:
+        for combo_id, (n_clusters, metric, linkage) in enumerate(param_combos):
+            print(f"\tParam configs: {combo_id + 1}/{len(param_combos)}")
             start_time = time.time()
             try:
                 clusterer = AgglomerativeClustering(n_clusters=n_clusters, metric=metric, linkage=linkage)
@@ -279,7 +294,8 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         for nn in param_grid['n_neighbors']
                         for al in param_grid['assign_labels']]
 
-        for n_clusters, affinity, n_neighbors, assign_labels in param_combos:
+        for combo_id, (n_clusters, affinity, n_neighbors, assign_labels) in enumerate(param_combos):
+            print(f"\tParam configs: {combo_id+1}/{len(param_combos)} - {n_clusters}, {affinity}, {n_neighbors}, {assign_labels}")
             start_time = time.time()
             try:
                 if affinity == 'rbf':
@@ -332,10 +348,11 @@ def grid_search(algo_name, X, true_labels=None, param_grid=None, n_clusters_rang
                         for tol in param_grid['tol']
                         for algo in param_grid['algorithm']]
 
-        for (n_clusters, max_iter, tol, algorithm) in param_combos:
+        for combo_id, (n_clusters, max_iter, tol, algorithm) in enumerate(param_combos):
+            print(f"\tParam configs: {combo_id + 1}/{len(param_combos)}")
             start_time = time.time()
             try:
-                clusterer = KMeans(n_clusters=n_clusters, max_iter=max_iter, tol=tol, algorithm=algorithm, random_state=random_state)
+                clusterer = KMeans(n_clusters=n_clusters, n_init="auto", max_iter=max_iter, tol=tol, algorithm=algorithm, random_state=random_state)
                 labels = clusterer.fit_predict(X)
                 fit_time = time.time() - start_time
 
@@ -433,19 +450,25 @@ def save_best_parameters(all_results, dataset_name, output_dir=FOLDER_RESULTS_CL
     best_params = {}
 
     for algo_name, results in all_results.items():
-        params = results['best']['params'].copy()
+        if results['best']['params'] is not None:
+            params = results['best']['params'].copy()
 
-        # Convert numpy types to native Python types
-        for key, value in params.items():
-            if isinstance(value, (np.integer, np.floating)):
-                params[key] = value.item()
-            elif value is None:
-                params[key] = None
+            # Convert numpy types to native Python types
+            for key, value in params.items():
+                if isinstance(value, (np.integer, np.floating)):
+                    params[key] = value.item()
+                elif value is None:
+                    params[key] = None
 
-        best_params[algo_name] = {
-            'params': params,
-            'score': float(results['best']['score'])
-        }
+            best_params[algo_name] = {
+                'params': params,
+                'score': float(results['best']['score'])
+            }
+        else:
+            best_params[algo_name] = {
+                'params': None,
+                'score': float(results['best']['score'])
+            }
 
         # Save best labels
         labels = results['best']['labels']
@@ -564,10 +587,10 @@ def main_real_data_new():
                                                 algorithms=[
                                                     # "KMeans",
                                                     # "DBSCAN",
-                                                    "MeanShift",
+                                                    # "MeanShift",
                                                     "HDBSCAN"
                                                     # "AgglomerativeClustering",
-                                                    "SpectralClustering"
+                                                    # "SpectralClustering"
                                                 ])
 
         save_best_parameters(results, data_name)
