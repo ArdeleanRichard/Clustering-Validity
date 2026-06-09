@@ -502,7 +502,7 @@ def main_synthetic_data():
                                                     "KMeans",
                                                     "DBSCAN",
                                                     "MeanShift",
-                                                    "HDBSCAN"
+                                                    "HDBSCAN",
                                                     "AgglomerativeClustering",
                                                     "SpectralClustering"
                                                 ])
@@ -534,7 +534,7 @@ def main_real_data():
                                                     "KMeans",
                                                     "DBSCAN",
                                                     "MeanShift",
-                                                    "HDBSCAN"
+                                                    "HDBSCAN",
                                                     "AgglomerativeClustering",
                                                     "SpectralClustering"
                                                 ])
@@ -565,12 +565,12 @@ def main_real_data_new():
                                                     # "KMeans",
                                                     # "DBSCAN",
                                                     "MeanShift",
-                                                    "HDBSCAN"
-                                                    # "AgglomerativeClustering",
-                                                    "SpectralClustering"
+                                                    "HDBSCAN",
+                                                    "AgglomerativeClustering",
+                                                    #"SpectralClustering"
                                                 ])
 
-        save_best_parameters(results, data_name)
+        save_best_parameters(results, data_name
 
         summary = compare_best_results(results)
         print(summary.to_string(index=False))
