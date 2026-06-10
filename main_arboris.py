@@ -8,7 +8,7 @@ def main_compare_performance(ns=[500, 1000, 2000, 5000, 10000, 15000, 20000], d=
     from sklearn.preprocessing import MinMaxScaler
 
     for n in ns:
-        print(f"\nDataset size: {n} samples")
+        print(f"\nDataset size: {n} samples, {d} features")
         X, labels = create_data5(n, d)
         X = MinMaxScaler((-1, 1)).fit_transform(X)
 

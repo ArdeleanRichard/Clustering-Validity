@@ -4,8 +4,8 @@ from permetrics import ClusteringMetric
 from pycvi import cvi as pycvi_cvi
 from pycvi.cluster import get_clustering
 
-from cvis.DBCV_opt import dbcv
-from cvis.VIASCKDE_opt import VIASCKDE
+from cvis.DBCV import dbcv
+from cvis.VIASCKDE import VIASCKDE
 from cvis.c_index import c_index
 from cvis.cdbw import CDbw
 from cvis.cs_index import cs_index
