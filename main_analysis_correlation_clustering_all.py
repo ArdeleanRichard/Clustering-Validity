@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import adjusted_rand_score
@@ -26,7 +28,7 @@ def compute_ari_cvi_correlations_per_clusterer(datasets, metrics, labels_folder)
 
     # iterate datasets and collect per-clusterer lists
     for dataset_name, (X_raw, labels_gt) in datasets:
-        print(f"\n{'-'*40}\nProcessing dataset: {dataset_name}\n{'-'*40}")
+        print(f"\n{'-'*40}\nProcessing dataset: {dataset_name} with {X_raw.shape}\n{'-'*40}")
 
         # Preprocess
         X = MinMaxScaler(scale).fit_transform(X_raw)
@@ -115,12 +117,16 @@ def compute_ari_cvi_correlations_per_clusterer(datasets, metrics, labels_folder)
             clusterer_stats[clusterer_name]['bari_nn'].append(bari_nn_val)
 
             # CVIs
-            for metric in metrics:
+            for metric_id, metric in enumerate(metrics):
                 # full
+                start = time.time()
                 try:
                     c_full = choose_index(metric=metric, data=X, labels=labels_clustering)
                 except Exception:
                     c_full = np.nan
+
+                print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)} in {time.time() - start:.3f}s")
+
                 clusterer_stats[clusterer_name]['cvi'][metric].append(c_full)
 
                 # nn
@@ -227,8 +233,8 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
 
         # Process each clustering algorithm result
         for label_id, label_file in enumerate(label_files):
-            print(f"\t\tLabel files: {label_id + 1}/{len(label_files)}")
-            clusterer_name = Path(label_file).stem.replace(f"labels_{dataset_name}_", "")
+            print(f"\tLabel files: {label_id + 1}/{len(label_files)}")
+            # clusterer_name = Path(label_file).stem.replace(f"labels_{dataset_name}_", "")
 
             try:
                 labels_clustering = np.load(label_file)
@@ -257,9 +263,11 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
             bari_values.append(balanced_external(adjusted_rand_score, labels_gt_re, labels_clustering_re, method='macro'))
             bari_nn_values.append(balanced_external(adjusted_rand_score, labels_gt_nn, labels_clustering_nn, method='macro'))
 
+
+
             # Compute each CVI
             for metric_id, metric in enumerate(metrics):
-                # print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)}")
+                print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)}")
                 try:
                     cvi_values[metric].append(choose_index(metric=metric, data=X, labels=labels_clustering))
                     cvi_nn_values[metric].append(choose_index(metric=metric, data=X_nn, labels=labels_clustering_nn))
@@ -414,12 +422,14 @@ def main_synth_data_per_clusterer():
 
 def main_real_data_new_per_clusterer():
     from load_datasets import create_real_datasets_new
-    datasets = create_real_datasets_new()
+    datasets = create_real_datasets_new(image_size=(64,64))
 
     prefix = "imagedata"
     metrics = METRICS.copy()
-    metrics.remove("CDbw") # cannot construct hull # Failed to compute CDbw: QH6214 qhull input error: not enough points to construct initial simplex
-    metrics.remove("rCIP") # Failed to compute
+    metrics.remove("CDbw")  # cannot construct hull # Failed to compute CDbw: QH6214 qhull input error: not enough points to construct initial simplex
+    metrics.remove("rCIP")  # Failed to compute
+    # metrics.remove("SD")     # takes a long time
+    # metrics.remove("Sym")    # takes a long time
 
     correlation_matrices = compute_ari_cvi_correlations_per_clusterer(
         datasets=datasets,

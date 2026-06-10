@@ -167,10 +167,19 @@ def _get_centroid_id_from_data(data, indices=None):
         return indices[0] if indices is not None else 0
 
     # Compute all pairwise squared distances at once
-    diff = data[:, np.newaxis, :] - data[np.newaxis, :, :]
-    pairwise_sq = np.sum(diff ** 2, axis=2)
+    # diff = data[:, np.newaxis, :] - data[np.newaxis, :, :]
+    # pairwise_sq = np.sum(diff ** 2, axis=2)
+    # sum_sq = np.sum(pairwise_sq, axis=1)
+    # min_idx = np.argmin(sum_sq)
+
+    # Compute all pairwise squared distances without materializing (N, N, F) tensor.
+    # Uses ||a-b||^2 = ||a||^2 + ||b||^2 - 2*a·b  →  shape stays (N, N).
+    norms_sq = np.einsum('ij,ij->i', data, data)          # (N,)  — per-row squared norm
+    pairwise_sq = norms_sq[:, None] + norms_sq[None, :] - 2.0 * (data @ data.T)
+    np.clip(pairwise_sq, 0, None, out=pairwise_sq)        # guard against tiny negatives from float arithmetic
     sum_sq = np.sum(pairwise_sq, axis=1)
     min_idx = np.argmin(sum_sq)
+
 
     return indices[min_idx] if indices is not None else min_idx
 

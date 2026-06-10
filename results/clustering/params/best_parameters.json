@@ -866,7 +866,7 @@
         "cluster_selection_epsilon": 0.5
       },
       "score": 0.771592235780757
-    },
+    }
   },
 
 
@@ -922,7 +922,7 @@
         "cluster_selection_epsilon": 0.5
       },
       "score": 0.16693695808574197
-    },
+    }
   },
 
 
@@ -978,10 +978,6 @@
         "cluster_selection_epsilon": 0.5
       },
       "score": 0.3428058300541749
-    },
-  }
-
-}
-
+    }
   }
 }

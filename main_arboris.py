@@ -1,13 +1,15 @@
 from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, arboris_index
+from load_datasets import create_data5
 
-def main_compare_performance():
+
+def main_compare_performance(ns=[500, 1000, 2000, 5000, 10000, 15000, 20000], d=2):
     from time import time
     from load_datasets import create_data4
     from sklearn.preprocessing import MinMaxScaler
 
-    for n in [500, 1000, 2000, 5000, 10000, 15000, 20000]:
+    for n in ns:
         print(f"\nDataset size: {n} samples")
-        X, labels = create_data4(n)
+        X, labels = create_data5(n, d)
         X = MinMaxScaler((-1, 1)).fit_transform(X)
 
         k = 5

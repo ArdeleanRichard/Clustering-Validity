@@ -1,0 +1,41 @@
+Dataset size: 500 samples
+  AD Silhouette: 0.7458 in 0.035s
+  AD Davies-Bouldin: 0.5441 in 0.031s
+  AD Calinski-Harabasz: 2121.8278 in 0.029s
+  Arboris: 405.7515 in 0.078s
+
+Dataset size: 1000 samples
+  AD Silhouette: 0.8243 in 0.077s
+  AD Davies-Bouldin: 0.3695 in 0.084s
+  AD Calinski-Harabasz: 5426.0666 in 0.086s
+  Arboris: 1159.8995 in 0.168s
+
+Dataset size: 2000 samples
+  AD Silhouette: 0.8101 in 0.252s
+  AD Davies-Bouldin: 0.4005 in 0.194s
+  AD Calinski-Harabasz: 13617.5063 in 0.268s
+  Arboris: 1205.0371 in 0.412s
+
+Dataset size: 5000 samples
+  AD Silhouette: 0.8166 in 1.866s
+  AD Davies-Bouldin: 0.3869 in 2.014s
+  AD Calinski-Harabasz: 33225.4478 in 1.943s
+  Arboris: 1395.3667 in 2.241s
+
+Dataset size: 10000 samples
+  AD Silhouette: 0.7990 in 6.840s
+  AD Davies-Bouldin: 0.4270 in 6.451s
+  AD Calinski-Harabasz: 88129.4436 in 7.330s
+  Arboris: 1549.0908 in 7.894s
+
+Dataset size: 15000 samples
+  AD Silhouette: 0.8000 in 12.109s
+  AD Davies-Bouldin: 0.4224 in 11.507s
+  AD Calinski-Harabasz: 170269.3537 in 13.465s
+  Arboris: 2136.3903 in 24.150s
+
+Dataset size: 20000 samples
+  AD Silhouette: 0.8304 in 25.467s
+  AD Davies-Bouldin: 0.3566 in 25.806s
+  AD Calinski-Harabasz: 198823.4202 in 26.245s
+  Arboris: 2471.4612 in 38.766s
