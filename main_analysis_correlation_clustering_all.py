@@ -267,7 +267,7 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
 
             # Compute each CVI
             for metric_id, metric in enumerate(metrics):
-                print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)}")
+                start = time.time()
                 try:
                     cvi_values[metric].append(choose_index(metric=metric, data=X, labels=labels_clustering))
                     cvi_nn_values[metric].append(choose_index(metric=metric, data=X_nn, labels=labels_clustering_nn))
@@ -275,6 +275,8 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
                     # print(f"Warning: Failed to compute {metric} for {clusterer_name}: {e}")
                     cvi_values[metric].append(np.nan)
                     cvi_nn_values[metric].append(np.nan)
+
+                print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)} in {time.time() - start:.3f}s")
 
             # print(f"  - {clusterer_name}: ARI={ari_values[-1]:.3f}, noise={np.count_nonzero(labels_clustering == -1)}/{len(labels_clustering)}")
 
