@@ -4,7 +4,6 @@ from load_datasets import create_data5
 
 def main_compare_performance(ns=[500, 1000, 2000, 5000, 10000, 15000, 20000], d=2):
     from time import time
-    from load_datasets import create_data4
     from sklearn.preprocessing import MinMaxScaler
 
     for n in ns:

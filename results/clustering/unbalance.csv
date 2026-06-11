@@ -1,0 +1,8 @@
+,ARI,AMI,time (s)
+K-Means,1.000,1.000,0.015
+DBSCAN,1.000,0.999,0.334
+HDBSCAN,1.000,1.000,0.806
+MeanShift,0.997,0.937,2.872
+AgglomerativeClustering,1.000,1.000,8.416
+SpectralClustering,0.151,0.474,5.760
+AD-K-Means,1.000,1.000,2.991

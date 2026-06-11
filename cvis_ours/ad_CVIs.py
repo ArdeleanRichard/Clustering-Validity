@@ -53,13 +53,15 @@ def ad_davies_bouldin_score(data, labels, n_neighbors=5):
     # Find centroids
     centroid_ids = _get_centroid_ids_from_data(data, labels, unique_labels)
 
-    # Compute inter-cluster distances (between centroids)
-    cluster_distances = np.zeros((n_clusters, n_clusters))
-    for i in range(n_clusters):
-        for j in range(i + 1, n_clusters):
-            dist = dist_calculator.get_distance(centroid_ids[i], centroid_ids[j])
-            cluster_distances[i, j] = dist
-            cluster_distances[j, i] = dist
+    # Compute inter-cluster distances (between centroids).
+    # One BFS per centroid covers all centroid-to-centroid distances at once,
+    # replacing the previous O(K^2) individual get_distance calls with O(K) BFS traversals.
+    all_centroid_distances = dist_calculator.get_distances_to_multiple(centroid_ids)
+    # Shape: (n_clusters, n_samples) — index into centroid columns only.
+    cluster_distances = all_centroid_distances[:, centroid_ids]
+    # BFS distances on a tree are symmetric; symmetrise explicitly for safety.
+    cluster_distances = (cluster_distances + cluster_distances.T) / 2
+    np.fill_diagonal(cluster_distances, 0.0)
 
     # Compute intra-cluster scatter (mean distance to centroid)
     cluster_scatter = np.zeros(n_clusters)
@@ -100,12 +102,12 @@ def ad_calinski_harabasz_score(data, labels, n_neighbors=5):
     # Find overall centroid
     overall_centroid_id = _get_centroid_id_from_data(data)
 
-    # Between-cluster sum of squares
-    between_ss = 0.0
-    for i, label in enumerate(unique_labels):
-        cluster_size = np.sum(labels == label)
-        dist = dist_calculator.get_distance(overall_centroid_id, centroid_ids[i])
-        between_ss += dist * cluster_size
+    # Between-cluster sum of squares.
+    # One BFS from the overall centroid gives distances to all points at once,
+    # replacing the previous O(K) individual get_distance calls with a single O(N) traversal.
+    overall_to_all = dist_calculator.get_distances_to_point(overall_centroid_id)
+    cluster_sizes = np.array([np.sum(labels == label) for label in unique_labels])
+    between_ss = np.dot(overall_to_all[centroid_ids], cluster_sizes)
 
     # Within-cluster sum of squares
     within_ss = 0.0
@@ -120,8 +122,6 @@ def ad_calinski_harabasz_score(data, labels, n_neighbors=5):
 
     ch_index = (between_ss / (n_clusters - 1)) / (within_ss / (n_samples - n_clusters))
     return ch_index
-
-
 
 
 def arboris_index(data, labels, n_neighbors=5):
@@ -169,28 +169,21 @@ def arboris_index(data, labels, n_neighbors=5):
     mst = ArborisDistanceCalculator(data, n_neighbors=n_neighbors)
     centroid_ids = _get_centroid_ids_from_data(data, labels, unique_labels)
 
-    # Find minimum inter-cluster distance
-    # min_inter_dists = []
-    # for i in range(n_clusters):
-    #     min_inter_dist = np.inf
-    #     for j in range(n_clusters):
-    #         if i != j:
-    #             dist = mst.get_distance(centroid_ids[i], centroid_ids[j])
-    #             min_inter_dist = min(min_inter_dist, dist)
-    #     min_inter_dists.append(min_inter_dist)
+    # Compute distances from every centroid to all points in one pass per centroid.
+    # Shape: (n_clusters, n_samples). This replaces the previous O(K^2) BFS calls
+    # (get_distances_to_point was called K times inside the outer loop of K iterations)
+    # with O(K) BFS calls whose results are reused across all outer iterations.
+    all_centroid_to_all = mst.get_distances_to_multiple(centroid_ids)
 
     min_inter_dists = []
     for i, label_i in enumerate(unique_labels):
         min_inter_dist = np.inf
         for j, label_j in enumerate(unique_labels):
             if i != j:
-                distances_to_j = mst.get_distances_to_point(centroid_ids[j])
-                cluster_i_distances_to_j = distances_to_j[labels == label_i]
-
+                cluster_i_distances_to_j = all_centroid_to_all[j][labels == label_i]
                 dist = np.mean(cluster_i_distances_to_j)
                 min_inter_dist = min(min_inter_dist, dist)
         min_inter_dists.append(min_inter_dist)
-
 
     # max intra dist for each cluster
     max_intra_dists = np.array(max_intra_dists)

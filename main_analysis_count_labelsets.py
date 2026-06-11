@@ -82,7 +82,7 @@ def main_summarize():
         f"Errors (out of {5 * len(glob.glob(FOLDER))})": pd.Series(metric_error_counts)
     })
 
-    summary.to_csv(FOLDER_RESULTS_CVIS + "/saved/.summary.csv")
+    summary.to_csv(FOLDER_RESULTS_CVIS + "/.summary.csv")
     print(summary)
 
 if __name__ == '__main__':

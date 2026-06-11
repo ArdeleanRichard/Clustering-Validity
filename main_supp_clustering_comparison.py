@@ -10,6 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 from constants import (LABEL_COLOR_MAP, random_state, scale,
                         FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS,
                         FOLDER_RESULTS_CLUSTERING)
+from load_datasets import create_compound, create_aggregation, create_spiral, create_r15, create_x, create_dense, create_unbalance, create_pathbased, create_jain
 from cvis_ours.np_kmeans import KMeansClustering
 from cvis_ours.ed_kmeans import ED_KMeansClustering
 from cvis_ours.ad_kmeans import AD_KMeansClustering
@@ -34,7 +35,7 @@ def run_clustering_algorithms(dataset_name, X, n_clusters):
 
     km_start = time.time()
     # Kmeans = KMeansClustering(X, n_clusters)
-    kmeans = KMeans(n_clusters=n_clusters).fit(X)
+    kmeans = KMeans(n_clusters=n_clusters, n_init="auto").fit(X)
     km_labels = kmeans.labels_
     km_time = time.time() - km_start
 
@@ -88,10 +89,10 @@ def run_clustering_algorithms(dataset_name, X, n_clusters):
     sc_labels = sc.labels_
     sc_time = time.time() - sc_start
 
-    ed_km_start = time.time()
-    ed_Kmeans = ED_KMeansClustering(X, n_clusters, neighbors=5, lookahead=20)
-    ed_km_labels, _ = ed_Kmeans.fit(X)
-    ed_km_time = time.time() - ed_km_start
+    # ed_km_start = time.time()
+    # ed_Kmeans = ED_KMeansClustering(X, n_clusters, neighbors=5, lookahead=20)
+    # ed_km_labels, _ = ed_Kmeans.fit(X)
+    # ed_km_time = time.time() - ed_km_start
 
     ad_km_start = time.time()
     ad_Kmeans = AD_KMeansClustering(X, n_clusters=n_clusters, n_neighbors=5)
@@ -106,7 +107,7 @@ def run_clustering_algorithms(dataset_name, X, n_clusters):
         "MeanShift": (ms_labels, ms_time),
         "AgglomerativeClustering": (ac_labels, ac_time),
         "SpectralClustering": (sc_labels, sc_time),
-        "ED-K-Means": (ed_km_labels, ed_km_time),
+        # "ED-K-Means": (ed_km_labels, ed_km_time),
         "AD-K-Means": (ad_km_labels, ad_km_time),
     }
 
@@ -114,16 +115,16 @@ def run_clustering_algorithms(dataset_name, X, n_clusters):
 
 
 def main_comparison_clustering_algorithms():
-    from load_datasets import create_compound, create_aggregation, \
-        create_spiral, create_r15, create_x, create_fuzzyx, create_dense
-
     datasets = [
-        ("compound", create_compound()),
         ("aggregation", create_aggregation()),
+        ("compound", create_compound()),
+        ("jain", create_jain()),
+        ("pathbased", create_pathbased()),
         ("spiral", create_spiral()),
-        ("r15", create_r15()),
-        ("x1", create_x(1)),
-        ("dense", create_dense()),
+        # ("r15", create_r15()),
+        # ("x1", create_x(1)),
+        # ("dense", create_dense()),
+        ("unbalance", create_unbalance()),
     ]
     for data_name, (X, gt) in datasets:
         X = MinMaxScaler(scale).fit_transform(X)
@@ -144,7 +145,12 @@ def main_comparison_clustering_algorithms():
 
             print(f"{algo_name} in {TIME:.3f}s: {ari:.3f}, {ami:.3f}")
 
-            label_color = [LABEL_COLOR_MAP[i] for i in labels]
+            if len(np.unique(labels)) < len(LABEL_COLOR_MAP.keys()):
+                label_color = [LABEL_COLOR_MAP[i] for i in labels]
+            else:
+                palette = plt.rcParams['axes.prop_cycle'].by_key()['color']
+                color_map = {lab: palette[j % len(palette)] for j, lab in enumerate(np.unique(labels))}
+                label_color = [color_map[i] for i in labels]
             plt.scatter(X[:, 0], X[:, 1], c=label_color, marker='o', edgecolors='k', alpha=0.75, s=25)
             plt.savefig(FOLDER_FIGS_CLUSTERING + f"/{data_name}_{algo_name}.png")
             plt.savefig(FOLDER_FIGS_CLUSTERING + f"/svgs/{data_name}_{algo_name}.svg")
@@ -203,5 +209,5 @@ def create_paper_tables_from_results():
 
 if __name__ == '__main__':
     pass
-    # main_comparison_clustering_algorithms()
-    create_paper_tables_from_results()
+    main_comparison_clustering_algorithms()
+    # create_paper_tables_from_results()

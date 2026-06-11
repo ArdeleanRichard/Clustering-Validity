@@ -57,13 +57,18 @@ class AD_KMeansClustering:
         self.best_centroid_ids = centroid_ids.copy()
 
         for it in range(self.max_iterations):
-            labels = self.reassign_points(centroid_ids)
+            # Compute the full (n_clusters, n_samples) distance matrix once and
+            # reuse it in both reassign_points and calculate_error — avoids a
+            # second round of cache lookups and the transpose inside reassign_points.
+            distance_matrix = self.dist_calculator.get_distances_to_multiple(centroid_ids)  # (K, N)
+
+            labels = self._reassign_from_matrix(distance_matrix)
 
             # Compute new centroids
             centroids, centroid_ids = self.compute_new_centroids(labels, X)
 
-            # Calculate error
-            error = self.calculate_error(labels, centroid_ids)
+            # Calculate error — reuse the distance matrix already fetched above
+            error = self._calculate_error_from_matrix(labels, distance_matrix)
 
             if error >= prev_error:
                 self.n_convergence = it
@@ -103,6 +108,26 @@ class AD_KMeansClustering:
 
         return error
 
+    def _calculate_error_from_matrix(self, labels, distance_matrix):
+        """Calculate total MST distance error using a pre-fetched distance matrix.
+
+        Identical output to calculate_error but avoids re-fetching rows that
+        were already retrieved (and cached) during reassignment.
+
+        Parameters
+        ----------
+        labels         : ndarray (N,) — cluster assignment for each point
+        distance_matrix: ndarray (K, N) — distances_matrix[k, i] is the
+                         bottleneck distance from centroid k to point i,
+                         as returned by get_distances_to_multiple.
+        """
+        error = 0.0
+        for k in range(self.n_clusters):
+            cluster_indices = np.where(labels == k)[0]
+            if len(cluster_indices) > 0:
+                error += float(np.sum(distance_matrix[k, cluster_indices]))
+        return error
+
     def initialize_kmeans_pp(self, X):
         """Initialize centroids using k-means++ strategy with MST distances."""
         centroids = np.zeros((self.n_clusters, self.n_features))
@@ -115,13 +140,12 @@ class AD_KMeansClustering:
 
         # For remaining centroids
         for k in range(1, self.n_clusters):
-            # Get distances from all points to nearest existing centroid
-            min_distances = np.full(self.n_examples, np.inf)
-
-            for point_idx in range(self.n_examples):
-                for c_id in centroid_ids[:k]:
-                    dist = self.dist_calculator.get_distance(point_idx, c_id)
-                    min_distances[point_idx] = min(min_distances[point_idx], dist)
+            # Fetch the full distance row for each existing centroid once
+            # (results are cached inside dist_calculator).  Then take the
+            # element-wise minimum across centroids — fully vectorised, no
+            # Python loop over n_examples.
+            dist_rows = self.dist_calculator.get_distances_to_multiple(centroid_ids[:k])  # (k, N)
+            min_distances = dist_rows.min(axis=0)  # (N,)
 
             # Choose next centroid with probability proportional to squared distance
             probabilities = min_distances ** 2
@@ -143,19 +167,28 @@ class AD_KMeansClustering:
 
         return labels
 
+    def _reassign_from_matrix(self, distance_matrix):
+        """Assign each point to nearest centroid given a pre-fetched (K, N) matrix.
+
+        Identical output to reassign_points but skips the extra
+        get_distances_to_multiple call when the matrix is already available.
+        """
+        # distance_matrix shape: (K, N) — argmin over K axis gives label per point
+        return np.argmin(distance_matrix, axis=0)
+
     def compute_new_centroids(self, labels, X):
         """Compute new centroids as the point minimizing sum of distances."""
         centroids = np.zeros((self.n_clusters, self.n_features))
         centroid_ids = np.zeros(self.n_clusters, dtype=int)
 
         for k in range(self.n_clusters):
-            cluster_mask = labels == k
-            cluster_indices = np.where(cluster_mask)[0]
+            # Compute indices once; use them for both the data slice and the
+            # centroid lookup — avoids a second boolean-indexing pass over X.
+            cluster_indices = np.where(labels == k)[0]
 
             if len(cluster_indices) > 0:
-                # Find centroid using the fast method
                 centroid_id = _get_centroid_id_from_data(
-                    X[cluster_mask],
+                    X[cluster_indices],
                     indices=cluster_indices
                 )
                 centroids[k] = X[centroid_id]

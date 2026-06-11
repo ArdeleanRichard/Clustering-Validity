@@ -487,6 +487,15 @@ def create_real_datasets_uci():
 def create_synthetic_datasets():
     datasets = []
 
+    # n_samples = 1000
+    # datasets.append(("data1", create_data1(n_samples)))
+    # datasets.append(("data2", create_data1(n_samples)))
+    # datasets.append(("data3", create_data1(n_samples)))
+    # datasets.append(("data4", create_data1(n_samples)))
+    # datasets.append(("data5", create_data1(n_samples)))
+    # datasets.append(("data6", create_data1(n_samples)))
+    # datasets.append(("data7", create_data1(n_samples)))
+
     # graves (4 datasets + 3 + 3 = 10)
     datasets.append(("fuzzyx", create_fuzzyx()))
     datasets.append(("line", create_line()))
@@ -529,7 +538,7 @@ def create_synthetic_datasets():
 if __name__ == '__main__':
     pass
 
-    datasets = create_real_datasets_new(image_size=(64, 64))
+    datasets = create_real_datasets_new(image_size=None)
     print(len(datasets))
     for name, (X, y) in datasets:
         print(name, X.shape, y.shape, len(np.unique(y)))

@@ -350,7 +350,7 @@ def main_real_data_per_dataset():
     # Compute correlations per dataset
     correlation_matrices = compute_ari_cvi_correlations_per_dataset(
         datasets=datasets,
-        metrics=METRICS if "CDbw" not in METRICS else [m for m in METRICS if m != "CDbw"],
+        metrics=METRICS,
         labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
     )
 

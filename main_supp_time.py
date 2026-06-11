@@ -153,6 +153,7 @@ if __name__ == "__main__":
     )
 
     # --- Analysis 2: vary dimensionality, n fixed at 1000 ---
+    METRICS.remove("CDbw")
     mean_d, std_d = run_timing_vary_dimensions(
         ds=[2, 5, 10, 20, 50, 100, 200, 500],
         fixed_n=1000,
