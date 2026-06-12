@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_EXTERNAL
-from constants_maps import MAP_EXTERNAL_METRICS, MAP_MEASURES
+from constants_maps import MAP_EXTERNAL_CVIs, MAP_MEASURES
 from load_datasets import load_UNBALANCE_STATS, generate_unbalance_like
 from cvis_ours.external_CVIs import balanced_external
 
 def analyze_external_index_vs_imbalance(cvi_str, measure_str, scales=np.linspace(1.0, 10.0, 10), save_prefix="analysis_imbalance"):
-    cvi_name_acronym, cvi_name_full, cvi_function = MAP_EXTERNAL_METRICS[cvi_str]
+    cvi_name_acronym, cvi_name_full, cvi_function = MAP_EXTERNAL_CVIs[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
 
     UNBALANCE_STATS, MAJORITY_IDS, MINORITY_IDS = load_UNBALANCE_STATS()

@@ -8,10 +8,15 @@ import matplotlib.pyplot as plt
 import math
 
 from constants import scale, FOLDER_RESULTS_CORRELATION, FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS, LABEL_COLOR_MAP
-from constants_maps import METRICS, MAP_LOWER_IS_BETTER
-from load_CVIs import choose_index
+from constants_maps import CVIs, MAP_CVI_LOWER_IS_BETTER
+from load_CVIs import choose_CVI
+from main_analysis_cache import _main_caches_exist, _load_external_cache, _load_cvi_cache, _save_cvi_cache, _save_external_cache
 from utils import reencode, remove_dups, get_label_files
 
+
+# ---------------------------------------------------------------------------
+# Scatter-plot helper (unchanged)
+# ---------------------------------------------------------------------------
 
 def create_error_scatter_plot(X, error_cases, best_ari_case, metric, dataset_name, algo_name, lower_is_better, output_folder):
     """
@@ -135,14 +140,25 @@ def create_error_scatter_plot(X, error_cases, best_ari_case, metric, dataset_nam
     print(f"      Saved error plot: {filepath}")
 
 
+# ---------------------------------------------------------------------------
+# Core analysis  (caching added; logic otherwise unchanged)
+# ---------------------------------------------------------------------------
+
 def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, create_plots=True, plot_output_folder=None):
     """
     For each dataset and clustering algorithm:
     1. Find parameterization with highest ARI
     2. Check if that parameterization also has best CVI value
     3. Count correct evaluations (binary: 1 if match, 0 otherwise)
-    4. Count errors (number of parameterizations with better CVI + failed parameterizations)
+    4. Count errors (number of parameterizations with better CVI + failed ones)
     5. Create scatter plots for erroneous cases
+
+    Intermediary CVI and ARI values are cached as CSVs under FOLDER_CVI_CACHE
+    so that subsequent runs can skip the expensive CVI computation entirely.
+
+    Cache layout per (dataset, algo) pair:
+      {dataset}_{algo}.csv      rows=CVIs,   cols=param-file-stems
+      {dataset}_{algo}_ARI.csv  1 row,       cols=param-file-stems  (ARI values)
 
     Returns:
     --------
@@ -175,7 +191,6 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
         algo_groups = {}
         for label_file in label_files:
             filename = Path(label_file).stem
-            # Extract algorithm name (assumes format: labels_<dataset>_<algo>_<params>)
             parts = filename.replace(f"labels_{dataset_name}_", "").split("_")
             algo_name = parts[-2] if len(parts) > 1 else "unknown"
 
@@ -191,48 +206,109 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
         for algo_name, algo_files in algo_groups.items():
             print(f"\n  Processing algorithm: {algo_name} ({len(algo_files)} parameterizations)")
 
-            # Storage for all parameterizations of this algorithm
-            param_results = []
+            # ------------------------------------------------------------------
+            # Attempt to load param_results from cache
+            # ------------------------------------------------------------------
+            param_results = None   # will be a list of dicts once populated
 
-            for label_file in algo_files:
-                try:
-                    labels_clustering = np.load(label_file)
-                except Exception as e:
-                    print(f"    Warning: Failed to load {label_file}: {e}")
-                    continue
+            if _main_caches_exist(dataset_name, algo_name):
+                print(f"  [cache] Loading {dataset_name} / {algo_name} from cache")
 
-                # Skip single-cluster results - this is also a failure
-                unique_labels = np.unique(labels_clustering)
-                if len(unique_labels) == 1 or (-1 in unique_labels and len(unique_labels) <= 2):
-                    continue
+                cvi_cached = _load_cvi_cache(dataset_name, algo_name)
+                ari_cached = _load_external_cache(dataset_name, algo_name, "_ARI")
 
-                labels_clustering_re = reencode(labels_clustering)
+                if cvi_cached is None or ari_cached is None:
+                    print(f"  [cache] WARNING: cache load failed — recomputing")
+                else:
+                    cvi_dict, param_keys = cvi_cached
+                    ari_values, _ = ari_cached
 
-                if len(labels_clustering_re) != len(labels_gt_re):
-                    continue
+                    # Reconstruct param_results list (labels not needed for the
+                    # analysis logic below — only cvi and ari values are used
+                    # after this point, except for scatter plots which need labels)
+                    param_results = []
+                    for i, (param_key, ari_val) in enumerate(zip(param_keys, ari_values)):
+                        cvi_for_param = {
+                            m: (cvi_dict[m][i] if m in cvi_dict else None)
+                            for m in metrics
+                        }
+                        # Replace NaN sentinels with None (matches original logic)
+                        cvi_for_param = {
+                            m: (None if (v is not None and isinstance(v, float) and np.isnan(v)) else v)
+                            for m, v in cvi_for_param.items()
+                        }
+                        param_results.append({
+                            'file': param_key,
+                            'ari': ari_val,
+                            'labels': None,   # not stored in cache; plots disabled for cached runs
+                            'cvi': cvi_for_param,
+                        })
 
-                ari_value = adjusted_rand_score(labels_gt_re, labels_clustering_re)
+            # ------------------------------------------------------------------
+            # Compute from scratch if cache was missing / unreadable
+            # ------------------------------------------------------------------
+            if param_results is None:
+                param_results = []
+                cache_cvi  = {m: [] for m in metrics}
+                cache_ari  = []
+                param_keys = []
 
-                # Compute all CVIs
-                cvi_results = {}
-                for metric in metrics:
+                for label_file in algo_files:
                     try:
-                        cvi_value = choose_index(metric=metric, data=X, labels=labels_clustering)
-                        if np.isnan(cvi_value) or np.isinf(cvi_value):
-                            cvi_results[metric] = None
-                        else:
-                            cvi_results[metric] = cvi_value
+                        labels_clustering = np.load(label_file)
                     except Exception as e:
-                        print(f"    Warning: Failed to compute {metric}: {e}")
-                        cvi_results[metric] = None
+                        print(f"    Warning: Failed to load {label_file}: {e}")
+                        continue
 
-                param_results.append({
-                    'file': label_file,
-                    'ari': ari_value,
-                    'labels': labels_clustering,
-                    'cvi': cvi_results
-                })
+                    # Skip single-cluster / all-noise results
+                    unique_labels = np.unique(labels_clustering)
+                    if len(unique_labels) == 1 or (-1 in unique_labels and len(unique_labels) <= 2):
+                        continue
 
+                    labels_clustering_re = reencode(labels_clustering)
+
+                    if len(labels_clustering_re) != len(labels_gt_re):
+                        continue
+
+                    ari_value = adjusted_rand_score(labels_gt_re, labels_clustering_re)
+
+                    # Compute all CVIs
+                    cvi_results = {}
+                    for metric in metrics:
+                        try:
+                            cvi_value = choose_CVI(metric=metric, data=X, labels=labels_clustering)
+                            if np.isnan(cvi_value) or np.isinf(cvi_value):
+                                cvi_results[metric] = None
+                            else:
+                                cvi_results[metric] = cvi_value
+                        except Exception as e:
+                            print(f"    Warning: Failed to compute {metric}: {e}")
+                            cvi_results[metric] = None
+
+                    param_results.append({
+                        'file': label_file,
+                        'ari': ari_value,
+                        'labels': labels_clustering,
+                        'cvi': cvi_results
+                    })
+
+                    # Accumulate for cache
+                    cache_ari.append(ari_value)
+                    param_keys.append(Path(label_file).stem)
+                    for m in metrics:
+                        # Store None as NaN in the CSV
+                        raw = cvi_results[m]
+                        cache_cvi[m].append(np.nan if raw is None else raw)
+
+                # Save cache
+                if len(param_keys) > 0:
+                    _save_cvi_cache(dataset_name, algo_name, cache_cvi, param_keys)
+                    _save_external_cache(dataset_name, algo_name, "_ARI", cache_ari, param_keys)
+                    print(f"  [cache] Saved cache for {dataset_name} / {algo_name}")
+
+            # ------------------------------------------------------------------
+            # Analysis logic (completely unchanged from original)
+            # ------------------------------------------------------------------
             if len(param_results) < 2:
                 print(f"    Skipping {algo_name}: insufficient valid parameterizations")
                 continue
@@ -262,7 +338,7 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
                     continue
 
                 # Determine best CVI index
-                lower_is_better = True if metric.lower() in MAP_LOWER_IS_BETTER else False
+                lower_is_better = True if metric.lower() in MAP_CVI_LOWER_IS_BETTER else False
 
                 if lower_is_better:
                     best_cvi_idx = min(valid_cvi_values, key=lambda x: x[1])[0]
@@ -271,22 +347,18 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
 
                 # Check if best ARI matches best CVI
                 if best_ari_idx == best_cvi_idx:
-                    # CORRECT - binary count of 1
                     results_by_dataset[dataset_name][metric]['correct'] += 1
                     results_by_algo[algo_name][metric]['correct'] += 1
                     print(f"      {metric}: CORRECT")
                 else:
-                    # NOT CORRECT - count how many parameterizations have better CVI
                     best_ari_cvi = best_ari_param['cvi'][metric]
 
                     error_cases = []
 
                     if best_ari_cvi is None:
-                        # Best ARI param failed for this CVI - all others are errors
                         error_count = len(param_results)
                         error_cases = [p for i, p in enumerate(param_results) if i != best_ari_idx]
                     else:
-                        # Count parameterizations with better CVI than best ARI one
                         error_count = 0
                         for idx, cvi_val in valid_cvi_values:
                             if idx == best_ari_idx:
@@ -310,20 +382,31 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
                     print(f"      {metric}: ERROR (count={error_count})")
 
                     # Create visualization for errors
+                    # NOTE: scatter plots require the actual cluster labels, which
+                    # are not stored in the cache.  Plots are only produced when
+                    # param_results were computed fresh in this run.
                     if create_plots and plot_output_folder and len(error_cases) > 0:
-                        create_error_scatter_plot(
-                            X=X,
-                            error_cases=error_cases,
-                            best_ari_case=best_ari_param,
-                            metric=metric,
-                            dataset_name=dataset_name,
-                            algo_name=algo_name,
-                            lower_is_better=lower_is_better,
-                            output_folder=plot_output_folder
-                        )
+                        # Check whether labels are available (None when loaded from cache)
+                        if best_ari_param['labels'] is not None:
+                            create_error_scatter_plot(
+                                X=X,
+                                error_cases=error_cases,
+                                best_ari_case=best_ari_param,
+                                metric=metric,
+                                dataset_name=dataset_name,
+                                algo_name=algo_name,
+                                lower_is_better=lower_is_better,
+                                output_folder=plot_output_folder
+                            )
+                        else:
+                            print(f"      (scatter plot skipped: labels not available in cache)")
 
     return results_by_dataset, results_by_algo
 
+
+# ---------------------------------------------------------------------------
+# Saving final results (unchanged)
+# ---------------------------------------------------------------------------
 
 def save_results(results_by_dataset, results_by_algo, file_prefix):
     dataset_rows = []
@@ -363,23 +446,9 @@ def save_results(results_by_dataset, results_by_algo, file_prefix):
     print(f">>> Results by algorithm saved to: {output_path_algo}")
 
 
-def main_real_data():
-    from load_datasets import create_real_datasets_uci
-
-    datasets = create_real_datasets_uci()
-    prefix = "realdata"
-    plot_folder = FOLDER_RESULTS_CORRELATION + f"{prefix}_error_plots/"
-
-    results_by_dataset, results_by_algo = compute_best_match_analysis_per_dataset(
-        datasets=datasets,
-        metrics=METRICS if "CDbw" not in METRICS else [m for m in METRICS if m != "CDbw"],
-        labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
-        create_plots=True,
-        plot_output_folder=plot_folder
-    )
-
-    save_results(results_by_dataset, results_by_algo, prefix)
-
+# ---------------------------------------------------------------------------
+# Entry points (unchanged)
+# ---------------------------------------------------------------------------
 
 def main_synth_data():
     from load_datasets import create_synthetic_datasets
@@ -390,7 +459,27 @@ def main_synth_data():
 
     results_by_dataset, results_by_algo = compute_best_match_analysis_per_dataset(
         datasets=datasets,
-        metrics=METRICS,
+        metrics=CVIs,
+        labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
+        create_plots=True,
+        plot_output_folder=plot_folder
+    )
+
+    save_results(results_by_dataset, results_by_algo, prefix)
+
+
+def main_real_data():
+    from load_datasets import create_real_datasets_uci
+
+    datasets = create_real_datasets_uci()
+    prefix = "realdata"
+    plot_folder = FOLDER_RESULTS_CORRELATION + f"{prefix}_error_plots/"
+
+    metrics = CVIs.copy()
+    metrics.remove("CDbw")
+    results_by_dataset, results_by_algo = compute_best_match_analysis_per_dataset(
+        datasets=datasets,
+        metrics=metrics,
         labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
         create_plots=True,
         plot_output_folder=plot_folder

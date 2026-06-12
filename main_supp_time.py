@@ -4,8 +4,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 from constants import scale
-from constants_maps import METRICS
-from load_CVIs import choose_index
+from constants_maps import CVIs
+from load_CVIs import choose_CVI
 from load_datasets import create_data5
 
 
@@ -56,7 +56,7 @@ def _run_timing_loop(axis_values, axis_label, fixed_label, metrics, n_runs, outp
             for run in range(n_runs):
                 t0 = time.time()
                 try:
-                    _ = choose_index(metric=metric, data=X, labels=labels)
+                    _ = choose_CVI(metric=metric, data=X, labels=labels)
                     run_times.append(time.time() - t0)
                 except Exception as e:
                     print(f"  [{metric}] run {run+1} FAILED: {e}")
@@ -100,7 +100,7 @@ def run_timing_vary_samples(
     Rows = metrics, columns = n values.
     """
     if metrics is None:
-        metrics = METRICS
+        metrics = CVIs
     print(f"\n{'#'*60}")
     print(f"# TIMING ANALYSIS: varying n, fixed d={fixed_d}")
     print(f"{'#'*60}")
@@ -126,7 +126,7 @@ def run_timing_vary_dimensions(
     Rows = metrics, columns = d values.
     """
     if metrics is None:
-        metrics = METRICS
+        metrics = CVIs
     print(f"\n{'#'*60}")
     print(f"# TIMING ANALYSIS: varying d, fixed n={fixed_n}")
     print(f"{'#'*60}")
@@ -148,17 +148,17 @@ if __name__ == "__main__":
         ns=[500, 1000, 2000, 5000, 10000, 15000, 20000],
         fixed_d=2,
         n_runs=n_runs,
-        metrics=METRICS,
+        metrics=CVIs,
         output_csv_prefix="./results/supplementary/timing/timing_cvi_vary_n",
     )
 
     # --- Analysis 2: vary dimensionality, n fixed at 1000 ---
-    METRICS.remove("CDbw")
+    CVIs.remove("CDbw")
     mean_d, std_d = run_timing_vary_dimensions(
         ds=[2, 5, 10, 20, 50, 100, 200, 500],
         fixed_n=1000,
         n_runs=n_runs,
-        metrics=METRICS,
+        metrics=CVIs,
         output_csv_prefix="./results/supplementary/timing/timing_cvi_vary_d",
     )
 

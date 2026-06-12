@@ -4,22 +4,26 @@ from permetrics import ClusteringMetric
 from pycvi import cvi as pycvi_cvi
 from pycvi.cluster import get_clustering
 
-from cvis.DBCV import dbcv
-from cvis.VIASCKDE import VIASCKDE
+# from cvis.DBCV import dbcv
+from cvis.DBCV_opt import dbcv
+# from cvis.VIASCKDE import VIASCKDE
+from cvis.VIASCKDE_opt import VIASCKDE
+# from cvis.CDbw import CDbw
+from cvis.CDbw_opt import CDbw
+
 from cvis.c_index import c_index
-from cvis.cdbw import CDbw
 from cvis.cs_index import cs_index
 from cvis.cvi_set.cop import cop
 from cvis.cvi_set.gSym import gSym
 from cvis.i_index import i_index
-from cvis_ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 
+from cvis_ours.ed_CVIs import ed_silhouette_score, ed_davies_bouldin_score, ed_calinski_harabasz_score
 from cvis_ours.ad_CVIs import ad_silhouette_score, ad_davies_bouldin_score, ad_calinski_harabasz_score, arboris_index
 
 from cvis_ours.measures import imbalance_ratio, overlap_ratio
 
 
-MAP_METRIC_TO_FUNCTION = {
+MAP_CVI_TO_FUNCTION = {
     # # CVI metrics
     "cSIL": lambda data, labels: cvi.cSIL().get_cvi(data, labels),
     "GD43": lambda data, labels: cvi.GD43().get_cvi(data, labels),
@@ -64,9 +68,9 @@ MAP_METRIC_TO_FUNCTION = {
     "CH": calinski_harabasz_score,
 
     # #### our metrics
-    # # # # "ED-S": ed_silhouette_score,
-    # # # # "ED-DB": ed_davies_bouldin_score,
-    # # # # "ED-CH": ed_calinski_harabasz_score,
+    "ED-S": ed_silhouette_score,
+    "ED-DB": ed_davies_bouldin_score,
+    "ED-CH": ed_calinski_harabasz_score,
 
     "AD-S": ad_silhouette_score,
     "AD-DB": ad_davies_bouldin_score,
@@ -76,11 +80,12 @@ MAP_METRIC_TO_FUNCTION = {
 }
 
 
-METRICS = list(MAP_METRIC_TO_FUNCTION.keys())
+CVIs = list(MAP_CVI_TO_FUNCTION.keys())
+
 
 
 # Define which metrics are "lower is better"
-MAP_LOWER_IS_BETTER = {
+MAP_CVI_LOWER_IS_BETTER = {
     # CVI
     "rcip", "wb", "xb",
 
@@ -104,13 +109,13 @@ MAP_LOWER_IS_BETTER = {
 }
 
 
-MAP_EXTERNAL_METRICS = {
+MAP_EXTERNAL_CVIs = {
     "ari": ("ARI", "Adjusted Rand Index", adjusted_rand_score),
     "ami": ("AMI", "Adjusted Mutual Information", adjusted_mutual_info_score),
 }
 
 
-MAP_INTERNAL_METRICS = {
+MAP_INTERNAL_CVIs = {
     "silhouette": ("Silhouette Score", silhouette_score),
     "ad_silhouette": ("AD-S", ad_silhouette_score),
     "ad_db": ("AD-CH", ad_calinski_harabasz_score),
@@ -130,6 +135,7 @@ MAP_MEASURE_TO_VARIABLE = {
     "overlap": "distance"
 }
 
+LIST_LABELSETS = ["dfl", "dsl", "vl", "hl", "rl"]
 
 
 MAP_LABELSET = {

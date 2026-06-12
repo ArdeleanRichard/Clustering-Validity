@@ -487,47 +487,52 @@ def create_real_datasets_uci():
 def create_synthetic_datasets():
     datasets = []
 
-    # n_samples = 1000
-    # datasets.append(("data1", create_data1(n_samples)))
-    # datasets.append(("data2", create_data1(n_samples)))
-    # datasets.append(("data3", create_data1(n_samples)))
-    # datasets.append(("data4", create_data1(n_samples)))
-    # datasets.append(("data5", create_data1(n_samples)))
-    # datasets.append(("data6", create_data1(n_samples)))
-    # datasets.append(("data7", create_data1(n_samples)))
+    # # sklearn (7 datasets)
+    n_samples = 1000
+    datasets.append(("data1", create_data1(n_samples)))
+    datasets.append(("data2", create_data2(n_samples)))
+    datasets.append(("data3", create_data3(n_samples)))
+    datasets.append(("data4", create_data4(n_samples)))
+    datasets.append(("data5", create_data5(n_samples)))
+    datasets.append(("data6", create_data6(n_samples)))
+    datasets.append(("data7", create_data7(n_samples)))
 
-    # graves (4 datasets + 3 + 3 = 10)
-    datasets.append(("fuzzyx", create_fuzzyx()))
-    datasets.append(("line", create_line()))
-    datasets.append(("dense", create_dense()))
-    datasets.append(("parabolic", create_parabolic()))
-    datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
-    datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
+    # # graves (4 + 3 + 3 = 10 datasets)
+    # datasets.append(("fuzzyx", create_fuzzyx()))
+    # datasets.append(("line", create_line()))
+    # datasets.append(("dense", create_dense()))
+    # datasets.append(("parabolic", create_parabolic()))
+    # datasets.extend([(f"ring{t}", create_ring(t)) for t in ["", "_noisy", "_outliers"]])
+    # datasets.extend([(f"zigzag{t}", create_zigzag(t)) for t in ["", "_noisy", "_outliers"]])
 
-    # # wut (2 + 1 + 3 = 6 datasets)
-    datasets.extend([(f"mk{i}", create_mk(i)) for i in [1, 2]])  ### [1,2,3,4] ### >2 n_dims
-    datasets.append((f"smile", create_smile()))
-    datasets.extend([(f"x{i}", create_x(i)) for i in [1, 2, 3]])
-    # ### datasets.extend([("trajectories", create_trajectories())]) ### high n_samples
+    # # # wut (2 + 1 + 3 = 6 datasets)
+    # datasets.extend([(f"mk{i}", create_mk(i)) for i in [1, 2]])  ### [1,2,3,4] ### >2 n_dims
+    # datasets.append((f"smile", create_smile()))
+    # datasets.extend([(f"x{i}", create_x(i)) for i in [1, 2, 3]])
 
-    # # sipu (7 datasets)
-    datasets.append(("aggregation", create_aggregation()))
-    datasets.append(("compound", create_compound()))
-    datasets.append(("jain", create_jain()))
-    datasets.append(("pathbased", create_pathbased()))
-    datasets.append(("spiral", create_spiral()))
-    datasets.append(("r15", create_r15()))
-    datasets.append(("flame", create_flame()))
-    # ### datasets.append(("d31", create_d31())) ### high n_samples
-    # ### datasets.append(("unbalance", create_unbalance())) ### high n_samples
-    # ### datasets.extend([(f"s{i}", create_s(i)) for i in [1,2,3,4]]) ### high n_samples
-    # ### datasets.extend([(f"a{i}", create_a(i)) for i in [1, 2, 3]]) ### high n_samples
+    # datasets.extend([("trajectories", create_trajectories())]) ### high n_samples
+
+    # # # sipu (7 datasets)
+    # datasets.append(("aggregation", create_aggregation()))
+    # datasets.append(("compound", create_compound()))
+    # datasets.append(("jain", create_jain()))
+    # datasets.append(("pathbased", create_pathbased()))
+    # datasets.append(("spiral", create_spiral()))
+    # datasets.append(("r15", create_r15()))
+    # datasets.append(("flame", create_flame()))
+
+    ### 2 + 4 + 3 = 9 datasets
+    # datasets.append(("d31", create_d31())) ### high n_samples
+    # datasets.append(("unbalance", create_unbalance())) ### high n_samples
+    # datasets.extend([(f"s{i}", create_s(i)) for i in [1,2,3,4]]) ### high n_samples
+    # datasets.extend([(f"a{i}", create_a(i)) for i in [1, 2, 3]]) ### high n_samples
 
     # # fcps (4 datasets)
-    datasets.append(("lsun", create_lsun()))
-    datasets.append(("target", create_target()))
-    datasets.append(("twodiamonds", create_twodiamonds()))
-    datasets.append(("wingnut", create_wingnut()))
+    # datasets.append(("lsun", create_lsun()))
+    # datasets.append(("target", create_target()))
+    # datasets.append(("twodiamonds", create_twodiamonds()))
+    # datasets.append(("wingnut", create_wingnut()))
+
     # ### datasets.append(("hepta", create_hepta())) ### >2 n_dims
     # ### datasets.append(("tetra", create_tetra())) ### >2 n_dims
 

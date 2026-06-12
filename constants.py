@@ -78,12 +78,15 @@ current_path = os.getcwd()
 if os.path.abspath(current_path) == os.path.abspath(target_path):
     FOLDER_RESULTS = f"./results/"
     FOLDER_RESULTS_CVIS = f"./results/CVIs/"
+    FOLDER_RESULTS_CVIS_CACHE = f"./results/CVIs_CACHE/"
     FOLDER_RESULTS_CLUSTERING = f"./results/clustering/"
     FOLDER_RESULTS_CLUSTERING_PARAMS = f"./results/clustering/params/"
     FOLDER_RESULTS_CLUSTERING_LABELS = f"./results/clustering/params/labels/"
     FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS = f"./results/clustering/params/all_labels/"
     FOLDER_RESULTS_CORRELATION = f"./results/correlation/"
     FOLDER_RESULTS_STATS = f"./results/stats/"
+
+
 
     FOLDER_FIGS_DATA = f"./figs/data/"
     FOLDER_FIGS_CLUSTERING = f"./figs/clustering/"
@@ -97,6 +100,7 @@ if os.path.abspath(current_path) == os.path.abspath(target_path):
     os.makedirs(FOLDER_RESULTS_CLUSTERING, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING_PARAMS, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING_LABELS, exist_ok=True)
+    os.makedirs(FOLDER_RESULTS_CVIS_CACHE, exist_ok=True)
 
     os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
     os.makedirs(FOLDER_FIGS_CLUSTERING, exist_ok=True)

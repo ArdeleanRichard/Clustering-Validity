@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_AD
-from constants_maps import MAP_INTERNAL_METRICS
+from constants_maps import MAP_INTERNAL_CVIs
 from load_datasets import create_data1
 
 
@@ -23,7 +23,7 @@ def plot_n_neighbours_analysis(
         Values of k to evaluate (converted to list).
 
     """
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_CVIs[cvi_str]
 
     X = np.asarray(X)
     labels = np.asarray(labels)
@@ -118,7 +118,7 @@ def plot_n_neighbours_analysis_all(
     ]
     MAP_CVI_TO_SCORES = {}
     for cvi_str in cvi_strs:
-        cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+        cvi_name_full, cvi_function = MAP_INTERNAL_CVIs[cvi_str]
 
         scores = []
         for k in ks:

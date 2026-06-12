@@ -3,14 +3,14 @@ import pandas as pd
 import time
 from tabulate import tabulate
 
-from constants_maps import MAP_METRIC_TO_FUNCTION, METRICS, MAP_LOWER_IS_BETTER
+from constants_maps import MAP_CVI_TO_FUNCTION, CVIs, MAP_CVI_LOWER_IS_BETTER
 
 
-def get_index(name):
+def get_CVI(name):
     """
     Returns a math function from the math library based on the given name.
     """
-    func = MAP_METRIC_TO_FUNCTION.get(name, lambda *args, **kwargs: f"No function named '{name}'")
+    func = MAP_CVI_TO_FUNCTION.get(name, lambda *args, **kwargs: f"No function named '{name}'")
 
     # Wrap it to accept any arguments safely
     def wrapper(*args, **kwargs):
@@ -19,13 +19,13 @@ def get_index(name):
     return wrapper
 
 
-def choose_index(metric, data, labels, *args, **kwargs):
-    metric_function = get_index(metric)
+def choose_CVI(metric, data, labels, *args, **kwargs):
+    metric_function = get_CVI(metric)
     return metric_function(data, labels, *args, **kwargs)
 
 
 
-def create_indices_table(X, label_sets=None, metrics=METRICS, decimals=3, save="metrics.csv", prnt=True):
+def create_indices_table(X, label_sets=None, metrics=CVIs, decimals=3, save="metrics.csv", prnt=True):
     """
     Computes clustering metrics for multiple label sets and creates a table.
 
@@ -52,7 +52,7 @@ def create_indices_table(X, label_sets=None, metrics=METRICS, decimals=3, save="
     for metric in metrics:
         for label_name, labels in label_sets.items():
             try:
-                table.loc[metric, label_name] = choose_index(metric=metric, data=X, labels=labels)
+                table.loc[metric, label_name] = choose_CVI(metric=metric, data=X, labels=labels)
             except Exception as e:
                 table.loc[metric, label_name] = np.nan
                 print(f"Warning: Metric {metric} failed for {label_name}: {e}")
@@ -89,13 +89,13 @@ def create_indices_table(X, label_sets=None, metrics=METRICS, decimals=3, save="
     return table
 
 
-def create_indices_table_with_arrows(X, label_sets=None, metrics=METRICS, decimals=3, save="metrics.csv", prnt=True):
+def create_indices_table_with_arrows(X, label_sets=None, metrics=CVIs, decimals=3, save="metrics.csv", prnt=True):
     def is_index_reversed(index_name):
         """
         Returns boolean indicating whether higher (↑) or lower (↓) is better.
         """
         # Normalize metric name to lowercase for comparison
-        return True if index_name.lower() in MAP_LOWER_IS_BETTER else False
+        return True if index_name.lower() in MAP_CVI_LOWER_IS_BETTER else False
 
     if label_sets is None:
         raise ValueError("Please provide a dictionary of label sets.")
@@ -111,7 +111,7 @@ def create_indices_table_with_arrows(X, label_sets=None, metrics=METRICS, decima
         for label_name, labels in label_sets.items():
             try:
                 time_start = time.time()
-                val = choose_index(metric=metric, data=X, labels=labels)
+                val = choose_CVI(metric=metric, data=X, labels=labels)
                 time_end = time.time()
                 time_values.append(time_end-time_start)
 

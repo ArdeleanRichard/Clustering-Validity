@@ -7,7 +7,7 @@ from itertools import combinations
 from scipy.stats import wilcoxon
 
 from constants import FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS
-from constants_maps import MAP_LOWER_IS_BETTER
+from constants_maps import MAP_CVI_LOWER_IS_BETTER
 from utils import get_label_files
 
 # csv_path = "./results/correlation/saved/realdata_correlations_cvi_to_ari.csv"

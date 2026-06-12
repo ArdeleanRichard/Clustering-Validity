@@ -4,9 +4,9 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import MinMaxScaler
 
 from constants import scale, FOLDER_RESULTS_CLUSTERING_LABELS, FOLDER_RESULTS_CORRELATION
-from constants_maps import METRICS
+from constants_maps import CVIs
 from cvis_ours.external_CVIs import balanced_external
-from load_CVIs import choose_index
+from load_CVIs import choose_CVI
 from utils import reencode, remove_dups
 
 
@@ -97,8 +97,8 @@ def compute_ari_cvi_correlations(datasets, metrics, clusterer, labels_path=FOLDE
             print(f"\tMetric - {metric}: {metric_id+1}/{len(metrics)}")
 
             try:
-                cvi_values[metric].append(choose_index(metric=metric, data=X, labels=labels_clustering))
-                cvi_nn_values[metric].append(choose_index(metric=metric, data=X_nn, labels=labels_clustering_nn))
+                cvi_values[metric].append(choose_CVI(metric=metric, data=X, labels=labels_clustering))
+                cvi_nn_values[metric].append(choose_CVI(metric=metric, data=X_nn, labels=labels_clustering_nn))
 
             except Exception as e:
                 print(f"Warning: Failed to compute {metric} for {dataset_name}: {e}")
@@ -138,28 +138,28 @@ def main_synth_data():
     datasets = create_synthetic_datasets()
 
     # Compute correlations
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="KMeans")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="MeanShift")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="DBSCAN")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="HDBSCAN")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="AgglomerativeClustering")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="SpectralClustering")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="KMeans")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="MeanShift")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="DBSCAN")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="HDBSCAN")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="AgglomerativeClustering")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="SpectralClustering")
 
 def main_real_data():
     from load_datasets import create_real_datasets_uci
 
     datasets = create_real_datasets_uci()
 
-    metrics = METRICS.copy()
+    metrics = CVIs.copy()
     metrics.remove("CDbw") # cannot construct hull # Failed to compute CDbw: QH6214 qhull input error: not enough points to construct initial simplex
 
     # Compute correlations
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="KMeans")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="MeanShift")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="DBSCAN")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="HDBSCAN")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="AgglomerativeClustering")
-    compute_ari_cvi_correlations(datasets, METRICS, clusterer="SpectralClustering")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="KMeans")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="MeanShift")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="DBSCAN")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="HDBSCAN")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="AgglomerativeClustering")
+    compute_ari_cvi_correlations(datasets, CVIs, clusterer="SpectralClustering")
 
 
 def main_real_data_new():
@@ -167,7 +167,7 @@ def main_real_data_new():
 
     datasets = create_real_datasets_new()
 
-    metrics = METRICS.copy()
+    metrics = CVIs.copy()
     metrics.remove("rCIP") # Failed to compute rCIP: (..., 'Result too large')
     metrics.remove("CDbw") # Failed to compute CDbw: QH6214 qhull input error: not enough points to construct initial simplex
 

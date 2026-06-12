@@ -4,7 +4,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
 from constants import LABEL_COLOR_MAP, FOLDER_FIGS_ANALYSIS_INTERNAL, random_state
-from constants_maps import MAP_INTERNAL_METRICS, MAP_MEASURES, MAP_MEASURE_TO_VARIABLE, MAP_LABELSET
+from constants_maps import MAP_INTERNAL_CVIs, MAP_MEASURES, MAP_MEASURE_TO_VARIABLE, MAP_LABELSET
 from load_datasets import generate_clusters_analysis
 
 
@@ -12,7 +12,7 @@ from load_datasets import generate_clusters_analysis
 # -------------------- Plot helpers --------------------
 
 def plot_analysis(cvi_str, measure_str, labelset_str, measure_arr, cvi_tl_arr, cvi_fl_arr, chosen_idx, datasets, save_filename):
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_CVIs[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
     val_name = MAP_MEASURE_TO_VARIABLE[measure_str]
     labelset_name, labelset, line_func = MAP_LABELSET[labelset_str]
@@ -128,7 +128,7 @@ def analyze_measure(
     the true labeling (or the horizontal split with max silhouette if none).
     Returns (measure_arr, cvi_tl_arr, cvi_hl_arr).
     """
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_CVIs[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
 
     set_plot_style()
@@ -196,7 +196,7 @@ def analyze_measure(
 
 
 def plot_analysis_kmeans(cvi_str, measure_str, measure_arr, cvi_km2_arr, cvi_km3_arr, chosen_idx, datasets, save_filename):
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_CVIs[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
     val_name = MAP_MEASURE_TO_VARIABLE[measure_str]
 
@@ -267,7 +267,7 @@ def analyze_measure_kmeans(
     the true labeling (or the horizontal split with max silhouette if none).
     Returns (measure_arr, cvi_tl_arr, cvi_hl_arr).
     """
-    cvi_name_full, cvi_function = MAP_INTERNAL_METRICS[cvi_str]
+    cvi_name_full, cvi_function = MAP_INTERNAL_CVIs[cvi_str]
     measure_name_acronym, measure_name_full, measure_function = MAP_MEASURES[measure_str]
 
     set_plot_style()

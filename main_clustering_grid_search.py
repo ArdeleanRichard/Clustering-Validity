@@ -14,81 +14,123 @@ from utils import remove_dups, reencode
 
 
 def get_param_grids():
+    """Define parameter grids for each clustering algorithm"""
     param_grids = {
-        # 'DBSCAN': {
-        #     'eps': [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75],
-        #     'min_samples': [3, 5, 10, 15, 20, 30, 50, 100, 200]
-        # },
-        # 'HDBSCAN': {
-        #     'min_cluster_size': [2, 3, 5, 10, 15, 20, 30, 50, 100],
-        #     'min_samples': [1, 3, 5, 10, 20],
-        #     'cluster_selection_epsilon': [0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25]
-        # },
-        # 'MeanShift': {
-        #     'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
-        #     'n_samples': [3, 5, 10, 15, 20],
-        #     'bin_seeding': [True, False]
-        # },
-        # 'AgglomerativeClustering': {
-        #     'n_clusters': None,
-        #     'linkage': ['ward', 'complete', 'average', 'single']
-        # },
-        # 'SpectralClustering': {
-        #     'n_clusters': None,
-        #     'affinity': ['nearest_neighbors', 'rbf'],
-        #     'n_neighbors': [3, 5, 10, 15, 20],
-        #     'assign_labels': ['kmeans', 'discretize'],
-        # },
-        # 'KMeans': {
-        #     'n_clusters': None,
-        #     'max_iter': [100, 300, 500],
-        #     'tol': [1e-3, 1e-4, 1e-5],
-        #     'algorithm': ["full", "elkan"],  # for newer sklearn versions change 'full' to 'lloyd'
-        # },
-
+        # Synthetic data
         'DBSCAN': {
-            'eps': [0.001, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.00],
-            'min_samples': [1, 3, 5, 10, 20, 50, 100],
+            'eps': [0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75],
+            'min_samples': [5, 10, 15, 20]
         },
-
         'HDBSCAN': {
-            'min_cluster_size': [5, 10, 20],
+            'min_cluster_size': [5, 10, 15, 20],
             'min_samples': [5, 10, 20],
-            'cluster_selection_epsilon': [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+            'cluster_selection_epsilon': [0.01, 0.05, 0.1, 0.2, 0.3, 0.5],
         },
-
         'MeanShift': {
-            # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
-            # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
-            # 'n_samples': [2, 3, 5, 10, 15, 20],
-            # 'bin_seeding': [True, False]
-            'quantile': [0.20, 0.25, 0.30, 0.40, 0.50],
-            'n_samples': [15, 20, 30, 50],
-            'bin_seeding': [True]
+            'quantile': [0.01, 0.02, 0.05, 0.075, 0.1, 0.0125, 0.15, 0.2, 0.25, 0.5, 0.75, 1.0],
+            'n_samples': [3, 5, 10, 15, 20],
+            'bin_seeding': [True, False]
         },
         'AgglomerativeClustering': {
             'n_clusters': None,
             'metric': ['euclidean', 'l1', 'l2', 'manhattan', 'cosine'],
-            'linkage': ['ward', 'complete', 'average', 'single'],
+            'linkage': ['ward', 'complete', 'average', 'single']
         },
         'SpectralClustering': {
             'n_clusters': None,
-            # 'affinity': ['nearest_neighbors', 'rbf'],
-            # 'n_neighbors': [5, 10, 20],
-            'affinity': ['nearest_neighbors'],
-            'n_neighbors': [3, 5, 10, 15, 20, 30, 50],
+            'affinity': ['nearest_neighbors', 'rbf'],
+            'n_neighbors': [3, 5, 10, 15, 20],
             'assign_labels': ['kmeans', 'discretize'],
         },
         'KMeans': {
             'n_clusters': None,
-            'n_init': 'auto',
             'max_iter': [100, 300, 500],
             'tol': [1e-3, 1e-4, 1e-5],
-            'algorithm': ["lloyd", "elkan"], # for newer sklearn versions change 'full' to 'lloyd'
+            'algorithm': ["lloyd", "elkan"],  # for newer sklearn versions change 'full' to 'lloyd'
         },
 
+
+
+
+        # # Real data
+        # 'DBSCAN': {
+        #     'eps': [0.001, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.00],
+        #     'min_samples': [1, 3, 5, 10, 20, 50, 100],
+        # },
+        # 'HDBSCAN': {
+        #     'min_cluster_size': [5, 10, 20],
+        #     'min_samples': [5, 10, 20],
+        #     'cluster_selection_epsilon': [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+        # },
+        # 'MeanShift': {
+        #     'quantile': [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+        #     'n_samples': [2, 3, 5, 10, 15, 20],
+        #     'bin_seeding': [True, False]
+        # },
+        # 'AgglomerativeClustering': {
+        #     'n_clusters': None,
+        #     'metric': ['euclidean', 'l1', 'l2', 'manhattan', 'cosine'],
+        #     'linkage': ['ward', 'complete', 'average', 'single'],
+        # },
+        # 'SpectralClustering': {
+        #     'n_clusters': None,
+        #     'affinity': ['nearest_neighbors', 'rbf'],
+        #     'n_neighbors': [5, 10, 20],
+        #     'assign_labels': ['kmeans', 'discretize'],
+        # },
+        # 'KMeans': {
+        #     'n_clusters': None,
+        #     'n_init': 'auto',
+        #     'max_iter': [100, 300, 500],
+        #     'tol': [1e-3, 1e-4, 1e-5],
+        #     'algorithm': ["lloyd", "elkan"], # for newer sklearn versions change 'full' to 'lloyd'
+        # },
+
+
+
+
+        # # Real Data Image
+        # 'DBSCAN': {
+        #     'eps': [0.001, 0.005, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.00],
+        #     'min_samples': [1, 3, 5, 10, 20, 50, 100],
+        # },
+        #
+        # 'HDBSCAN': {
+        #     'min_cluster_size': [5, 10, 20],
+        #     'min_samples': [5, 10, 20],
+        #     'cluster_selection_epsilon': [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+        # },
+        #
+        # 'MeanShift': {
+        #     # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5],
+        #     # 'quantile': [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+        #     # 'n_samples': [2, 3, 5, 10, 15, 20],
+        #     # 'bin_seeding': [True, False]
+        #     'quantile': [0.20, 0.25, 0.30, 0.40, 0.50],
+        #     'n_samples': [15, 20, 30, 50],
+        #     'bin_seeding': [True]
+        # },
+        # 'AgglomerativeClustering': {
+        #     'n_clusters': None,
+        #     'metric': ['euclidean', 'l1', 'l2', 'manhattan', 'cosine'],
+        #     'linkage': ['ward', 'complete', 'average', 'single'],
+        # },
+        # 'SpectralClustering': {
+        #     'n_clusters': None,
+        #     # 'affinity': ['nearest_neighbors', 'rbf'],
+        #     # 'n_neighbors': [5, 10, 20],
+        #     'affinity': ['nearest_neighbors'],
+        #     'n_neighbors': [3, 5, 10, 15, 20, 30, 50],
+        #     'assign_labels': ['kmeans', 'discretize'],
+        # },
+        # 'KMeans': {
+        #     'n_clusters': None,
+        #     'n_init': 'auto',
+        #     'max_iter': [100, 300, 500],
+        #     'tol': [1e-3, 1e-4, 1e-5],
+        #     'algorithm': ["lloyd", "elkan"], # for newer sklearn versions change 'full' to 'lloyd'
+        # },
     }
-    """Define parameter grids for each clustering algorithm"""
     return param_grids
 
 
@@ -525,9 +567,9 @@ def main_synthetic_data():
                                                     "KMeans",
                                                     "DBSCAN",
                                                     "MeanShift",
-                                                    "HDBSCAN"
+                                                    "HDBSCAN",
                                                     "AgglomerativeClustering",
-                                                    "SpectralClustering"
+                                                    "SpectralClustering",
                                                 ])
 
         save_best_parameters(results, data_name)
@@ -557,9 +599,9 @@ def main_real_data():
                                                     "KMeans",
                                                     "DBSCAN",
                                                     "MeanShift",
-                                                    "HDBSCAN"
+                                                    "HDBSCAN",
                                                     "AgglomerativeClustering",
-                                                    "SpectralClustering"
+                                                    "SpectralClustering",
                                                 ])
 
         save_best_parameters(results, data_name)
@@ -588,9 +630,9 @@ def main_real_data_new():
                                                     # "KMeans",
                                                     # "DBSCAN",
                                                     # "MeanShift",
-                                                    "HDBSCAN"
+                                                    "HDBSCAN",
                                                     # "AgglomerativeClustering",
-                                                    # "SpectralClustering"
+                                                    # "SpectralClustering",
                                                 ])
 
         save_best_parameters(results, data_name)
@@ -599,6 +641,6 @@ def main_real_data_new():
         print(summary.to_string(index=False))
 
 if __name__ == '__main__':
-    # main_synthetic_data()
+    main_synthetic_data()
     # main_real_data()
-    main_real_data_new()
+    # main_real_data_new()

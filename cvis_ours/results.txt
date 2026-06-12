@@ -1,3 +1,5 @@
+# Obtained from main_arboris.py
+
 Dataset size: 500 samples
   AD Silhouette: 0.7458 in 0.035s
   AD Davies-Bouldin: 0.5441 in 0.031s

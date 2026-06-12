@@ -1,0 +1,13 @@
+Latex:
+Is introduced on the simple D1 dataset,
+However, in the case of the CH, the extensions do not improve as strongly. This decrease for the CH is due to the A1-3 \citep{89, 90} and S1-4 \citep{91} datasets that have a high number of clusters and overlap with regular shapes, where the CH fares better (though this is not the case for datasets with irregular shapes).
+
+
+labelcounts with varying clusterings should be remade for 44 datasets (long time)
+-update text
+- you dont need to run all, just the new datasets
+
+New datasets?
+
+main_clustering_grid_search.py -> a2 ...
+main_analysis_correlation_clustering_all -> data4 ...
