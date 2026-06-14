@@ -56,7 +56,7 @@ def _run_timing_loop(axis_values, axis_label, fixed_label, metrics, n_runs, outp
             for run in range(n_runs):
                 t0 = time.time()
                 try:
-                    _ = choose_CVI(metric=metric, data=X, labels=labels)
+                    _ = choose_CVI(cvi=metric, data=X, labels=labels)
                     run_times.append(time.time() - t0)
                 except Exception as e:
                     print(f"  [{metric}] run {run+1} FAILED: {e}")

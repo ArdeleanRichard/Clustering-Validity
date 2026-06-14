@@ -19,8 +19,8 @@ def get_CVI(name):
     return wrapper
 
 
-def choose_CVI(metric, data, labels, *args, **kwargs):
-    metric_function = get_CVI(metric)
+def choose_CVI(cvi, data, labels, *args, **kwargs):
+    metric_function = get_CVI(cvi)
     return metric_function(data, labels, *args, **kwargs)
 
 
@@ -52,7 +52,7 @@ def create_indices_table(X, label_sets=None, metrics=CVIs, decimals=3, save="met
     for metric in metrics:
         for label_name, labels in label_sets.items():
             try:
-                table.loc[metric, label_name] = choose_CVI(metric=metric, data=X, labels=labels)
+                table.loc[metric, label_name] = choose_CVI(cvi=metric, data=X, labels=labels)
             except Exception as e:
                 table.loc[metric, label_name] = np.nan
                 print(f"Warning: Metric {metric} failed for {label_name}: {e}")
@@ -111,7 +111,7 @@ def create_indices_table_with_arrows(X, label_sets=None, metrics=CVIs, decimals=
         for label_name, labels in label_sets.items():
             try:
                 time_start = time.time()
-                val = choose_CVI(metric=metric, data=X, labels=labels)
+                val = choose_CVI(cvi=metric, data=X, labels=labels)
                 time_end = time.time()
                 time_values.append(time_end-time_start)
 

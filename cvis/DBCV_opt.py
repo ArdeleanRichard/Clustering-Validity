@@ -425,17 +425,17 @@ if __name__ == "__main__":
     import time
     from load_datasets import create_data1, create_data2, create_data3
 
-    X, y = create_data1(1000)
+    X, y = create_data1(10000)
     start = time.time()
     score = dbcv(X, y)
     print(f"DBCV: {score:.3f} in {time.time()-start:.3f}s")
 
-    X, y = create_data2(1000)
+    X, y = create_data2(10000)
     start = time.time()
     score = dbcv(X, y)
     print(f"DBCV: {score:.3f} in {time.time()-start:.3f}s")
 
-    X, y = create_data3(1000)
+    X, y = create_data3(10000)
     start = time.time()
     score = dbcv(X, y)
     print(f"DBCV: {score:.3f} in {time.time()-start:.3f}s")

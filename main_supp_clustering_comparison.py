@@ -8,8 +8,8 @@ from sklearn.metrics import adjusted_rand_score, adjusted_mutual_info_score
 from sklearn.preprocessing import MinMaxScaler
 
 from constants import (LABEL_COLOR_MAP, random_state, scale,
-                        FOLDER_FIGS_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS,
-                        FOLDER_RESULTS_CLUSTERING)
+                       FOLDER_FIGS_SUPP_CLUSTERING, FOLDER_RESULTS_CLUSTERING_PARAMS,
+                       FOLDER_RESULTS_SUPP_CLUSTERING)
 from load_datasets import create_compound, create_aggregation, create_spiral, create_r15, create_x, create_dense, create_unbalance, create_pathbased, create_jain
 from cvis_ours.np_kmeans import KMeansClustering
 from cvis_ours.ed_kmeans import ED_KMeansClustering
@@ -152,15 +152,15 @@ def main_comparison_clustering_algorithms():
                 color_map = {lab: palette[j % len(palette)] for j, lab in enumerate(np.unique(labels))}
                 label_color = [color_map[i] for i in labels]
             plt.scatter(X[:, 0], X[:, 1], c=label_color, marker='o', edgecolors='k', alpha=0.75, s=25)
-            plt.savefig(FOLDER_FIGS_CLUSTERING + f"/{data_name}_{algo_name}.png")
-            plt.savefig(FOLDER_FIGS_CLUSTERING + f"/svgs/{data_name}_{algo_name}.svg")
+            plt.savefig(FOLDER_FIGS_SUPP_CLUSTERING + f"/{data_name}_{algo_name}.png")
+            plt.savefig(FOLDER_FIGS_SUPP_CLUSTERING + f"/svgs/{data_name}_{algo_name}.svg")
             # plt.show()
             plt.close()
 
         # save the dataframe and its transpose
-        csv_path = FOLDER_RESULTS_CLUSTERING + f"{data_name}.csv"
+        csv_path = FOLDER_RESULTS_SUPP_CLUSTERING + f"{data_name}.csv"
         df.to_csv(csv_path, float_format="%.3f")
-        csv_transpose_path = FOLDER_RESULTS_CLUSTERING + f"{data_name}_transpose.csv"
+        csv_transpose_path = FOLDER_RESULTS_SUPP_CLUSTERING + f"{data_name}_transpose.csv"
         df.T.to_csv(csv_transpose_path, float_format="%.3f")
 
 
@@ -171,12 +171,12 @@ def create_paper_tables_from_results():
     import pandas as pd
 
     paths = [
-        FOLDER_RESULTS_CLUSTERING + "aggregation.csv",
-        FOLDER_RESULTS_CLUSTERING + "compound.csv",
-        FOLDER_RESULTS_CLUSTERING + "dense.csv",
-        FOLDER_RESULTS_CLUSTERING + "r15.csv",
-        FOLDER_RESULTS_CLUSTERING + "spiral.csv",
-        FOLDER_RESULTS_CLUSTERING + "x1.csv",
+        FOLDER_RESULTS_SUPP_CLUSTERING + "aggregation.csv",
+        FOLDER_RESULTS_SUPP_CLUSTERING + "compound.csv",
+        FOLDER_RESULTS_SUPP_CLUSTERING + "dense.csv",
+        FOLDER_RESULTS_SUPP_CLUSTERING + "r15.csv",
+        FOLDER_RESULTS_SUPP_CLUSTERING + "spiral.csv",
+        FOLDER_RESULTS_SUPP_CLUSTERING + "x1.csv",
     ]
     per_column = {}
     base_index = None

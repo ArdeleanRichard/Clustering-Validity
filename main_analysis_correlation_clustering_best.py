@@ -97,8 +97,8 @@ def compute_ari_cvi_correlations(datasets, metrics, clusterer, labels_path=FOLDE
             print(f"\tMetric - {metric}: {metric_id+1}/{len(metrics)}")
 
             try:
-                cvi_values[metric].append(choose_CVI(metric=metric, data=X, labels=labels_clustering))
-                cvi_nn_values[metric].append(choose_CVI(metric=metric, data=X_nn, labels=labels_clustering_nn))
+                cvi_values[metric].append(choose_CVI(cvi=metric, data=X, labels=labels_clustering))
+                cvi_nn_values[metric].append(choose_CVI(cvi=metric, data=X_nn, labels=labels_clustering_nn))
 
             except Exception as e:
                 print(f"Warning: Failed to compute {metric} for {dataset_name}: {e}")
@@ -163,9 +163,9 @@ def main_real_data():
 
 
 def main_real_data_new():
-    from load_datasets import create_real_datasets_new
+    from load_datasets import create_real_datasets_image
 
-    datasets = create_real_datasets_new()
+    datasets = create_real_datasets_image()
 
     metrics = CVIs.copy()
     metrics.remove("rCIP") # Failed to compute rCIP: (..., 'Result too large')

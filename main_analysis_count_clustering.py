@@ -7,16 +7,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import math
 
-from constants import scale, FOLDER_RESULTS_CORRELATION, FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS, LABEL_COLOR_MAP
+from constants import scale, FOLDER_RESULTS_COUNT, FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS, LABEL_COLOR_MAP
 from constants_maps import CVIs, MAP_CVI_LOWER_IS_BETTER
 from load_CVIs import choose_CVI
 from main_analysis_cache import _main_caches_exist, _load_external_cache, _load_cvi_cache, _save_cvi_cache, _save_external_cache
 from utils import reencode, remove_dups, get_label_files
 
-
-# ---------------------------------------------------------------------------
-# Scatter-plot helper (unchanged)
-# ---------------------------------------------------------------------------
 
 def create_error_scatter_plot(X, error_cases, best_ari_case, metric, dataset_name, algo_name, lower_is_better, output_folder):
     """
@@ -140,11 +136,9 @@ def create_error_scatter_plot(X, error_cases, best_ari_case, metric, dataset_nam
     print(f"      Saved error plot: {filepath}")
 
 
-# ---------------------------------------------------------------------------
-# Core analysis  (caching added; logic otherwise unchanged)
-# ---------------------------------------------------------------------------
 
-def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, create_plots=True, plot_output_folder=None):
+
+def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plots=True, plot_output_folder=None):
     """
     For each dataset and clustering algorithm:
     1. Find parameterization with highest ARI
@@ -200,7 +194,7 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
 
         # Storage for this dataset
         if dataset_name not in results_by_dataset:
-            results_by_dataset[dataset_name] = {metric: {'correct': 0, 'errors': 0} for metric in metrics}
+            results_by_dataset[dataset_name] = {metric: {'correct': 0, 'errors': 0} for metric in cvis}
 
         # Process each clustering algorithm
         for algo_name, algo_files in algo_groups.items():
@@ -230,7 +224,7 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
                     for i, (param_key, ari_val) in enumerate(zip(param_keys, ari_values)):
                         cvi_for_param = {
                             m: (cvi_dict[m][i] if m in cvi_dict else None)
-                            for m in metrics
+                            for m in cvis
                         }
                         # Replace NaN sentinels with None (matches original logic)
                         cvi_for_param = {
@@ -249,7 +243,7 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
             # ------------------------------------------------------------------
             if param_results is None:
                 param_results = []
-                cache_cvi  = {m: [] for m in metrics}
+                cache_cvi  = {m: [] for m in cvis}
                 cache_ari  = []
                 param_keys = []
 
@@ -274,9 +268,9 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
 
                     # Compute all CVIs
                     cvi_results = {}
-                    for metric in metrics:
+                    for metric in cvis:
                         try:
-                            cvi_value = choose_CVI(metric=metric, data=X, labels=labels_clustering)
+                            cvi_value = choose_CVI(cvi=metric, data=X, labels=labels_clustering)
                             if np.isnan(cvi_value) or np.isinf(cvi_value):
                                 cvi_results[metric] = None
                             else:
@@ -295,7 +289,7 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
                     # Accumulate for cache
                     cache_ari.append(ari_value)
                     param_keys.append(Path(label_file).stem)
-                    for m in metrics:
+                    for m in cvis:
                         # Store None as NaN in the CSV
                         raw = cvi_results[m]
                         cache_cvi[m].append(np.nan if raw is None else raw)
@@ -307,7 +301,7 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
                     print(f"  [cache] Saved cache for {dataset_name} / {algo_name}")
 
             # ------------------------------------------------------------------
-            # Analysis logic (completely unchanged from original)
+            # Analysis logic
             # ------------------------------------------------------------------
             if len(param_results) < 2:
                 print(f"    Skipping {algo_name}: insufficient valid parameterizations")
@@ -321,10 +315,10 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
 
             # Initialize results for this algorithm if not exists
             if algo_name not in results_by_algo:
-                results_by_algo[algo_name] = {metric: {'correct': 0, 'errors': 0} for metric in metrics}
+                results_by_algo[algo_name] = {metric: {'correct': 0, 'errors': 0} for metric in cvis}
 
             # For each CVI, check if best ARI also gives best CVI
-            for metric in metrics:
+            for metric in cvis:
                 # Collect valid CVI values
                 valid_cvi_values = [(i, p['cvi'][metric]) for i, p in enumerate(param_results)
                                     if p['cvi'][metric] is not None]
@@ -404,90 +398,85 @@ def compute_best_match_analysis_per_dataset(datasets, metrics, labels_folder, cr
     return results_by_dataset, results_by_algo
 
 
-# ---------------------------------------------------------------------------
-# Saving final results (unchanged)
-# ---------------------------------------------------------------------------
 
-def save_results(results_by_dataset, results_by_algo, file_prefix):
+
+def save_results(cvis, results_by_dataset, results_by_algo, file_prefix):
     dataset_rows = []
-    for dataset, metrics_dict in results_by_dataset.items():
-        for metric, counts in metrics_dict.items():
+    for dataset, cvis_dict in results_by_dataset.items():
+        for cvi, counts in cvis_dict.items():
             dataset_rows.append({
                 'dataset': dataset,
-                'metric': metric,
+                'cvi': cvi,
                 'correct': counts['correct'],
                 'errors': counts['errors']
             })
 
     df_by_dataset = pd.DataFrame(dataset_rows)
-    df_by_dataset_pivot = df_by_dataset.pivot(index='metric', columns='dataset',
-                                              values=['correct', 'errors'])
+    df_by_dataset_pivot = df_by_dataset.pivot(index='cvi', columns='dataset', values=['correct', 'errors'])
+    df_by_dataset_pivot = df_by_dataset_pivot.reindex(cvis)  # <-- preserve order
 
-    output_path_dataset = FOLDER_RESULTS_CORRELATION + f"{file_prefix}_best_match_by_dataset.csv"
+    output_path_dataset = FOLDER_RESULTS_COUNT + f"{file_prefix}_count_by_dataset.csv"
     df_by_dataset_pivot.to_csv(output_path_dataset)
     print(f"\n>>> Results by dataset saved to: {output_path_dataset}")
 
     # Create DataFrame aggregated by clustering algorithm
-    algo_rows = []
-    for algo, metrics_dict in results_by_algo.items():
-        for metric, counts in metrics_dict.items():
-            algo_rows.append({
-                'algorithm': algo,
-                'metric': metric,
+    clusterer_rows = []
+    for clusterer, cvis_dict in results_by_algo.items():
+        for cvi, counts in cvis_dict.items():
+            clusterer_rows.append({
+                'clusterer': clusterer,
+                'cvi': cvi,
                 'correct': counts['correct'],
                 'errors': counts['errors']
             })
 
-    df_by_algo = pd.DataFrame(algo_rows)
-    df_by_algo_pivot = df_by_algo.pivot(index='metric', columns='algorithm', values=['correct', 'errors'])
+    df_by_clusterer = pd.DataFrame(clusterer_rows)
+    df_by_clusterer_pivot = df_by_clusterer.pivot(index='cvi', columns='clusterer', values=['correct', 'errors'])
+    df_by_clusterer_pivot = df_by_clusterer_pivot.reindex(cvis)  # <-- preserve order
 
-    output_path_algo = FOLDER_RESULTS_CORRELATION + f"{file_prefix}_best_match_by_algorithm.csv"
-    df_by_algo_pivot.to_csv(output_path_algo)
-    print(f">>> Results by algorithm saved to: {output_path_algo}")
+    output_path_clusterer = FOLDER_RESULTS_COUNT + f"{file_prefix}_count_by_clusterer.csv"
+    df_by_clusterer_pivot.to_csv(output_path_clusterer)
+    print(f">>> Results by clusterer saved to: {output_path_clusterer}")
 
 
-# ---------------------------------------------------------------------------
-# Entry points (unchanged)
-# ---------------------------------------------------------------------------
 
-def main_synth_data():
-    from load_datasets import create_synthetic_datasets
 
-    datasets = create_synthetic_datasets()
-    prefix = "synthdata"
-    plot_folder = FOLDER_RESULTS_CORRELATION + f"{prefix}_error_plots/"
 
-    results_by_dataset, results_by_algo = compute_best_match_analysis_per_dataset(
+def main(data_type):
+    cvis = CVIs.copy()
+
+    if data_type == "data_synth":
+        from load_datasets import create_synthetic_datasets
+        datasets = create_synthetic_datasets()
+
+    if data_type == "data_real":
+        cvis.remove("CDbw")
+        from load_datasets import create_real_datasets_uci
+        datasets = create_real_datasets_uci()
+
+    if data_type == "data_image":
+        cvis.remove("CDbw")  # cannot construct hull
+        cvis.remove("rCIP")  # Failed to compute
+
+        from load_datasets import create_real_datasets_image
+        datasets = create_real_datasets_image()
+
+
+    plot_folder = FOLDER_RESULTS_COUNT + f"error_plots_{data_type}/"
+
+
+    results_by_dataset, results_by_algo = compute_count_analysis_per_dataset(
         datasets=datasets,
-        metrics=CVIs,
+        cvis=cvis,
         labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
         create_plots=True,
         plot_output_folder=plot_folder
     )
 
-    save_results(results_by_dataset, results_by_algo, prefix)
-
-
-def main_real_data():
-    from load_datasets import create_real_datasets_uci
-
-    datasets = create_real_datasets_uci()
-    prefix = "realdata"
-    plot_folder = FOLDER_RESULTS_CORRELATION + f"{prefix}_error_plots/"
-
-    metrics = CVIs.copy()
-    metrics.remove("CDbw")
-    results_by_dataset, results_by_algo = compute_best_match_analysis_per_dataset(
-        datasets=datasets,
-        metrics=metrics,
-        labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
-        create_plots=True,
-        plot_output_folder=plot_folder
-    )
-
-    save_results(results_by_dataset, results_by_algo, prefix)
+    save_results(cvis, results_by_dataset, results_by_algo, data_type)
 
 
 if __name__ == "__main__":
-    main_synth_data()
-    # main_real_data()
+    main("data_synth")
+    main("data_real")
+    main("data_image")

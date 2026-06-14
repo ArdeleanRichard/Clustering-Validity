@@ -120,3 +120,23 @@ def calc_smin_smax(distances, n_incluster_pairs):
         Smax = np.sum(distances[largest_indices])
 
     return Smin, Smax
+
+
+if __name__ == "__main__":
+    import time
+    from load_datasets import create_data1, create_data2, create_data3
+
+    X, y = create_data1(1000)
+    start = time.time()
+    score = c_index(X, y)
+    print(f"C: {score:.3f} in {time.time()-start:.3f}s")
+
+    X, y = create_data2(1000)
+    start = time.time()
+    score = c_index(X, y)
+    print(f"C: {score:.3f} in {time.time()-start:.3f}s")
+
+    X, y = create_data3(1000)
+    start = time.time()
+    score = c_index(X, y)
+    print(f"C: {score:.3f} in {time.time()-start:.3f}s")

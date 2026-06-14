@@ -1,4 +1,3 @@
-import os
 import time
 
 import numpy as np
@@ -15,10 +14,6 @@ from load_CVIs import choose_CVI
 from main_analysis_cache import _all_caches_exist, _load_cvi_cache, _load_external_cache, _save_cvi_cache, _save_external_cache
 from utils import reencode, remove_dups, get_label_files
 
-
-# ---------------------------------------------------------------------------
-# Correlation helper
-# ---------------------------------------------------------------------------
 
 def compute_single_correlation(metric, external_vals, cvi_vals, dataset_name):
     """Helper function to compute a single Spearman correlation"""
@@ -227,7 +222,7 @@ def compute_ari_cvi_correlations_per_clusterer(datasets, cvis, labels_folder):
 
                     # full
                     try:
-                        c_full = choose_CVI(metric=metric, data=X, labels=labels_clustering)
+                        c_full = choose_CVI(cvi=metric, data=X, labels=labels_clustering)
                     except Exception:
                         c_full = np.nan
                     print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(cvis)} in {time.time() - start:.3f}s")
@@ -239,7 +234,7 @@ def compute_ari_cvi_correlations_per_clusterer(datasets, cvis, labels_folder):
                         if len(np.unique(labels_clustering_nn)) == 1:
                             c_nn = np.nan
                         else:
-                            c_nn = choose_CVI(metric=metric, data=X_nn, labels=labels_clustering_nn)
+                            c_nn = choose_CVI(cvi=metric, data=X_nn, labels=labels_clustering_nn)
                     except Exception:
                         c_nn = np.nan
                     clusterer_stats[clusterer_name]['cvi_nn'][metric].append(c_nn)
@@ -258,7 +253,7 @@ def compute_ari_cvi_correlations_per_clusterer(datasets, cvis, labels_folder):
                 print(f"  [cache] Saved cache for {dataset_name} / {clusterer_name}")
 
     # -----------------------------------------------------------------------
-    # Compute correlations per clusterer (unchanged logic)
+    # Compute correlations per clusterer
     # -----------------------------------------------------------------------
     results_ari     = {}
     results_ari_nn  = {}
@@ -401,6 +396,8 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
 
                 if len(np.unique(labels_clustering)) == 1:
                     continue
+                if X.shape[0] != labels_clustering.shape[0]:
+                    continue
 
                 labels_clustering_re  = reencode(labels_clustering)
 
@@ -433,8 +430,8 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
                 for metric_id, metric in enumerate(metrics):
                     start = time.time()
                     try:
-                        c_full = choose_CVI(metric=metric, data=X, labels=labels_clustering)
-                        c_nn   = choose_CVI(metric=metric, data=X_nn, labels=labels_clustering_nn)
+                        c_full = choose_CVI(cvi=metric, data=X, labels=labels_clustering)
+                        c_nn   = choose_CVI(cvi=metric, data=X_nn, labels=labels_clustering_nn)
                     except Exception as e:
                         c_full = np.nan
                         c_nn   = np.nan
@@ -443,7 +440,7 @@ def compute_ari_cvi_correlations_per_dataset(datasets, metrics, labels_folder):
                     cvi_nn_values[metric].append(c_nn)
                     cache_cvi[metric]    .append(c_full)
                     cache_cvi_nn[metric] .append(c_nn)
-                    print(f"\t\tMetric - {metric}: {metric_id + 1}/{len(metrics)} in {time.time() - start:.3f}s")
+                    print(f"\t\tCVI - {metric}: {metric_id + 1}/{len(metrics)} in {time.time() - start:.3f}s")
 
                 param_keys.append(param_key)
 
@@ -498,14 +495,22 @@ def main_analysis_per_dataset(data_type):
     cvis.remove("ED-DB")
     cvis.remove("ED-CH")
 
-    if data_type == "synth_data":
+    if data_type == "data_synth":
         from load_datasets import create_synthetic_datasets
         datasets = create_synthetic_datasets()
 
-    if data_type == "real_data":
+    if data_type == "data_real":
         cvis.remove("CDbw")  # cannot construct hull
         from load_datasets import create_real_datasets_uci
         datasets = create_real_datasets_uci()
+
+    if data_type == "data_image":
+        from load_datasets import create_real_datasets_image
+        datasets = create_real_datasets_image(image_size=(64, 64))
+
+        cvis.remove("CDbw")  # cannot construct hull
+        cvis.remove("rCIP")  # Failed to compute
+
 
     correlation_matrices = compute_ari_cvi_correlations_per_dataset(
         datasets=datasets,
@@ -513,10 +518,10 @@ def main_analysis_per_dataset(data_type):
         labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
     )
 
-    save_correlation_matrix(correlation_matrices['ari'],     file_name=f"{data_type}_per_dataset_correlations_cvi_to_ari")
-    save_correlation_matrix(correlation_matrices['ari_nn'],  file_name=f"{data_type}_per_dataset_correlations_cvi_to_ari_nn")
-    save_correlation_matrix(correlation_matrices['bari'],    file_name=f"{data_type}_per_dataset_correlations_cvi_to_bari")
-    save_correlation_matrix(correlation_matrices['bari_nn'], file_name=f"{data_type}_per_dataset_correlations_cvi_to_bari_nn")
+    save_correlation_matrix(correlation_matrices['ari'],     file_name=f"{data_type}_correlations_per_dataset_cvi_to_ari")
+    save_correlation_matrix(correlation_matrices['ari_nn'],  file_name=f"{data_type}_correlations_per_dataset_cvi_to_ari_nn")
+    save_correlation_matrix(correlation_matrices['bari'],    file_name=f"{data_type}_correlations_per_dataset_cvi_to_bari")
+    save_correlation_matrix(correlation_matrices['bari_nn'], file_name=f"{data_type}_correlations_per_dataset_cvi_to_bari_nn")
 
 
 def main_analysis_per_clusterer(data_type):
@@ -525,18 +530,18 @@ def main_analysis_per_clusterer(data_type):
     cvis.remove("ED-DB")
     cvis.remove("ED-CH")
 
-    if data_type == "synth_data":
+    if data_type == "data_synth":
         from load_datasets import create_synthetic_datasets
         datasets = create_synthetic_datasets()
 
-    if data_type == "real_data":
+    if data_type == "data_real":
         cvis.remove("CDbw")  # cannot construct hull
         from load_datasets import create_real_datasets_uci
         datasets = create_real_datasets_uci()
 
-    if data_type == "image_data":
-        from load_datasets import create_real_datasets_new
-        datasets = create_real_datasets_new(image_size=(64, 64))
+    if data_type == "data_image":
+        from load_datasets import create_real_datasets_image
+        datasets = create_real_datasets_image(image_size=(64, 64))
 
         cvis.remove("CDbw")  # cannot construct hull
         cvis.remove("rCIP")  # Failed to compute
@@ -547,14 +552,18 @@ def main_analysis_per_clusterer(data_type):
         labels_folder=FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS,
     )
 
-    save_correlation_matrix(correlation_matrices['ari'],     file_name=f"{data_type}_per_clusterer_correlations_cvi_to_ari")
-    save_correlation_matrix(correlation_matrices['ari_nn'],  file_name=f"{data_type}_per_clusterer_correlations_cvi_to_ari_nn")
-    save_correlation_matrix(correlation_matrices['bari'],    file_name=f"{data_type}_per_clusterer_correlations_cvi_to_bari")
-    save_correlation_matrix(correlation_matrices['bari_nn'], file_name=f"{data_type}_per_clusterer_correlations_cvi_to_bari_nn")
+    save_correlation_matrix(correlation_matrices['ari'],     file_name=f"{data_type}_correlations_per_clusterer_cvi_to_ari")
+    save_correlation_matrix(correlation_matrices['ari_nn'],  file_name=f"{data_type}_correlations_per_clusterer_cvi_to_ari_nn")
+    save_correlation_matrix(correlation_matrices['bari'],    file_name=f"{data_type}_correlations_per_clusterer_cvi_to_bari")
+    save_correlation_matrix(correlation_matrices['bari_nn'], file_name=f"{data_type}_correlations_per_clusterer_cvi_to_bari_nn")
 
 
 if __name__ == "__main__":
-    main_analysis_per_dataset(data_type="synth_data")
-    # main_analysis_per_dataset(data_type="synth_data")
-    # main_analysis_per_clusterer(data_type="real_data")
-    # main_analysis_per_clusterer(data_type="image_data")
+    main_analysis_per_dataset(data_type="data_synth")
+    main_analysis_per_clusterer(data_type="data_synth")
+
+    main_analysis_per_dataset(data_type="data_real")
+    main_analysis_per_clusterer(data_type="data_real")
+
+    main_analysis_per_dataset(data_type="data_image")
+    main_analysis_per_clusterer(data_type="data_image")

@@ -13,7 +13,7 @@ from cvis.CDbw_opt import CDbw
 
 from cvis.c_index import c_index
 from cvis.cs_index import cs_index
-from cvis.cvi_set.cop import cop
+from cvis.cvi_set.cop_opt import cop
 from cvis.cvi_set.gSym import gSym
 from cvis.i_index import i_index
 

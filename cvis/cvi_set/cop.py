@@ -80,10 +80,10 @@ def separation(cluster_i, data, m, **kwargs):
 
 
 if __name__ == "__main__":
-    data = np.array([
-        [1, 2, 3],
-        [1, 2, 3],
-    ]).T
-    labels = [0, 1, 2]
+    import time
+    from load_datasets import create_data5, create_data2, create_data3
 
-    print(cop(data, labels))
+    X, y = create_data5(1000, 4000)
+    start = time.time()
+    score = cop(X, y)
+    print(f"COP: {score:.3f} in {time.time()-start:.3f}s")

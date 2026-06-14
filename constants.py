@@ -77,38 +77,42 @@ current_path = os.getcwd()
 
 if os.path.abspath(current_path) == os.path.abspath(target_path):
     FOLDER_RESULTS = f"./results/"
-    FOLDER_RESULTS_CVIS = f"./results/CVIs/"
-    FOLDER_RESULTS_CVIS_CACHE = f"./results/CVIs_CACHE/"
-    FOLDER_RESULTS_CLUSTERING = f"./results/clustering/"
-    FOLDER_RESULTS_CLUSTERING_PARAMS = f"./results/clustering/params/"
-    FOLDER_RESULTS_CLUSTERING_LABELS = f"./results/clustering/params/labels/"
-    FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS = f"./results/clustering/params/all_labels/"
+    FOLDER_RESULTS_LABELSETS = f"./results/labelsets/"
+    FOLDER_RESULTS_CACHE = f"./results/cache/"
+
+    FOLDER_RESULTS_CLUSTERING_PARAMS = f"./results/clustering_params/"
+    FOLDER_RESULTS_CLUSTERING_LABELS = f"./results/clustering_params/labels/"
+    FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS = f"./results/clustering_params/all_labels/"
+
+    FOLDER_RESULTS_SUPP_CLUSTERING = f"./results/supplementary/clustering/"
+
     FOLDER_RESULTS_CORRELATION = f"./results/correlation/"
+    FOLDER_RESULTS_COUNT = f"./results/count/"
     FOLDER_RESULTS_STATS = f"./results/stats/"
 
-
-
     FOLDER_FIGS_DATA = f"./figs/data/"
-    FOLDER_FIGS_CLUSTERING = f"./figs/clustering/"
     FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
     FOLDER_FIGS_ANALYSIS_ESTIMATE = f"./figs/analysis/estimate_k/"
     FOLDER_FIGS_ANALYSIS_EXTERNAL = f"./figs/analysis/external/"
     FOLDER_FIGS_ANALYSIS_INTERNAL = f"./figs/analysis/internal/"
     FOLDER_FIGS_ANALYSIS_AD = f"./figs/analysis/ad_n_neighbours/"
 
+    FOLDER_FIGS_SUPP_CLUSTERING = f"./figs/supplementary/clustering/"
+
     os.makedirs(FOLDER_RESULTS, exist_ok=True)
-    os.makedirs(FOLDER_RESULTS_CLUSTERING, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING_PARAMS, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING_LABELS, exist_ok=True)
-    os.makedirs(FOLDER_RESULTS_CVIS_CACHE, exist_ok=True)
+    os.makedirs(FOLDER_RESULTS_CACHE, exist_ok=True)
 
     os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
-    os.makedirs(FOLDER_FIGS_CLUSTERING, exist_ok=True)
     os.makedirs(FOLDER_FIGS_ANALYSIS, exist_ok=True)
     os.makedirs(FOLDER_FIGS_ANALYSIS_ESTIMATE, exist_ok=True)
     os.makedirs(FOLDER_FIGS_ANALYSIS_EXTERNAL, exist_ok=True)
     os.makedirs(FOLDER_FIGS_ANALYSIS_INTERNAL, exist_ok=True)
     os.makedirs(FOLDER_FIGS_ANALYSIS_AD, exist_ok=True)
+
+    os.makedirs(FOLDER_FIGS_SUPP_CLUSTERING, exist_ok=True)
+    os.makedirs(FOLDER_RESULTS_SUPP_CLUSTERING, exist_ok=True)
 
 
 

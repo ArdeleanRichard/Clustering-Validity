@@ -611,9 +611,9 @@ def main_real_data():
 
 
 def main_real_data_new():
-    from load_datasets import create_real_datasets_new
+    from load_datasets import create_real_datasets_image
 
-    datasets = create_real_datasets_new()
+    datasets = create_real_datasets_image()
 
     for data_name, (X, gt) in datasets:
         print(f"\n{'=' * 80}")

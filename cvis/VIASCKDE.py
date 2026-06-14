@@ -58,3 +58,21 @@ def VIASCKDE(X, labels, kernel='gaussian', b_width=0.05):
 
     return viasc
 
+if __name__ == "__main__":
+    import time
+    from load_datasets import create_data1, create_data2, create_data3
+
+    X, y = create_data1(1000)
+    start = time.time()
+    score = VIASCKDE(X, y)
+    print(f"VIASCKDE: {score:.3f} in {time.time()-start:.3f}s")
+
+    X, y = create_data2(1000)
+    start = time.time()
+    score = VIASCKDE(X, y)
+    print(f"VIASCKDE: {score:.3f} in {time.time()-start:.3f}s")
+
+    X, y = create_data3(1000)
+    start = time.time()
+    score = VIASCKDE(X, y)
+    print(f"VIASCKDE: {score:.3f} in {time.time()-start:.3f}s")

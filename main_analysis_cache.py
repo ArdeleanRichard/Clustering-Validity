@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from constants import FOLDER_RESULTS_CVIS_CACHE
+from constants import FOLDER_RESULTS_CACHE
 
 
 
@@ -17,7 +17,7 @@ def _cache_path(dataset_name, clusterer_name, suffix=""):
     suffix="_ARI" / "_ARI_nn" / "_BARI" / "_BARI_nn" -> external metric vectors
     """
     fname = f"{dataset_name}_{clusterer_name}{suffix}.csv"
-    return os.path.join(FOLDER_RESULTS_CVIS_CACHE, fname)
+    return os.path.join(FOLDER_RESULTS_CACHE, fname)
 
 
 def _save_cvi_cache(dataset_name, clusterer_name, cvi_matrix, param_keys, suffix=""):
@@ -41,7 +41,7 @@ def _save_external_cache(dataset_name, clusterer_name, suffix, values, param_key
     The resulting CSV has rows=CVIs (only one row here labelled with the suffix)
     and cols=param_keys, so that shape matches the CVI cache exactly.
     """
-    os.makedirs(FOLDER_RESULTS_CVIS_CACHE, exist_ok=True)
+    os.makedirs(FOLDER_RESULTS_CACHE, exist_ok=True)
     df = pd.DataFrame([values], index=[suffix.lstrip("_")], columns=param_keys)
     df.to_csv(_cache_path(dataset_name, clusterer_name, suffix))
 
