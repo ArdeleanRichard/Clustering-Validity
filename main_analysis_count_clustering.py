@@ -209,7 +209,7 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
                 print(f"  [cache] Loading {dataset_name} / {algo_name} from cache")
 
                 cvi_cached = _load_cvi_cache(dataset_name, algo_name)
-                ari_cached = _load_external_cache(dataset_name, algo_name, "_ARI")
+                ari_cached = _load_external_cache(dataset_name, algo_name, f"_{GROUND_TRUTH_INDEX}")
 
                 if cvi_cached is None or ari_cached is None:
                     print(f"  [cache] WARNING: cache load failed — recomputing")
@@ -226,9 +226,9 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
                             m: (cvi_dict[m][i] if m in cvi_dict else None)
                             for m in cvis
                         }
-                        # Replace NaN sentinels with None (matches original logic)
+                        # Replace NaN/inf sentinels with None (matches original logic)
                         cvi_for_param = {
-                            m: (None if (v is not None and isinstance(v, float) and np.isnan(v)) else v)
+                            m: (None if (v is not None and isinstance(v, float) and (np.isnan(v) or np.isinf(v))) else v)
                             for m, v in cvi_for_param.items()
                         }
                         param_results.append({
@@ -297,7 +297,7 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
                 # Save cache
                 if len(param_keys) > 0:
                     _save_cvi_cache(dataset_name, algo_name, cache_cvi, param_keys)
-                    _save_external_cache(dataset_name, algo_name, "_ARI", cache_ari, param_keys)
+                    _save_external_cache(dataset_name, algo_name, f"_{GROUND_TRUTH_INDEX}", cache_ari, param_keys)
                     print(f"  [cache] Saved cache for {dataset_name} / {algo_name}")
 
             # ------------------------------------------------------------------
@@ -307,11 +307,11 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
                 print(f"    Skipping {algo_name}: insufficient valid parameterizations")
                 continue
 
-            # Find parameterization with highest ARI
-            best_ari_idx = np.argmax([p['ari'] for p in param_results])
-            best_ari_param = param_results[best_ari_idx]
+            # Find all parameterizations that share the highest ARI
+            max_ari = max(p['ari'] for p in param_results)
+            best_ari_indices = {i for i, p in enumerate(param_results) if p['ari'] == max_ari}
 
-            print(f"    Best ARI: {best_ari_param['ari']:.4f}")
+            print(f"    Best ARI: {max_ari:.4f} ({len(best_ari_indices)} parameterization(s))")
 
             # Initialize results for this algorithm if not exists
             if algo_name not in results_by_algo:
@@ -319,9 +319,28 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
 
             # For each CVI, check if best ARI also gives best CVI
             for metric in cvis:
-                # Collect valid CVI values
-                valid_cvi_values = [(i, p['cvi'][metric]) for i, p in enumerate(param_results)
-                                    if p['cvi'][metric] is not None]
+                # Collect valid CVI values (non-None, i.e. not nan/inf at compute time)
+                valid_cvi_values = [(i, p['cvi'][metric]) for i, p in enumerate(param_results) if p['cvi'][metric] is not None]
+
+                # Determine direction first — needed for the edge-case checks below
+                lower_is_better = True if metric.lower() in MAP_CVI_LOWER_IS_BETTER else False
+
+                # Edge-case: treat all-zero values as failed (no meaningful signal),
+                # but only for higher-is-better CVIs.  For lower-is-better CVIs, 0 can
+                # be a legitimate best-possible score, so all-zeros there is fine.
+                # This covers two sub-cases for higher-is-better metrics:
+                #   (a) every parameterization returned 0  — all zeros
+                #   (b) some returned 0 and the rest are None — mix of zeros and failures
+                # In both situations the CVI provides no useful information, so the
+                # entire (dataset, algo, metric) group is counted as errors.
+                if (not lower_is_better
+                        and len(valid_cvi_values) > 0
+                        and all(v == 0.0 for _, v in valid_cvi_values)):
+                    failed_count = len(param_results)
+                    results_by_dataset[dataset_name][metric]['errors'] += failed_count
+                    results_by_algo[algo_name][metric]['errors'] += failed_count
+                    print(f"      {metric}: ERROR — all valid values are 0 (count={failed_count})")
+                    continue
 
                 if len(valid_cvi_values) < 2:
                     # Not enough valid values - count failed ones as errors
@@ -331,16 +350,31 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
                     print(f"      {metric}: ERROR (count={failed_count})")
                     continue
 
-                # Determine best CVI index
-                lower_is_better = True if metric.lower() in MAP_CVI_LOWER_IS_BETTER else False
-
+                # Collect all indices tied for best CVI value
                 if lower_is_better:
-                    best_cvi_idx = min(valid_cvi_values, key=lambda x: x[1])[0]
+                    best_cvi_val = min(v for _, v in valid_cvi_values)
                 else:
-                    best_cvi_idx = max(valid_cvi_values, key=lambda x: x[1])[0]
+                    best_cvi_val = max(v for _, v in valid_cvi_values)
+                best_cvi_indices = {i for i, v in valid_cvi_values if v == best_cvi_val}
 
-                # Check if best ARI matches best CVI
-                if best_ari_idx == best_cvi_idx:
+                # Among the best-ARI parameterizations, pick the one with the best CVI
+                # value for this metric (i.e. give the best-ARI group every benefit of
+                # the doubt).  Fall back to any best-ARI index if none have a valid CVI.
+                best_ari_valid = [(i, param_results[i]['cvi'][metric])
+                                  for i in best_ari_indices
+                                  if param_results[i]['cvi'][metric] is not None]
+                if best_ari_valid:
+                    if lower_is_better:
+                        best_ari_idx = min(best_ari_valid, key=lambda x: x[1])[0]
+                    else:
+                        best_ari_idx = max(best_ari_valid, key=lambda x: x[1])[0]
+                else:
+                    # No valid CVI among best-ARI params — pick any for reference
+                    best_ari_idx = next(iter(best_ari_indices))
+                best_ari_param = param_results[best_ari_idx]
+
+                # Correct if any best-ARI param is also among the best-CVI params
+                if best_ari_indices & best_cvi_indices:
                     results_by_dataset[dataset_name][metric]['correct'] += 1
                     results_by_algo[algo_name][metric]['correct'] += 1
                     print(f"      {metric}: CORRECT")
@@ -351,11 +385,11 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
 
                     if best_ari_cvi is None:
                         error_count = len(param_results)
-                        error_cases = [p for i, p in enumerate(param_results) if i != best_ari_idx]
+                        error_cases = [p for i, p in enumerate(param_results) if i not in best_ari_indices]
                     else:
                         error_count = 0
                         for idx, cvi_val in valid_cvi_values:
-                            if idx == best_ari_idx:
+                            if idx in best_ari_indices:
                                 continue
 
                             if lower_is_better:
@@ -444,6 +478,9 @@ def save_results(cvis, results_by_dataset, results_by_algo, file_prefix):
 
 def main(data_type):
     cvis = CVIs.copy()
+    cvis.remove("ED-S")
+    cvis.remove("ED-DB")
+    cvis.remove("ED-CH")
 
     if data_type == "data_synth":
         from load_datasets import create_synthetic_datasets
@@ -477,6 +514,8 @@ def main(data_type):
 
 
 if __name__ == "__main__":
+    GROUND_TRUTH_INDEX = "AMI"
+
     main("data_synth")
     main("data_real")
     main("data_image")

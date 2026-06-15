@@ -627,12 +627,12 @@ def main_real_data_new():
 
         results = run_comprehensive_grid_search(X, true_labels=gt,
                                                 algorithms=[
-                                                    # "KMeans",
-                                                    # "DBSCAN",
-                                                    # "MeanShift",
+                                                    "KMeans",
+                                                    "DBSCAN",
+                                                    "MeanShift",
                                                     "HDBSCAN",
-                                                    # "AgglomerativeClustering",
-                                                    # "SpectralClustering",
+                                                    "AgglomerativeClustering",
+                                                    "SpectralClustering",
                                                 ])
 
         save_best_parameters(results, data_name)
