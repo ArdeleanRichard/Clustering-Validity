@@ -29,8 +29,6 @@ To address these issues, the paper proposes:
 
 Project files:
 - main_arboris.py : showcasing the Arboris CVIs on a simple case
-- main_supp_clustering_comparison.py : showcasing the Arboris distance in clustering on a simple case
-- main_supp_external_CVIs.py : showcasing the balanced versions for external CVIs
 
 - main_analysis_count_labelsets.py : simple analysis counting the number of correct evaluations across datasets for the CVIs  (errors = how many handcrafted labels give higher scores than the ground truth labels)
 - main_analysis_count_clustering.py : simple analysis counting the number of correct evaluations across datasets for the CVIs (errors = how many clustering labels give higher scores than the ground truth labels)
@@ -39,6 +37,12 @@ Project files:
 - main_clustering_grid_search.py : run a clustering grid search to find the best parametrisation for each datasets of each clustering algorithm
 - main_analysis_correlation_clustering_best.py : correlation analysis of the best clustering for each dataset
 - main_analysis_correlation_clustering_all.py : correlation analysis of the all clustering configurations for each dataset
+
+- main_analysis_specifics: extracted and aggregated data plotting parametrisation scores distributions
+
+- main_supp_time: time analysis for all CVIs
+- main_supp_external_CVIs.py : showcasing the balanced versions for external CVIs
+- main_supp_clustering_comparison.py : showcasing the Arboris distance in clustering on a simple case
 
 ---
 

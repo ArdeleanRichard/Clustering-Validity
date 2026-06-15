@@ -136,35 +136,75 @@ def plot_all_in_one(plot_data, datasets, clusterers, cvis, file_name):
 
     all_metrics = ["ARI"] + list(cvis)
     n_metrics   = len(all_metrics)
-    n_rows      = len(clusterers) * n_metrics
+    n_clusterers = len(clusterers)
     n_cols      = len(datasets)
 
-    # ── figure dimensions ────────────────────────────────────────────────────
-    col_width  = max(5, len(datasets) * 0.6)
-    row_height = 3.0
-
-    fig_width  = n_cols * col_width
-    fig_height = n_rows * row_height
-
-    fig, axes = plt.subplots(
-        n_rows, n_cols,
-        figsize=(fig_width, fig_height),
-        squeeze=False,
-    )
-
     # ── colour palette ───────────────────────────────────────────────────────
-    # Desaturated, print-safe colours that survive greyscale printing.
     metric_colors = {"ARI": "#4D4D4D"}
     cvi_palette   = ["#2166AC", "#C0392B", "#27AE60", "#D35400", "#6C3483"]
     for i, cvi in enumerate(cvis):
         metric_colors[cvi] = cvi_palette[i % len(cvi_palette)]
 
+    # ── GridSpec layout ──────────────────────────────────────────────────────
+    # Between each pair of clusterer groups we insert a thin spacer row that
+    # will hold the clusterer label for the group *below* it (except for the
+    # very first group whose label sits above its first data row).
+    #
+    # GridSpec row structure (top → bottom):
+    #   [label row for clusterer 0]          ← spacer, height_ratio = LABEL
+    #   [data rows for clusterer 0]          ← n_metrics rows, ratio = DATA each
+    #   [label row for clusterer 1]          ← spacer
+    #   [data rows for clusterer 1]
+    #   …
+    #
+    DATA  = 3.0   # relative height of one data row (inches equivalent)
+    LABEL = 0.45  # relative height of one label/spacer row
+
+    # Build the height-ratio list
+    height_ratios = []
+    for ci in range(n_clusterers):
+        height_ratios.append(LABEL)                # label spacer row
+        height_ratios.extend([DATA] * n_metrics)   # data rows
+
+    n_gs_rows = len(height_ratios)   # = n_clusterers * (1 + n_metrics)
+
+    col_width  = max(5, len(datasets) * 0.6)
+    # Total figure height: sum of all ratios scaled to inches
+    fig_height = sum(height_ratios)
+    fig_width  = n_cols * col_width
+
+    fig = plt.figure(figsize=(fig_width, fig_height))
+    gs  = fig.add_gridspec(
+        n_gs_rows, n_cols,
+        height_ratios=height_ratios,
+        hspace=0.55,   # vertical gap between all rows
+        wspace=0.35,   # horizontal gap between columns
+    )
+
     for ci, clusterer in enumerate(clusterers):
+        # GridSpec row index of this clusterer's label row
+        label_gs_row = ci * (1 + n_metrics)
+
+        # ── clusterer label in the spacer row ────────────────────────────────
+        # Span all columns so the text is centred over the full width.
+        ax_label = fig.add_subplot(gs[label_gs_row, :])
+        ax_label.set_axis_off()
+        ax_label.text(
+            0.5, 0.5,
+            clusterer,
+            transform=ax_label.transAxes,
+            fontsize=13,
+            fontweight="bold",
+            fontfamily="serif",
+            va="center",
+            ha="center",
+        )
+
         for mi, metric in enumerate(all_metrics):
-            subplot_row = ci * n_metrics + mi
+            data_gs_row = label_gs_row + 1 + mi   # skip the label row
 
             for di, data in enumerate(datasets):
-                ax = axes[subplot_row][di]
+                ax = fig.add_subplot(gs[data_gs_row, di])
 
                 df = plot_data[clusterer][data]
 
@@ -175,78 +215,13 @@ def plot_all_in_one(plot_data, datasets, clusterers, cvis, file_name):
                 values = df.loc[metric].values
                 color  = metric_colors.get(metric, "#333333")
 
-                _style_ax(ax, values, metric, di, subplot_row, n_cols, color,
-                          is_top_row_of_group=(mi == 0))
+                _style_ax(ax, values, metric, di, data_gs_row, n_cols, color)
 
-                # Dataset name as column header (top row only)
-                if subplot_row == 0:
-                    ax.set_title(data, fontsize=13, fontweight="bold", pad=8,
-                                 fontfamily="serif")
+                # Dataset name as column header — only on very first data row
+                # of the entire figure (first clusterer, first metric)
+                if ci == 0 and mi == 0:
+                    ax.set_title(data, fontsize=13, fontweight="bold", pad=8, fontfamily="serif")
 
-                # Clusterer label on the right side, vertically centred in its block
-                if di == n_cols - 1 and mi == n_metrics // 2:
-                    ax.annotate(
-                        clusterer,
-                        xy=(1.03, 0.5),
-                        xycoords="axes fraction",
-                        fontsize=12,
-                        fontweight="bold",
-                        va="center",
-                        ha="left",
-                        rotation=270,
-                        fontfamily="serif",
-                    )
-
-    # ── horizontal separator lines between clusterer groups ──────────────────
-    # We draw them as figure-level lines positioned between the last subplot row
-    # of one clusterer and the first subplot row of the next.
-    fig.canvas.draw()  # needed to get accurate axes positions
-
-    for ci in range(1, len(clusterers)):
-        # Row index of the last metric row in the previous clusterer block
-        row_above = ci * n_metrics - 1
-        row_below = ci * n_metrics
-
-        # Gather y positions from all columns for both boundary rows
-        y_bottoms = []
-        y_tops    = []
-        for di in range(n_cols):
-            ax_above = axes[row_above][di]
-            ax_below = axes[row_below][di]
-            if not ax_above.get_visible() and not ax_below.get_visible():
-                continue
-            ax_ref = ax_above if ax_above.get_visible() else ax_below
-            bbox_above = ax_above.get_position()
-            bbox_below = ax_below.get_position()
-            y_bottoms.append(bbox_above.y0)
-            y_tops.append(bbox_below.y1)
-
-        if not y_bottoms:
-            continue
-
-        # Midpoint between the two groups in figure coordinates
-        y_line = (min(y_bottoms) + max(y_tops)) / 2
-
-        line = mpl.lines.Line2D(
-            [0.01, 0.99], [y_line, y_line],
-            transform=fig.transFigure,
-            color="#555555",
-            linewidth=1.2,
-            linestyle="--",
-            zorder=10,
-        )
-        fig.add_artist(line)
-
-    # ── figure title ─────────────────────────────────────────────────────────
-    fig.suptitle(
-        "ARI + CVIs",
-        fontsize=16,
-        fontweight="bold",
-        y=1.002,
-        fontfamily="serif",
-    )
-
-    plt.tight_layout(h_pad=0.8, w_pad=0.8)
 
     out_fig = out_dir / f"{file_name}.png"
     fig.savefig(out_fig, dpi=300, bbox_inches="tight")
