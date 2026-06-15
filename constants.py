@@ -89,6 +89,7 @@ if os.path.abspath(current_path) == os.path.abspath(target_path):
     FOLDER_RESULTS_CORRELATION = f"./results/correlation/"
     FOLDER_RESULTS_COUNT = f"./results/count/"
     FOLDER_RESULTS_STATS = f"./results/stats/"
+    FOLDER_RESULTS_SPECIFICS = f"./results/specifics/"
 
     FOLDER_FIGS_DATA = f"./figs/data/"
     FOLDER_FIGS_ANALYSIS = f"./figs/analysis/"
@@ -103,6 +104,7 @@ if os.path.abspath(current_path) == os.path.abspath(target_path):
     os.makedirs(FOLDER_RESULTS_CLUSTERING_PARAMS, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CLUSTERING_LABELS, exist_ok=True)
     os.makedirs(FOLDER_RESULTS_CACHE, exist_ok=True)
+    os.makedirs(FOLDER_RESULTS_SPECIFICS, exist_ok=True)
 
     os.makedirs(FOLDER_FIGS_DATA, exist_ok=True)
     os.makedirs(FOLDER_FIGS_ANALYSIS, exist_ok=True)
