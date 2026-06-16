@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from pathlib import Path
@@ -8,7 +7,7 @@ import matplotlib.pyplot as plt
 import math
 
 from constants import scale, FOLDER_RESULTS_COUNT, FOLDER_RESULTS_CLUSTERING_LABELS_ALL_PARAMETERS, LABEL_COLOR_MAP
-from constants_maps import CVIs, MAP_CVI_LOWER_IS_BETTER
+from constants_maps import CVIs, MAP_CVI_LOWER_IS_BETTER, MAP_EXTERNAL_CVIs
 from load_CVIs import choose_CVI
 from main_analysis_cache import _main_caches_exist, _load_external_cache, _load_cvi_cache, _save_cvi_cache, _save_external_cache
 from utils import reencode, remove_dups, get_label_files
@@ -264,7 +263,7 @@ def compute_count_analysis_per_dataset(datasets, cvis, labels_folder, create_plo
                     if len(labels_clustering_re) != len(labels_gt_re):
                         continue
 
-                    ari_value = adjusted_rand_score(labels_gt_re, labels_clustering_re)
+                    ari_value = gti_function(labels_gt_re, labels_clustering_re)
 
                     # Compute all CVIs
                     cvi_results = {}
@@ -514,7 +513,8 @@ def main(data_type):
 
 
 if __name__ == "__main__":
-    GROUND_TRUTH_INDEX = "AMI"
+    GROUND_TRUTH_INDEX = "ARI"
+    _, _, gti_function = MAP_EXTERNAL_CVIs[GROUND_TRUTH_INDEX.lower()]
 
     main("data_synth")
     main("data_real")

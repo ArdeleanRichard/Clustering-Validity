@@ -5,7 +5,6 @@ import matplotlib as mpl
 
 from constants import FOLDER_RESULTS_CACHE, FOLDER_RESULTS_SPECIFICS
 
-# ── Publication-quality global style ─────────────────────────────────────────
 mpl.rcParams.update({
     "font.family":        "serif",
     "font.serif":         ["Times New Roman", "DejaVu Serif", "serif"],
@@ -93,8 +92,7 @@ def aggregate(datasets, clusterers, cvis):
     return combined_data
 
 
-def _style_ax(ax, values, metric, di, subplot_row, n_cols, color,
-              is_top_row_of_group=False):
+def _style_ax(ax, values, metric, di, color):
     """
     Shared axis styling: x-tick labels, y-axis, spines, grid.
 
@@ -104,10 +102,7 @@ def _style_ax(ax, values, metric, di, subplot_row, n_cols, color,
     values           : array-like  — the bar values (used for x-tick count)
     metric           : str
     di               : int  — dataset (column) index
-    subplot_row      : int  — absolute subplot row index
-    n_cols           : int
     color            : str  — bar fill colour
-    is_top_row_of_group : bool — True for the first metric row of a clusterer block
     """
     n = len(values)
     x = range(n)
@@ -127,17 +122,26 @@ def _style_ax(ax, values, metric, di, subplot_row, n_cols, color,
 
     # Left y-label: metric name, only in leftmost column
     if di == 0:
-        ax.set_ylabel(metric, fontsize=12, fontweight="bold", labelpad=6,
-                      fontfamily="serif")
+        ax.set_ylabel("A" if metric == "AD-idea" else metric, fontsize=12, fontweight="bold", labelpad=6, fontfamily="serif")
 
 
-def plot_all_in_one(plot_data, datasets, clusterers, cvis, file_name):
+
+def plot_all_in_one(plot_data, datasets, clusterers, cvis, file_name, n_clusterer_cols=1):
+    """
+    Parameters
+    ----------
+    n_clusterer_cols : int
+        How many clusterer-groups to place side by side.
+        e.g. 1 = all stacked vertically (original behaviour)
+             2 = two clusterer-groups per row
+             3 = three clusterer-groups per row
+    """
     out_dir = Path(FOLDER_RESULTS_SPECIFICS)
 
-    all_metrics = ["ARI"] + list(cvis)
-    n_metrics   = len(all_metrics)
+    all_metrics  = ["ARI"] + list(cvis)
+    n_metrics    = len(all_metrics)
     n_clusterers = len(clusterers)
-    n_cols      = len(datasets)
+    n_datasets   = len(datasets)
 
     # ── colour palette ───────────────────────────────────────────────────────
     metric_colors = {"ARI": "#4D4D4D"}
@@ -145,66 +149,70 @@ def plot_all_in_one(plot_data, datasets, clusterers, cvis, file_name):
     for i, cvi in enumerate(cvis):
         metric_colors[cvi] = cvi_palette[i % len(cvi_palette)]
 
-    # ── GridSpec layout ──────────────────────────────────────────────────────
-    # Between each pair of clusterer groups we insert a thin spacer row that
-    # will hold the clusterer label for the group *below* it (except for the
-    # very first group whose label sits above its first data row).
-    #
-    # GridSpec row structure (top → bottom):
-    #   [label row for clusterer 0]          ← spacer, height_ratio = LABEL
-    #   [data rows for clusterer 0]          ← n_metrics rows, ratio = DATA each
-    #   [label row for clusterer 1]          ← spacer
-    #   [data rows for clusterer 1]
-    #   …
-    #
-    DATA  = 3.0   # relative height of one data row (inches equivalent)
-    LABEL = 0.45  # relative height of one label/spacer row
+    # ── clusterer layout ─────────────────────────────────────────────────────
+    # How many rows of clusterer-groups (ceiling division)
+    n_clusterer_rows = (n_clusterers + n_clusterer_cols - 1) // n_clusterer_cols
 
-    # Build the height-ratio list
+    # ── GridSpec dimensions ──────────────────────────────────────────────────
+    # Each "cell" in the high-level grid is:
+    #   rows : 1 label row + n_metrics data rows
+    #   cols : n_datasets columns
+    #
+    # Total GridSpec shape:
+    #   gs_rows = n_clusterer_rows * (1 + n_metrics)
+    #   gs_cols = n_clusterer_cols  * n_datasets
+
+    DATA  = 3.0
+    LABEL = 0.45
+
     height_ratios = []
-    for ci in range(n_clusterers):
-        height_ratios.append(LABEL)                # label spacer row
-        height_ratios.extend([DATA] * n_metrics)   # data rows
+    for _ in range(n_clusterer_rows):
+        height_ratios.append(LABEL)
+        height_ratios.extend([DATA] * n_metrics)
 
-    n_gs_rows = len(height_ratios)   # = n_clusterers * (1 + n_metrics)
+    gs_rows = len(height_ratios)
+    gs_cols = n_clusterer_cols * n_datasets
 
-    col_width  = max(5, len(datasets) * 0.6)
-    # Total figure height: sum of all ratios scaled to inches
+    col_width  = max(5, n_datasets * 0.6)
     fig_height = sum(height_ratios)
-    fig_width  = n_cols * col_width
+    fig_width  = gs_cols * col_width
 
     fig = plt.figure(figsize=(fig_width, fig_height))
     gs  = fig.add_gridspec(
-        n_gs_rows, n_cols,
+        gs_rows, gs_cols,
         height_ratios=height_ratios,
-        hspace=0.55,   # vertical gap between all rows
-        wspace=0.35,   # horizontal gap between columns
+        hspace=0.55,
+        wspace=0.35,
     )
 
     for ci, clusterer in enumerate(clusterers):
-        # GridSpec row index of this clusterer's label row
-        label_gs_row = ci * (1 + n_metrics)
+        # Which high-level cell does this clusterer occupy?
+        cl_row = ci // n_clusterer_cols   # which row of clusterer-groups
+        cl_col = ci % n_clusterer_cols    # which column of clusterer-groups
 
-        # ── clusterer label in the spacer row ────────────────────────────────
-        # Span all columns so the text is centred over the full width.
-        ax_label = fig.add_subplot(gs[label_gs_row, :])
+        # Top-left GridSpec coordinates of this clusterer's block
+        gs_row_start = cl_row * (1 + n_metrics)   # label row index
+        gs_col_start = cl_col * n_datasets         # first dataset column
+
+        # ── clusterer label spanning its own dataset columns ─────────────────
+        ax_label = fig.add_subplot(
+            gs[gs_row_start, gs_col_start : gs_col_start + n_datasets]
+        )
         ax_label.set_axis_off()
         ax_label.text(
             0.5, 0.5,
             clusterer,
             transform=ax_label.transAxes,
-            fontsize=13,
-            fontweight="bold",
-            fontfamily="serif",
-            va="center",
-            ha="center",
+            fontsize=13, fontweight="bold", fontfamily="serif",
+            va="center", ha="center",
         )
 
         for mi, metric in enumerate(all_metrics):
-            data_gs_row = label_gs_row + 1 + mi   # skip the label row
+            data_gs_row = gs_row_start + 1 + mi
 
             for di, data in enumerate(datasets):
-                ax = fig.add_subplot(gs[data_gs_row, di])
+                gs_col = gs_col_start + di
+                ax = fig.add_subplot(gs[data_gs_row, gs_col])
 
                 df = plot_data[clusterer][data]
 
@@ -215,13 +223,13 @@ def plot_all_in_one(plot_data, datasets, clusterers, cvis, file_name):
                 values = df.loc[metric].values
                 color  = metric_colors.get(metric, "#333333")
 
-                _style_ax(ax, values, metric, di, data_gs_row, n_cols, color)
+                # di=0 check: only label y-axis for leftmost dataset of this clusterer
+                is_leftmost = (di == 0)
+                _style_ax(ax, values, metric, 0 if is_leftmost else 1, color)
 
-                # Dataset name as column header — only on very first data row
-                # of the entire figure (first clusterer, first metric)
-                if ci == 0 and mi == 0:
+                # Dataset column header: top metric row, first clusterer-row only
+                if mi == 0:
                     ax.set_title(data, fontsize=13, fontweight="bold", pad=8, fontfamily="serif")
-
 
     out_fig = out_dir / f"{file_name}.png"
     fig.savefig(out_fig, dpi=300, bbox_inches="tight")
@@ -266,20 +274,11 @@ def plot_per_dataset(plot_data, datasets, clusterers, cvis, file_name):
                 values = df.loc[metric].values
                 color  = metric_colors.get(metric, "#333333")
 
-                _style_ax(ax, values, metric, ci, mi, n_cols, color)
+                _style_ax(ax, values, metric, ci, color)
 
                 # Clusterer name as column header (top row only)
                 if mi == 0:
-                    ax.set_title(clusterer, fontsize=13, fontweight="bold", pad=8,
-                                 fontfamily="serif")
-
-        fig.suptitle(
-            f"{data} — ARI + CVIs",
-            fontsize=16,
-            fontweight="bold",
-            y=1.002,
-            fontfamily="serif",
-        )
+                    ax.set_title(clusterer, fontsize=13, fontweight="bold", pad=8, fontfamily="serif")
 
         plt.tight_layout(h_pad=0.8, w_pad=0.8)
 
@@ -292,9 +291,9 @@ def plot_per_dataset(plot_data, datasets, clusterers, cvis, file_name):
 if __name__ == "__main__":
     datasets = ["coil20", "olivetti", "yaleA"]
     clusterers = ["AgglomerativeClustering", "HDBSCAN", "KMeans", "SpectralClustering"]
-    cvis = ["DBCV", "AD-S", "AD-idea"]
+    cvis = ["DBCV", "COP", "AD-S", "AD-idea"]
     plot_data = aggregate(datasets, clusterers, cvis)
-    plot_all_in_one(plot_data, datasets, clusterers, cvis,  file_name="analysis_data_image")
+    plot_all_in_one(plot_data, datasets, clusterers, cvis,  file_name="analysis_data_image", n_clusterer_cols=2)
     plot_per_dataset(plot_data, datasets, clusterers, cvis, file_name="analysis_data_image")
 
     datasets = ["ecoli", "glass", "ionosphere", "sonar", "statlog", "wdbc", "wine", "yeast"]
